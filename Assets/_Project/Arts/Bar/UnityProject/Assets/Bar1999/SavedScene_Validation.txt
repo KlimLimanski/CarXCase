@@ -1,0 +1,30 @@
+NavMesh_Bartender: persisted data PASS
+NavMesh_Player: persisted data PASS
+NavMesh_GuestNPC: persisted data PASS
+Guests excluded from staff aisle: PASS
+Bartender excluded from guest floor: PASS
+Countertop not walkable: PASS
+Tabletop not walkable: PASS
+Bartender spawn on NavMesh: PASS
+Bartender can traverse full service aisle: PASS
+Restroom rejects interaction: PASS
+Door_StaffOnly open state: PASS
+Door_StaffOnly swings inward: PASS
+Door_StaffOnly close state: PASS
+Door_Entry open state: PASS
+Door_Entry swings inward: PASS
+Door_Entry close state: PASS
+Player radius 0.23m: PASS
+Bar dialogue event: PASS
+Bar cannot interact remotely: PASS
+Timeline asset assigned: PASS
+Timeline camera at 0.1 seconds: PASS
+Timeline camera at 4.1 seconds: PASS
+Timeline camera at 8.1 seconds: PASS
+Timeline camera at 12.1 seconds: PASS
+Timeline camera at 16.1 seconds: PASS
+Timeline camera at 20.1 seconds: PASS
+Timeline camera at 24.1 seconds: PASS
+Timeline camera at 28.1 seconds: PASS
+Static environment triangles=199770
+Baked lightmaps=2

@@ -1,0 +1,33 @@
+{
+  "validated_on": "2026-11-17",
+  "blender_file": "Blender/Bar1999.blend",
+  "unity_version": "6000.6.9f1",
+  "unity_scene": "UnityProject/Assets/Bar1999/Scenes/Bar1999.unity",
+  "mesh_world_bounds_verified": 999,
+  "triangles": 199770,
+  "lightmaps": 2,
+  "navigation": [
+    "Player",
+    "GuestNPC",
+    "Bartender"
+  ],
+  "npc_capsule_checks": "passed",
+  "runtime_errors": 0,
+  "editor_search_diagnostics": 1,
+  "visual_fidelity": "Approximate reconstruction. See README_RU.md for reference inconsistencies and visual differences.",
+  "renders": [
+    "01_Entry.png",
+    "02_Bar.png",
+    "03_Reverse.png",
+    "04_North.png",
+    "Unity_Camera_01_Entry.png",
+    "Unity_Camera_02_Bar.png",
+    "Unity_Camera_03_Reverse.png",
+    "Unity_Camera_04_North.png"
+  ],
+  "archive_excludes": [
+    "Unity caches and logs",
+    "Blender backups",
+    "temporary diagnostics"
+  ]
+}

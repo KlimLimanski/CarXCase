@@ -1,0 +1,1 @@
+Lightmapping.Bake=True; lightmaps=2

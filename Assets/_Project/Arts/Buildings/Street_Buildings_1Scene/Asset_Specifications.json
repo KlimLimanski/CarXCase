@@ -1,0 +1,62 @@
+[
+  {
+    "name": "01_Hudson",
+    "width_m": 9.6,
+    "depth_m": 10.4,
+    "height_m": 16.6,
+    "triangles": 10295,
+    "materials": 12,
+    "front": "-Y (Blender)",
+    "detailed_side": "+X",
+    "origin": "front centre at ground level",
+    "textures_embedded": true
+  },
+  {
+    "name": "02_Mercer",
+    "width_m": 8.4,
+    "depth_m": 10.0,
+    "height_m": 13.500000000000002,
+    "triangles": 7757,
+    "materials": 11,
+    "front": "-Y (Blender)",
+    "detailed_side": "+X",
+    "origin": "front centre at ground level",
+    "textures_embedded": true
+  },
+  {
+    "name": "03_Fulton",
+    "width_m": 10.8,
+    "depth_m": 11.0,
+    "height_m": 19.7,
+    "triangles": 12812,
+    "materials": 11,
+    "front": "-Y (Blender)",
+    "detailed_side": "+X",
+    "origin": "front centre at ground level",
+    "textures_embedded": true
+  },
+  {
+    "name": "04_Rosette",
+    "width_m": 9.0,
+    "depth_m": 10.3,
+    "height_m": 16.6,
+    "triangles": 10006,
+    "materials": 12,
+    "front": "-Y (Blender)",
+    "detailed_side": "+X",
+    "origin": "front centre at ground level",
+    "textures_embedded": true
+  },
+  {
+    "name": "05_Union",
+    "width_m": 8.7,
+    "depth_m": 10.0,
+    "height_m": 13.500000000000002,
+    "triangles": 7687,
+    "materials": 11,
+    "front": "-Y (Blender)",
+    "detailed_side": "+X",
+    "origin": "front centre at ground level",
+    "textures_embedded": true
+  }
+]

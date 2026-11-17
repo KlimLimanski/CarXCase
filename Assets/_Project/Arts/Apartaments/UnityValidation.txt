@@ -1,0 +1,13 @@
+Unity 6000.6.8f1
+Collision proxies: 50
+Interactions: 37
+Renderers: 309
+Floor bounds: (4.37, 0.15, 7.59)
+Missing UV2 meshes: 0
+Unmapped material slots: 0
+Player start clear: True
+Start blockers: 
+Nav_Living reachable: True
+Nav_Kitchen reachable: True
+Nav_Bathroom reachable: True
+Nav_Dining reachable: True

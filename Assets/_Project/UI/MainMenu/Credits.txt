@@ -1,0 +1,14 @@
+<color=#8A7C6E>ИДЕЯ И РАЗРАБОТКА</color>
+Команда хакатона
+
+<color=#8A7C6E>ПРОГРАММИРОВАНИЕ</color>
+Имя Фамилия
+
+<color=#8A7C6E>ХУДОЖНИКИ</color>
+Имя Фамилия
+
+<color=#8A7C6E>МУЗЫКА</color>
+Normand Corbeil — «Last Chance House»
+
+<color=#8A7C6E>ШРИФТ</color>
+Liberation Serif

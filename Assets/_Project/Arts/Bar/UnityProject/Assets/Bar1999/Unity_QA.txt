@@ -1,0 +1,16 @@
+Imported Player_Start=(1.1200, 0.0000, 0.4800), Bartender=(5.4600, 0.0000, 3.8000)
+Scale and axes: Player_Start and bartender coordinates verified in metres.
+Every mesh world bound matched Blender: 999 PASS
+URP materials assigned; unmatched slots=0
+Simple collision proxies=42; no MeshCollider.
+Navigation baked: Player agent=-1372625422
+Navigation baked: GuestNPC agent=-334000983
+Navigation baked: Bartender agent=1479372276
+Occlusion compute=True
+Path Entry -> Bar: PASS
+Path Entry -> North doors: PASS
+Path Entry -> Round table: PASS
+Path Entry -> Staff door: PASS
+Path Entry -> Restroom door: PASS
+RESTROOM locked=True
+All required routes checked with player radius 0.23 m.

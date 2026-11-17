@@ -1,0 +1,13 @@
+Bar1999 Noir — lighting handoff
+Scene: Assets/Bar1999/Scenes/Bar1999_Noir.unity
+Source: FBX supplied alongside Bar1999.blend; all 999 renderer bounds verified against source manifest (0 discrepancies).
+Existing project URP and SSAO retained. No gameplay scripts or packages added.
+Lights: 21 total, 3 Mixed pendant spotlights; remainder Baked.
+Baked maps: 3; 24 texels/m, max atlas 2048, direct samples 64, indirect samples 128.
+Light probes: 60. Reflection probes: 3, baked 128px, box projection.
+Post: ACES, exposure +0.65 EV, contrast +7, saturation -16, white balance -6, Bloom 0.18 threshold 1.2, Vignette 0.22, Grain 0.13. DOF disabled for interior inspection.
+PBR wood/brass/steel/walls use supplied base, normal and metallic/smoothness textures; glass uses URP transparency. Reflections use cubemaps, not ray tracing.
+Eight inspection cameras under CAMERAS_Inspection. Entry camera is active.
+Reviewed entry, bar, reverse, north wall, guest seating, bartender aisle and staff storage. Play Mode test: no console errors.
+Final runtime screenshot: Captures/Final/Bar1999_Final_PlayMode.png
+Performance: baked static environment, only three Mixed spotlights; no target-hardware FPS benchmark performed.

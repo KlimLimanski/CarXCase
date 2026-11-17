@@ -1,0 +1,28 @@
+Unity Editor search diagnostic (outside game code): ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection.
+Parameter name: index
+Synthetic W pressed=True current=QA_Keyboard controller=True
+Step 0 W=True current=QA_Keyboard frames=1 hit=COL_Floor dt=0.01666667 pos=(1.127, 0.015, 0.507)
+Step 20 W=True current=QA_Keyboard frames=21 hit=COL_Floor dt=0.01666667 pos=(1.274, 0.015, 0.846)
+Step 40 W=True current=QA_Keyboard frames=41 hit=COL_Floor dt=0.01666667 pos=(1.421, 0.015, 0.846)
+Step 60 W=True current=QA_Keyboard frames=61 hit=COL_Floor dt=0.01666667 pos=(1.567, 0.015, 0.846)
+Step 80 W=True current=QA_Keyboard frames=81 hit=COL_Floor dt=0.01666667 pos=(1.714, 0.015, 0.846)
+Step 100 W=True current=QA_Keyboard frames=101 hit=COL_Floor dt=0.01666667 pos=(1.921, 0.015, 0.896)
+WASD movement in Play Mode: PASS
+Movement from (1.120, 0.021, 0.480) to (2.097, 0.015, 1.071)
+Player remains above floor: PASS
+Door_StaffOnly interaction: PASS
+Door_StaffOnly animated inward swing: PASS
+Door_Entry interaction: PASS
+Door_Entry animated inward swing: PASS
+Door_Restroom interaction: PASS
+Capture color space=Linear target sRGB=True
+Rendered image Camera_01_Entry mean=28.4: PASS
+Capture color space=Linear target sRGB=True
+Rendered image Camera_02_Bar mean=23.3: PASS
+Capture color space=Linear target sRGB=True
+Rendered image Camera_03_Reverse mean=24.2: PASS
+Capture color space=Linear target sRGB=True
+Rendered image Camera_04_North mean=33.0: PASS
+Baked lighting loaded in Play Mode: PASS
+Total runtime errors=0
+Unity Editor search diagnostics=1

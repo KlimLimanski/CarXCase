@@ -1,0 +1,614 @@
+{
+  "materials": [
+    {
+      "normal": "OldWalnut_Normal.png",
+      "roughness": 0.68,
+      "metallic": 0,
+      "name": "OldWalnut",
+      "baseMap": "OldWalnut_BaseColor.png"
+    },
+    {
+      "normal": "RedOakFloor_Normal.png",
+      "roughness": 0.71,
+      "metallic": 0,
+      "name": "RedOakFloor",
+      "baseMap": "RedOakFloor_BaseColor.png"
+    },
+    {
+      "normal": "OlivePlaster_Normal.png",
+      "roughness": 0.94,
+      "metallic": 0,
+      "name": "OlivePlaster",
+      "baseMap": "OlivePlaster_BaseColor.png"
+    },
+    {
+      "normal": "CeilingPlaster_Normal.png",
+      "roughness": 0.92,
+      "metallic": 0,
+      "name": "CeilingPlaster",
+      "baseMap": "CeilingPlaster_BaseColor.png"
+    },
+    {
+      "normal": "BrownPlaid_Normal.png",
+      "roughness": 0.92,
+      "metallic": 0,
+      "name": "BrownPlaid",
+      "baseMap": "BrownPlaid_BaseColor.png"
+    },
+    {
+      "normal": "KitchenPattern_Normal.png",
+      "roughness": 0.78,
+      "metallic": 0,
+      "name": "KitchenPattern",
+      "baseMap": "KitchenPattern_BaseColor.png"
+    },
+    {
+      "normal": "BathroomMosaic_Normal.png",
+      "roughness": 0.8,
+      "metallic": 0,
+      "name": "BathroomMosaic",
+      "baseMap": "BathroomMosaic_BaseColor.png"
+    },
+    {
+      "normal": "BathroomTile_Normal.png",
+      "roughness": 0.6,
+      "metallic": 0,
+      "name": "BathroomTile",
+      "baseMap": "BathroomTile_BaseColor.png"
+    },
+    {
+      "normal": "BrushedSteel_Normal.png",
+      "roughness": 0.42,
+      "metallic": 0.72,
+      "name": "BrushedSteel",
+      "baseMap": "BrushedSteel_BaseColor.png"
+    },
+    {
+      "normal": "CounterLaminate_Normal.png",
+      "roughness": 0.55,
+      "metallic": 0,
+      "name": "CounterLaminate",
+      "baseMap": "CounterLaminate_BaseColor.png"
+    },
+    {
+      "normal": "Linen_Normal.png",
+      "roughness": 0.95,
+      "metallic": 0,
+      "name": "Linen",
+      "baseMap": "Linen_BaseColor.png"
+    },
+    {
+      "normal": "DarkCloth_Normal.png",
+      "roughness": 0.98,
+      "metallic": 0,
+      "name": "DarkCloth",
+      "baseMap": "DarkCloth_BaseColor.png"
+    },
+    {
+      "color": [
+        0.6,
+        0.58,
+        0.49
+      ],
+      "roughness": 0.28,
+      "metallic": 0,
+      "name": "IvoryEnamel",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.31,
+        0.23,
+        0.11
+      ],
+      "roughness": 0.38,
+      "metallic": 0.7,
+      "name": "DullBrass",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.55,
+        0.58,
+        0.57
+      ],
+      "roughness": 0.22,
+      "metallic": 0.85,
+      "name": "Chrome",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.025,
+        0.028,
+        0.026
+      ],
+      "roughness": 0.86,
+      "metallic": 0,
+      "name": "BlackRubber",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.065,
+        0.072,
+        0.066
+      ],
+      "roughness": 0.55,
+      "metallic": 0,
+      "name": "TVPlastic",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.055,
+        0.075,
+        0.069
+      ],
+      "roughness": 0.18,
+      "metallic": 0.28,
+      "name": "CRTGlass",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.68,
+        0.65,
+        0.55
+      ],
+      "roughness": 0.95,
+      "metallic": 0,
+      "name": "Paper",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.055,
+        0.051,
+        0.042
+      ],
+      "roughness": 0.94,
+      "metallic": 0,
+      "name": "PrintInk",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.047,
+        0.024,
+        0.011
+      ],
+      "roughness": 0.3,
+      "metallic": 0,
+      "name": "Coffee",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.09,
+        0.16,
+        0.13
+      ],
+      "roughness": 0.31,
+      "metallic": 0,
+      "name": "MutedBottle",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.61,
+        0.58,
+        0.46
+      ],
+      "roughness": 0.7,
+      "metallic": 0,
+      "name": "Soap",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.25,
+        0.31,
+        0.34
+      ],
+      "roughness": 0.19,
+      "metallic": 0.15,
+      "name": "WindowGlass",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.65,
+        0.7,
+        0.68
+      ],
+      "roughness": 0.085,
+      "metallic": 1,
+      "name": "Mirror",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.22,
+        0.19,
+        0.13
+      ],
+      "roughness": 0.9,
+      "metallic": 0,
+      "name": "PhotoSepia",
+      "baseMap": ""
+    },
+    {
+      "color": [
+        0.75,
+        0.65,
+        0.46
+      ],
+      "roughness": 0.34,
+      "metallic": 0,
+      "name": "LampGlass",
+      "baseMap": ""
+    }
+  ],
+  "interactions": [
+    {
+      "name": "INT_BathroomDoor",
+      "kind": "hinge",
+      "angle": -95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_BodyWash",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Book_0",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Book_1",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Book_2",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Book_3",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Book_4",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_CoffeeMug",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_CookingOil",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_CutleryDrawer",
+      "kind": "drawer",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_DishSoap",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_EntryDoor",
+      "kind": "hinge",
+      "angle": -95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Envelope_0",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Envelope_1",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Envelope_2",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_FreezerDoor",
+      "kind": "hinge",
+      "angle": 100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_FridgeDoor",
+      "kind": "hinge",
+      "angle": 100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_FridgeMilk",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_KitchenBase_Prep_Door00",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_KitchenBase_SinkLeft_Door00",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_KitchenBase_SinkRight_Door00",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_KitchenMug",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_KitchenUpper_Door00",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_KitchenUpper_Door00.001",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_KitchenUpper_Door00.002",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_KitchenUpper_Door00.003",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Newspaper_Folded",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Newspaper_Second",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_OvenDoor",
+      "kind": "hinge",
+      "angle": -85,
+      "axis": "X",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_PhotoFrame",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Shampoo",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_ShoulderBag",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_TVRemote",
+      "kind": "pickup",
+      "angle": 95,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_TVStand_Door00",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_TVStand_Door01",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Wardrobe_Door00",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    },
+    {
+      "name": "INT_Wardrobe_Door01",
+      "kind": "hinge",
+      "angle": -100,
+      "axis": "Z",
+      "distance": 0.38
+    }
+  ],
+  "lights": [
+    {
+      "name": "Ceiling_Warm",
+      "position": [
+        1.899999976158142,
+        3.5,
+        2.390000104904175
+      ],
+      "color": [
+        1.0,
+        0.7699999809265137,
+        0.5099999904632568
+      ],
+      "energy": 85.0
+    },
+    {
+      "name": "Ceiling_Warm.001",
+      "position": [
+        1.899999976158142,
+        5.619999885559082,
+        2.390000104904175
+      ],
+      "color": [
+        1.0,
+        0.7699999809265137,
+        0.5099999904632568
+      ],
+      "energy": 60.0
+    },
+    {
+      "name": "Vanity_Warm",
+      "position": [
+        1.2000000476837158,
+        0.1599999964237213,
+        1.899999976158142
+      ],
+      "color": [
+        1.0,
+        0.7799999713897705,
+        0.5299999713897705
+      ],
+      "energy": 20.0
+    },
+    {
+      "name": "Window_Overcast",
+      "position": [
+        0.20000000298023224,
+        4.849999904632568,
+        1.7000000476837158
+      ],
+      "color": [
+        0.6600000262260437,
+        0.7699999809265137,
+        1.0
+      ],
+      "energy": 170.0
+    },
+    {
+      "name": "Room_Bounce",
+      "position": [
+        2.700000047683716,
+        1.5,
+        2.0999999046325684
+      ],
+      "color": [
+        0.7799999713897705,
+        0.75,
+        0.6600000262260437
+      ],
+      "energy": 40.0
+    },
+    {
+      "name": "Kitchen_Bounce",
+      "position": [
+        1.7999999523162842,
+        4.900000095367432,
+        2.200000047683716
+      ],
+      "color": [
+        0.8700000047683716,
+        0.8100000023841858,
+        0.6899999976158142
+      ],
+      "energy": 45.0
+    },
+    {
+      "name": "Bath_CeilingBounce",
+      "position": [
+        0.9800000190734863,
+        0.9300000071525574,
+        2.3499999046325684
+      ],
+      "color": [
+        1.0,
+        0.800000011920929,
+        0.5699999928474426
+      ],
+      "energy": 22.0
+    }
+  ]
+}

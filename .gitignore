@@ -112,3 +112,21 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Local review renders, temporary scene snapshots and editor command inboxes.
+/Review/
+/HeroSetup/
+/Assets/__CodexHeroCompare/
+/Assets/__CodexHeroCompare.meta
+
+# Extracted handoff copies; the imported assets are versioned under Assets/.
+/ArtSource/LocationImport_20261117/
+*.blend[0-9]
+*.blend[0-9].meta
+
+# Credentials and local tooling overrides.
+.env
+.env.*
+!.env.example
+*.pem
+*.key

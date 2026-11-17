@@ -1,0 +1,1201 @@
+{
+  "materials": [
+    {
+      "name": "BeigePlastic",
+      "file": "BeigePlastic",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.550000011920929,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/BeigePlastic_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "BlackPlastic",
+      "file": "BlackPlastic",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/BlackPlastic_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "Cardboard",
+      "file": "Cardboard",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.699999988079071,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Cardboard_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "Ceiling",
+      "file": "Ceiling",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.8500000238418579,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Ceiling_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "DoorGrey",
+      "file": "DoorGrey",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.6000000238418579,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/DoorGrey_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "FlagBlue",
+      "file": "FlagBlue",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.800000011920929,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/FlagBlue_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "FlagRed",
+      "file": "FlagRed",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.800000011920929,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/FlagRed_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "FlagWhite",
+      "file": "FlagWhite",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.800000011920929,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/FlagWhite_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "GlassPane",
+      "file": "GlassPane",
+      "color": [
+        0.6000000238418579,
+        0.699999988079071,
+        0.75,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.05000000074505806,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.8999999761581421,
+      "textures": {},
+      "procedural": false
+    },
+    {
+      "name": "Kick",
+      "file": "Kick",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.550000011920929,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Kick_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "LampTube",
+      "file": "LampTube",
+      "color": [
+        1.0,
+        0.9200000166893005,
+        0.75,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.30000001192092896,
+      "emission": [
+        1.0,
+        0.9200000166893005,
+        0.75,
+        1.0
+      ],
+      "emissionStrength": 8.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {},
+      "procedural": false
+    },
+    {
+      "name": "Manila",
+      "file": "Manila",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.699999988079071,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Manila_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "Material_0",
+      "file": "Material_0",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.jpg",
+        "normal": "Textures/Image_2.jpg",
+        "roughness": "Textures/Image_1.jpg",
+        "metallic": "Textures/Image_1.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.001",
+      "file": "Material_0.001",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.001.jpg",
+        "normal": "Textures/Image_2.001.jpg",
+        "roughness": "Textures/Image_1.001.jpg",
+        "metallic": "Textures/Image_1.001.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.002",
+      "file": "Material_0.002",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.002.jpg",
+        "normal": "Textures/Image_2.002.jpg",
+        "roughness": "Textures/Image_1.002.jpg",
+        "metallic": "Textures/Image_1.002.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.003",
+      "file": "Material_0.003",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.003.jpg",
+        "normal": "Textures/Image_2.003.jpg",
+        "roughness": "Textures/Image_1.003.jpg",
+        "metallic": "Textures/Image_1.003.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.004",
+      "file": "Material_0.004",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.004.jpg",
+        "normal": "Textures/Image_2.004.jpg",
+        "roughness": "Textures/Image_1.004.jpg",
+        "metallic": "Textures/Image_1.004.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.005",
+      "file": "Material_0.005",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.005.jpg",
+        "normal": "Textures/Image_2.005.jpg",
+        "roughness": "Textures/Image_1.005.jpg",
+        "metallic": "Textures/Image_1.005.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.006",
+      "file": "Material_0.006",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.006.jpg",
+        "normal": "Textures/Image_2.006.jpg",
+        "roughness": "Textures/Image_1.006.jpg",
+        "metallic": "Textures/Image_1.006.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.007",
+      "file": "Material_0.007",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.007.jpg",
+        "normal": "Textures/Image_2.007.jpg",
+        "roughness": "Textures/Image_1.007.jpg",
+        "metallic": "Textures/Image_1.007.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.008",
+      "file": "Material_0.008",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.008.jpg",
+        "normal": "Textures/Image_2.008.jpg",
+        "roughness": "Textures/Image_1.008.jpg",
+        "metallic": "Textures/Image_1.008.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.009",
+      "file": "Material_0.009",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.009.jpg",
+        "normal": "Textures/Image_2.009.jpg",
+        "roughness": "Textures/Image_1.009.jpg",
+        "metallic": "Textures/Image_1.009.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.010",
+      "file": "Material_0.010",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.010.jpg",
+        "normal": "Textures/Image_2.010.jpg",
+        "roughness": "Textures/Image_1.010.jpg",
+        "metallic": "Textures/Image_1.010.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.011",
+      "file": "Material_0.011",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.011.jpg",
+        "normal": "Textures/Image_2.011.jpg",
+        "roughness": "Textures/Image_1.011.jpg",
+        "metallic": "Textures/Image_1.011.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.012",
+      "file": "Material_0.012",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.012.jpg",
+        "normal": "Textures/Image_2.012.jpg",
+        "roughness": "Textures/Image_1.012.jpg",
+        "metallic": "Textures/Image_1.012.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.013",
+      "file": "Material_0.013",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.013.jpg",
+        "normal": "Textures/Image_2.013.jpg",
+        "roughness": "Textures/Image_1.013.jpg",
+        "metallic": "Textures/Image_1.013.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "Material_0.014",
+      "file": "Material_0.014",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Image_0.014.jpg",
+        "normal": "Textures/Image_2.014.jpg",
+        "roughness": "Textures/Image_1.014.jpg",
+        "metallic": "Textures/Image_1.014.jpg"
+      },
+      "procedural": false
+    },
+    {
+      "name": "MetalGrey",
+      "file": "MetalGrey",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.6000000238418579,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/MetalGrey_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "NeonBlue",
+      "file": "NeonBlue",
+      "color": [
+        0.15000000596046448,
+        0.44999998807907104,
+        1.0,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.30000001192092896,
+      "emission": [
+        0.15000000596046448,
+        0.44999998807907104,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 25.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {},
+      "procedural": false
+    },
+    {
+      "name": "NeonRed",
+      "file": "NeonRed",
+      "color": [
+        1.0,
+        0.07999999821186066,
+        0.11999999731779099,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.30000001192092896,
+      "emission": [
+        1.0,
+        0.07999999821186066,
+        0.11999999731779099,
+        1.0
+      ],
+      "emissionStrength": 25.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {},
+      "procedural": false
+    },
+    {
+      "name": "Paper",
+      "file": "Paper",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.699999988079071,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Paper_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "RugRed",
+      "file": "RugRed",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.949999988079071,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/RugRed_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "Screen",
+      "file": "Screen",
+      "color": [
+        0.07999999821186066,
+        0.14000000059604645,
+        0.10000000149011612,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.6000000238418579,
+      "emission": [
+        0.07999999821186066,
+        0.14000000059604645,
+        0.10000000149011612,
+        1.0
+      ],
+      "emissionStrength": 1.5,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {},
+      "procedural": false
+    },
+    {
+      "name": "Tile",
+      "file": "Tile",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.3499999940395355,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/Tile_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "WallWood",
+      "file": "WallWood",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.699999988079071,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/WallWood_BaseColor.png"
+      },
+      "procedural": true
+    },
+    {
+      "name": "WoodDark",
+      "file": "WoodDark",
+      "color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.5,
+      "emission": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "alpha": 1.0,
+      "transmission": 0.0,
+      "textures": {
+        "baseColor": "Textures/WoodDark_BaseColor.png"
+      },
+      "procedural": true
+    }
+  ],
+  "lights": [
+    {
+      "name": "WarmPoint_0",
+      "type": "POINT",
+      "energy": 48.0,
+      "color": [
+        1.0,
+        0.75,
+        0.5
+      ],
+      "position": [
+        2.799999952316284,
+        5.599999904632568,
+        2.4000000953674316
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "WarmPoint_1",
+      "type": "POINT",
+      "energy": 36.0,
+      "color": [
+        1.0,
+        0.75,
+        0.5
+      ],
+      "position": [
+        0.0,
+        0.5,
+        2.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "WarmPoint_2",
+      "type": "POINT",
+      "energy": 12.0,
+      "color": [
+        1.0,
+        0.75,
+        0.5
+      ],
+      "position": [
+        2.4000000953674316,
+        7.400000095367432,
+        1.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "WarmPoint_3",
+      "type": "POINT",
+      "energy": 24.0,
+      "color": [
+        1.0,
+        0.75,
+        0.5
+      ],
+      "position": [
+        -3.5999999046325684,
+        0.5,
+        2.200000047683716
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "WarmPoint_4",
+      "type": "POINT",
+      "energy": 12.0,
+      "color": [
+        1.0,
+        0.75,
+        0.5
+      ],
+      "position": [
+        -3.799999952316284,
+        6.900000095367432,
+        1.7999999523162842
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "AreaLight_-2.0_-5.0",
+      "type": "AREA",
+      "energy": 70.0,
+      "color": [
+        1.0,
+        0.8500000238418579,
+        0.6499999761581421
+      ],
+      "position": [
+        -2.0,
+        -5.0,
+        3.8499999046325684
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "AreaLight_-2.0_-1.0",
+      "type": "AREA",
+      "energy": 70.0,
+      "color": [
+        1.0,
+        0.8500000238418579,
+        0.6499999761581421
+      ],
+      "position": [
+        -2.0,
+        -1.0,
+        3.8499999046325684
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "AreaLight_-2.0_3.0",
+      "type": "AREA",
+      "energy": 70.0,
+      "color": [
+        1.0,
+        0.8500000238418579,
+        0.6499999761581421
+      ],
+      "position": [
+        -2.0,
+        3.0,
+        3.8499999046325684
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "AreaLight_2.0_-5.0",
+      "type": "AREA",
+      "energy": 70.0,
+      "color": [
+        1.0,
+        0.8500000238418579,
+        0.6499999761581421
+      ],
+      "position": [
+        2.0,
+        -5.0,
+        3.8499999046325684
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "AreaLight_2.0_-1.0",
+      "type": "AREA",
+      "energy": 70.0,
+      "color": [
+        1.0,
+        0.8500000238418579,
+        0.6499999761581421
+      ],
+      "position": [
+        2.0,
+        -1.0,
+        3.8499999046325684
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "AreaLight_2.0_3.0",
+      "type": "AREA",
+      "energy": 70.0,
+      "color": [
+        1.0,
+        0.8500000238418579,
+        0.6499999761581421
+      ],
+      "position": [
+        2.0,
+        3.0,
+        3.8499999046325684
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "NeonSpill_Red",
+      "type": "POINT",
+      "energy": 25.0,
+      "color": [
+        1.0,
+        0.10000000149011612,
+        0.11999999731779099
+      ],
+      "position": [
+        -3.200000047683716,
+        -7.199999809265137,
+        2.5999999046325684
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "NeonSpill_Blue",
+      "type": "POINT",
+      "energy": 12.0,
+      "color": [
+        0.20000000298023224,
+        0.44999998807907104,
+        1.0
+      ],
+      "position": [
+        -3.200000047683716,
+        -7.199999809265137,
+        2.0999999046325684
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ]
+}
