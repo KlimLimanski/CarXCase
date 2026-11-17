@@ -19,6 +19,7 @@ public static class HeroSetup
 {
     const string Glb = "Assets/_Project/Arts/Heroes/Main Hero/MainHero_Rigged.glb";
     const string AnimDir = "Assets/_Project/Arts/Heroes/Animations";
+    const string PhonePrefab = "Assets/_Project/Arts/Heroes/Phone1999/Phone_1999.prefab";
     const string CarScene = "Assets/_Project/Scenes/00_BrightonDrive_Models.unity";
     const string FlatScene = "Assets/_Project/Scenes/01_FatherApartment.unity";
     const string IoDir = "HeroSetup";
@@ -205,13 +206,7 @@ public static class HeroSetup
         Backup(scene, "Hero");
         var car = GameObject.Find("Hero_Car")?.transform ?? throw new Exception("Hero_Car missing");
         var old = car.Find("Alexey_Driver");
-        if (old)
-        {
-            var oldPhone = old.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Phone_1999");
-            var drv = car.Find("Driver");
-            if (oldPhone && drv) oldPhone.SetParent(drv, true);
-            UnityEngine.Object.DestroyImmediate(old.gameObject);
-        }
+        if (old) UnityEngine.Object.DestroyImmediate(old.gameObject);
         foreach (var n in new[] { "IK_Wheel_LeftHand", "IK_LeftElbow_Hint" }) { var t = car.Find(n); if (t) UnityEngine.Object.DestroyImmediate(t.gameObject); }
 
         var anim = CreateHero(car, "Alexey_Driver", "Hero_Drive.controller");
@@ -254,23 +249,10 @@ public static class HeroSetup
         }
         else log.AppendLine("WARNING steering wheel rim not found, IK skipped");
 
-        // phone from the old primitive driver goes into the hero's right hand
+        InstallPhoneGrip(hero);
         var driver = car.Find("Driver");
         if (driver)
         {
-            var phone = driver.Find("Phone_1999") ?? MakePhone(driver);
-            var hand = Deep(hero, "R_Hand"); var head = Deep(hero, "Head");
-            if (phone && hand && head)
-            {
-                Vector3 hr = hero.right, hu = head.up, hf = head.forward;
-                Vector3 ear = head.position + hr * 0.085f * HeroScale + hu * 0.06f + hf * 0.03f;
-                Vector3 phoneUp = (hu * 0.75f - hf * 0.4f).normalized;
-                Vector3 centre = ear + hf * 0.045f - hu * 0.05f + hr * HeroTune.phoneOut;
-                phone.SetParent(hand, true);
-                phone.position = centre;
-                phone.rotation = Quaternion.LookRotation(Vector3.Cross(hr, phoneUp), phoneUp);
-                log.AppendLine("Phone to wrist distance=" + (phone.position - hand.position).magnitude.ToString("F3"));
-            }
             driver.gameObject.SetActive(false);
             log.AppendLine("Primitive Driver disabled");
         }
@@ -280,21 +262,72 @@ public static class HeroSetup
         CaptureCar();
     }
 
-    static Transform MakePhone(Transform parent)
+    internal static void InstallPhoneGrip(Transform hero)
     {
-        var root = new GameObject("Phone_1999").transform; root.SetParent(parent, false);
-        var dark = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Arts/Heroes/Phone_1999.mat");
-        if (!dark) { dark = new Material(Shader.Find("Universal Render Pipeline/Lit")); dark.color = new Color(.05f, .055f, .06f); dark.SetFloat("_Smoothness", .55f); AssetDatabase.CreateAsset(dark, "Assets/_Project/Arts/Heroes/Phone_1999.mat"); }
-        void Part(PrimitiveType type, string name, Vector3 pos, Vector3 scale)
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PhonePrefab);
+        if (!prefab) throw new InvalidOperationException("Missing handset prefab: " + PhonePrefab);
+
+        var head = Deep(hero, "Head");
+        var upper = Deep(hero, "R_UpperArm");
+        var lower = Deep(hero, "R_LowerArm");
+        var hand = Deep(hero, "R_Hand");
+        if (!head || !upper || !lower || !hand)
+            throw new InvalidOperationException("The driver's right arm rig is incomplete.");
+
+        // The phone follows the wrist, and the wrist target follows the ear.
+        var target = GetOrCreateChild(head, "IK_Phone_RightHand");
+        target.SetLocalPositionAndRotation(
+            new Vector3(.1306650f, -.0667615f, .1194943f),
+            new Quaternion(.6302868f, .6934770f, -.2004679f, .2857293f));
+        var hint = GetOrCreateChild(hero, "IK_RightElbow_Hint");
+        hint.localPosition = new Vector3(.2127956f, .9404576f, .1657530f);
+
+        var phone = hand.Find(prefab.name);
+        if (!phone || PrefabUtility.GetCorrespondingObjectFromSource(phone.gameObject) != prefab)
         {
-            var go = GameObject.CreatePrimitive(type); go.name = name; UnityEngine.Object.DestroyImmediate(go.GetComponent<Collider>());
-            go.transform.SetParent(root, false); go.transform.localPosition = pos; go.transform.localScale = scale;
-            go.GetComponent<Renderer>().sharedMaterial = dark;
+            if (phone) Undo.DestroyObjectImmediate(phone.gameObject);
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, hand);
+            Undo.RegisterCreatedObjectUndo(instance, "Add driver handset");
+            phone = instance.transform;
         }
-        Part(PrimitiveType.Cube, "Body", Vector3.zero, new Vector3(.024f, .13f, .05f));
-        Part(PrimitiveType.Cylinder, "Antenna", new Vector3(0, .085f, .015f), new Vector3(.008f, .03f, .008f));
-        log.AppendLine("Phone_1999 rebuilt");
-        return root;
+        Undo.RecordObject(phone, "Fit driver handset");
+        phone.SetLocalPositionAndRotation(
+            new Vector3(.0836260f, -.0322249f, .0033863f),
+            new Quaternion(-.5852879f, -.4424565f, .3944100f, -.5532731f));
+        phone.localScale = Vector3.one / HeroScale;
+        PrefabUtility.RecordPrefabInstancePropertyModifications(phone);
+
+        var ik = hero.GetComponents<HeroArmIK>().FirstOrDefault(arm => arm.end == hand);
+        if (!ik) ik = Undo.AddComponent<HeroArmIK>(hero.gameObject);
+        Undo.RecordObject(ik, "Set up driver handset IK");
+        ik.upper = upper;
+        ik.lower = lower;
+        ik.end = hand;
+        ik.target = target;
+        ik.hint = hint;
+        ik.alignHandRotation = true;
+        ik.weight = 1f;
+        PrefabUtility.RecordPrefabInstancePropertyModifications(ik);
+
+        Undo.RecordObjects(new UnityEngine.Object[] { upper, lower, hand }, "Pose driver right arm");
+        HeroArmIK.Solve(upper, lower, hand, target.position, hint.position, 1f);
+        hand.rotation = target.rotation;
+        PrefabUtility.RecordPrefabInstancePropertyModifications(upper);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(lower);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(hand);
+    }
+
+    static Transform GetOrCreateChild(Transform parent, string name)
+    {
+        var child = parent.Find(name);
+        if (!child)
+        {
+            child = new GameObject(name).transform;
+            child.SetParent(parent, false);
+            Undo.RegisterCreatedObjectUndo(child.gameObject, "Add driver IK target");
+        }
+        Undo.RecordObject(child, "Position driver IK target");
+        return child;
     }
 
     static Vector3 Abs(Vector3 v) => new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
@@ -429,5 +462,4 @@ public static class HeroTune
     public static float hipSide = 0f;
     public static float gripUp = 0.55f, gripLeft = 0.85f;
     public static float wristOut = 0.03f, wristBack = 0.04f;
-    public static float phoneOut = 0.02f;
 }
