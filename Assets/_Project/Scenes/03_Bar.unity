@@ -1877,7 +1877,7 @@ MonoBehaviour:
   rollAmplitude: 0.35
   frequency: 0.32
   fovBreath: 0.35
-  gameplayCamera: {fileID: 0}
+  gameplayCamera: {fileID: 150359462}
 --- !u!114 &150359461
 MonoBehaviour:
   m_ObjectHideFlags: 0
