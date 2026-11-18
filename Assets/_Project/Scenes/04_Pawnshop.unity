@@ -1934,6 +1934,103 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 3657769305201371412, guid: ef7da9e14329b5e4790567f9fb57d9ef, type: 3}
+--- !u!1 &217690197
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 217690198}
+  - component: {fileID: 217690199}
+  m_Layer: 0
+  m_Name: Alexey_Fill
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &217690198
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 217690197}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.5, y: 1.65, z: -0.6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1160673650}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!108 &217690199
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 217690197}
+  m_Enabled: 1
+  serializedVersion: 13
+  m_Type: 2
+  m_Color: {r: 1, g: 0.97, b: 0.91, a: 1}
+  m_Intensity: 0.4
+  m_Range: 2.2
+  m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize2D: {x: 0.5, y: 0.5}
+  m_Shadows:
+    m_Type: 0
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShapeRadius: 0.025
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
 --- !u!1 &218997860
 GameObject:
   m_ObjectHideFlags: 0
@@ -2990,6 +3087,7 @@ GameObject:
   - component: {fileID: 409783933}
   - component: {fileID: 409783935}
   - component: {fileID: 409783936}
+  - component: {fileID: 409783937}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -3064,8 +3162,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 409783931}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.008956238, y: 0.15532352, z: -0.0014082644, w: 0.98782206}
-  m_LocalPosition: {x: -0.36, y: 1.7867317, z: -5.25}
+  m_LocalRotation: {x: 0, y: -0.13192113, z: -0, w: 0.99126023}
+  m_LocalPosition: {x: 1.34, y: 1.5, z: -5.8500004}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3088,7 +3186,7 @@ MonoBehaviour:
   rollAmplitude: 0.35
   frequency: 0.32
   fovBreath: 0.35
-  gameplayCamera: {fileID: 0}
+  gameplayCamera: {fileID: 409783937}
 --- !u!114 &409783936
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3133,6 +3231,43 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &409783937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 409783931}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2eb863db1f47aac45881822c701641da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DetectiveGame.Core.ThirdPersonCamera
+  target: {fileID: 1160673650}
+  offset: {x: 0, y: 1.5, z: 0}
+  distance: 1.55
+  minDistance: 0.15
+  maxDistance: 2
+  shoulderOffset: 0.42
+  mouseSensitivity: 1.45
+  pitchMin: -20
+  pitchMax: 65
+  orbitSmoothTime: 0.09
+  wallSmoothTime: 0.2
+  followSmoothTime: 0.14
+  verticalSmoothTime: 0.22
+  maxFollowLag: 0.4
+  walkBob: 0.012
+  runBob: 0.026
+  runSway: 0.012
+  runRoll: 0.35
+  walkReferenceSpeed: 1.8
+  runReferenceSpeed: 3
+  bobFadeTime: 0.3
+  focusBlendTime: 0.55
+  focusDistanceScale: 0.85
+  focusHeroBias: 0.2
+  focusMaxPitch: 18
 --- !u!1 &412590503
 GameObject:
   m_ObjectHideFlags: 0
@@ -3540,7 +3675,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -936484244805900293, guid: 82079f278023422cb3f3ab8aad848ac6, type: 3}
       propertyPath: m_Name
-      value: Alexey
+      value: Character_Visual
       objectReference: {fileID: 0}
     - target: {fileID: 499900235500500428, guid: 82079f278023422cb3f3ab8aad848ac6, type: 3}
       propertyPath: m_LocalScale.x
@@ -3953,7 +4088,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarXCase.Hero.HeroLocomotion
   animator: {fileID: 520570940}
-  controller: {fileID: 0}
+  controller: {fileID: 1160673651}
   walkClipSpeed: 1.8
   damping: 0.12
   stopDamping: 0.09
@@ -9585,6 +9720,74 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 901968547}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &903963382
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 903963385}
+  - component: {fileID: 903963384}
+  - component: {fileID: 903963383}
+  m_Layer: 0
+  m_Name: Sema_Conversation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &903963383
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 903963382}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2381d52a9ae264645bef7eadc53209ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CarXCase.Precinct.ConversationInteraction
+  conversation: {fileID: 1636784602}
+  characterName: "\u0421\u0451\u043C\u0430"
+--- !u!65 &903963384
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 903963382}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.8, y: 1.8, z: 1.6}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &903963385
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 903963382}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.8, y: 0.85, z: 3.4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &917301716
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -9735,7 +9938,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &943747482
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9743,7 +9946,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 943747481}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86378b899f0383b43b8907349013e548, type: 3}
   m_Name: 
@@ -11097,6 +11300,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1160673650}
+  - component: {fileID: 1160673651}
+  - component: {fileID: 1160673652}
   m_Layer: 0
   m_Name: Hero
   m_TagString: Untagged
@@ -11112,14 +11317,64 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1160673649}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.136355, z: 0, w: 0.99066}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.92, y: 0, z: -4.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 520570938}
+  - {fileID: 217690198}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!143 &1160673651
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1160673649}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 1.8
+  m_Radius: 0.25
+  m_SlopeLimit: 45
+  m_StepOffset: 0.18
+  m_SkinWidth: 0.025
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &1160673652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1160673649}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c6ba02a24cbe7c4493ceac8d98cb3cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DetectiveGame.Core.OfficerController
+  walkSpeed: 1.8
+  runSpeed: 2.9
+  turnSmoothTime: 0.08
+  gravity: -15
+  accelerationTime: 0.14
+  decelerationTime: 0.11
+  cameraTransform: {fileID: 409783934}
+  flashlight: {fileID: 0}
+  hud: {fileID: 1453577655}
+  interactionRadius: 1.5
+  aimToInspectClues: 0
+  inspectionReach: 2
 --- !u!64 &1164915488
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -13215,6 +13470,53 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4648164970794445875, guid: ef7da9e14329b5e4790567f9fb57d9ef, type: 3}
+--- !u!1 &1453577654
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1453577656}
+  - component: {fileID: 1453577655}
+  m_Layer: 0
+  m_Name: Gameplay_HUD
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1453577655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1453577654}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67a231eff350edb48ac43e9e8e3542a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DetectiveGame.Core.SimpleUIHUD
+  showInspectionHud: 1
+  enableJournal: 1
+  showHud: 0
+--- !u!4 &1453577656
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1453577654}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1457738780
 GameObject:
   m_ObjectHideFlags: 0
@@ -18256,3 +18558,5 @@ SceneRoots:
   - {fileID: 1748971774}
   - {fileID: 445154055}
   - {fileID: 1430231517}
+  - {fileID: 1453577656}
+  - {fileID: 903963385}
