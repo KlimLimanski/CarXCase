@@ -11,6 +11,8 @@ namespace DetectiveGame.Core
         public string clueDescription = "Сейф распахнут настежь. Замок не взломан — код ввели вручную. Внутри пусто, пачки денег исчезли.";
         public bool isSuspiciousForBrothers = true;
         public bool addToJournal = true;
+        [Tooltip("Optional real evidence images and captions shared by diary and board.")]
+        public Casebook.Attachment[] journalAttachments = System.Array.Empty<Casebook.Attachment>();
         [TextArea] public string inspectionComment;
         [TextArea] public string journalThought;
 

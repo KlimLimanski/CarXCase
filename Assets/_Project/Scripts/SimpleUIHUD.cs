@@ -17,14 +17,7 @@ namespace DetectiveGame.Core
         public bool showInspectionHud;
         public bool enableJournal;
         public bool IsListening { get; set; }
-        public bool IsShowingJournal { get; private set; }
-
-        int selectedEntry;
-        Vector2 journalListScroll, journalDetailScroll;
-        ThirdPersonCamera journalFollow;
-        CursorLockMode journalCursorLock;
-        bool journalCursorVisible;
-        GUIStyle journalTitle, journalBody, journalEntry;
+        public bool IsShowingJournal => CarXCase.Investigation.InvestigationIntegration.IsOpen;
 
         public void ShowInspectionComment(string line)
         {
@@ -41,39 +34,12 @@ namespace DetectiveGame.Core
 
         public bool HandleJournalInput(Transform view, bool freeInput)
         {
-            var keyboard = Keyboard.current;
-            if (IsShowingJournal)
-            {
-                if (!freeInput || (keyboard != null &&
-                    (keyboard.jKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)))
-                    CloseJournal();
-                return true;
-            }
-
-            if (!enableJournal || !freeInput || IsListening || _isShowingClue ||
-                keyboard == null || !keyboard.jKey.wasPressedThisFrame) return false;
-
-            IsShowingJournal = true;
-            journalHintUntil = 0f;
-            journalCursorLock = Cursor.lockState;
-            journalCursorVisible = Cursor.visible;
-            journalFollow = view ? view.GetComponent<ThirdPersonCamera>() : null;
-            if (journalFollow) journalFollow.SetCursorLock(false);
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            return true;
+            if (IsShowingJournal) return true;
+            if (!freeInput || IsListening || _isShowingClue) return false;
+            return CarXCase.Investigation.InvestigationIntegration.HandleInput(this);
         }
 
-        public void CloseJournal()
-        {
-            if (!IsShowingJournal) return;
-            IsShowingJournal = false;
-            if (journalFollow) journalFollow.SetCursorLock(journalCursorLock == CursorLockMode.Locked);
-            Cursor.lockState = journalCursorLock;
-            Cursor.visible = journalCursorVisible;
-            journalFollow = null;
-        }
-
+        public void CloseJournal() => CarXCase.Investigation.InvestigationIntegration.Close();
         void OnDisable() => CloseJournal();
 
         public string CurrentInspectionComment => Time.unscaledTime < _inspectionUntil ? _inspectionLine : "";
@@ -117,7 +83,6 @@ namespace DetectiveGame.Core
         {
             if (IsShowingJournal)
             {
-                DrawJournal();
                 return;
             }
             if (showInspectionHud)
@@ -166,80 +131,6 @@ namespace DetectiveGame.Core
             }
 
             DrawClueOnly();
-        }
-
-        void DrawJournal()
-        {
-            float scale = Mathf.Clamp(Screen.height / 850f, .65f, 1.7f);
-            float width = Mathf.Min(Screen.width * .92f, 880 * scale);
-            float height = Mathf.Min(Screen.height * .86f, 560 * scale);
-            float pad = 24 * scale;
-            var panel = new Rect((Screen.width - width) / 2, (Screen.height - height) / 2, width, height);
-
-            var previous = GUI.color;
-            GUI.color = new Color(0, 0, 0, .66f);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = new Color(.105f, .095f, .080f);
-            GUI.DrawTexture(panel, Texture2D.whiteTexture);
-            GUI.color = new Color(.50f, .41f, .27f);
-            GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2 * scale), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-
-            journalTitle ??= new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, wordWrap = true };
-            journalTitle.normal.textColor = new Color(.98f, .85f, .61f);
-            journalTitle.fontSize = Mathf.RoundToInt(24 * scale);
-            journalBody ??= new GUIStyle(GUI.skin.label) { wordWrap = true };
-            journalBody.normal.textColor = new Color(.94f, .90f, .81f);
-            journalBody.fontSize = Mathf.RoundToInt(18 * scale);
-            journalEntry ??= new GUIStyle(GUI.skin.button) { wordWrap = true, alignment = TextAnchor.MiddleLeft };
-            journalEntry.fontSize = Mathf.RoundToInt(16 * scale);
-
-            GUI.Label(new Rect(panel.x + pad, panel.y + pad * .5f, width - 2 * pad, 38 * scale),
-                "Дневник", journalTitle);
-            float top = panel.y + 58 * scale;
-            float columnsHeight = height - 103 * scale;
-            float listWidth = (width - 3 * pad) * .39f;
-            var entries = ClueJournal.Entries;
-
-            if (entries.Count == 0)
-                GUI.Label(new Rect(panel.x + pad, top, width - 2 * pad, 36 * scale), "Пока нет записей", journalBody);
-            else
-            {
-                selectedEntry = Mathf.Clamp(selectedEntry, 0, entries.Count - 1);
-                GUILayout.BeginArea(new Rect(panel.x + pad, top, listWidth, columnsHeight));
-                journalListScroll = GUILayout.BeginScrollView(journalListScroll);
-                for (int i = 0; i < entries.Count; i++)
-                {
-                    GUI.backgroundColor = i == selectedEntry ? new Color(.77f, .60f, .37f) : Color.white;
-                    if (GUILayout.Button(entries[i].title, journalEntry, GUILayout.MinHeight(42 * scale)))
-                    {
-                        selectedEntry = i;
-                        journalDetailScroll = Vector2.zero;
-                    }
-                }
-                GUI.backgroundColor = Color.white;
-                GUILayout.EndScrollView();
-                GUILayout.EndArea();
-
-                float detailX = panel.x + 2 * pad + listWidth;
-                GUILayout.BeginArea(new Rect(detailX, top, panel.xMax - pad - detailX, columnsHeight));
-                journalDetailScroll = GUILayout.BeginScrollView(journalDetailScroll);
-                var entry = entries[selectedEntry];
-                GUILayout.Label(entry.title, journalTitle);
-                GUILayout.Space(10 * scale);
-                GUILayout.Label(entry.description, journalBody);
-                if (!string.IsNullOrEmpty(entry.thought))
-                {
-                    GUILayout.Space(12 * scale);
-                    GUILayout.Label("Алексей: " + entry.thought, journalBody);
-                }
-                GUILayout.EndScrollView();
-                GUILayout.EndArea();
-            }
-
-            GUI.Label(new Rect(panel.x + pad, panel.yMax - 38 * scale, width - 2 * pad, 28 * scale),
-                "J / Esc — закрыть", journalBody);
-            GUI.color = previous;
         }
 
         void DrawInspectionHud()

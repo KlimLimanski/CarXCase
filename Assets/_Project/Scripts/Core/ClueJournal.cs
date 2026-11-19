@@ -14,6 +14,8 @@ namespace DetectiveGame.Core
         public static IReadOnlyList<Entry> Entries => entries;
         public static IEnumerable<string> Conclusions => conclusions;
         public static int Count => entries.Count;
+        public static event System.Action Changed;
+        public static event System.Action Cleared;
         public static string Decision;
         /// Set when returning to the precinct from a location: the entrance cutscene is skipped.
         public static bool SkipPrecinctIntro;
@@ -24,11 +26,12 @@ namespace DetectiveGame.Core
         {
             if (string.IsNullOrEmpty(id) || entries.Any(e => e.id == id)) return;
             entries.Add(new Entry { id = id, title = title, description = description, thought = thought });
+            Changed?.Invoke();
         }
 
-        public static void AddConclusion(string id) { if (!string.IsNullOrEmpty(id)) conclusions.Add(id); }
+        public static void AddConclusion(string id) { if (!string.IsNullOrEmpty(id) && conclusions.Add(id)) Changed?.Invoke(); }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        public static void Clear() { entries.Clear(); conclusions.Clear(); Decision = null; SkipPrecinctIntro = false; }
+        public static void Clear() { entries.Clear(); conclusions.Clear(); Decision = null; SkipPrecinctIntro = false; Cleared?.Invoke(); }
     }
 }
