@@ -1,5 +1,13 @@
-SCENE Assets/_Project/Scenes/02_Precinct.unity
-NODE Main Camera pos=(2.69, 1.55, 5.20) local=(2.69, 1.55, 5.20) rot=(0.45, 207.61, 0.15) scale=(1.00, 1.00, 1.00)
+SCENE Assets/_Project/Scenes/03_Bar.unity
+NODE Camera_01_Entry pos=(0.85, 1.57, 0.09) local=(0.85, 1.57, 0.09) rot=(2.32, 16.94, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_02_Bar pos=(1.06, 1.53, 4.47) local=(1.06, 1.53, 4.47) rot=(0.77, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_03_Reverse pos=(3.10, 1.60, 7.42) local=(3.10, 1.60, 7.42) rot=(1.57, 180.39, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_04_North pos=(3.10, 1.59, 4.55) local=(3.10, 1.59, 4.55) rot=(2.66, 0.66, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_Dialogue_Player pos=(3.10, 1.64, 3.80) local=(3.10, 1.64, 3.80) rot=(1.21, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_Dialogue_Bartender pos=(5.48, 1.64, 3.80) local=(5.48, 1.64, 3.80) rot=(1.28, 270.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_Bartender_Profile pos=(5.45, 1.65, 6.50) local=(5.45, 1.65, 6.50) rot=(2.76, 180.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_Guest_Wide pos=(3.20, 1.65, 0.68) local=(3.20, 1.65, 0.68) rot=(4.70, 338.29, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Main Camera pos=(2.95, 1.85, 0.62) local=(2.95, 1.85, 0.62) rot=(12.00, 9.00, 0.00) scale=(1.00, 1.00, 1.00)
 ASSET Assets/_Project/Arts/Heroes/Animations/Source/Running.fbx imported=True
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/03_Fulton.glb imported=True
  MESH 03_Fulton_Geometry bounds=Center: (-0.30, 9.85, -4.86), Extents: (5.70, 9.85, 6.14) mat=Opaque_Window_Atlas:Shader Graphs/glTF-pbrMetallicRoughness,Hardware_Midnight:Shader Graphs/glTF-pbrMetallicRoughness,Warm_Limestone:Shader Graphs/glTF-pbrMetallicRoughness,Weathered_AC:Shader Graphs/glTF-pbrMetallicRoughness,Deep_Shadow:Shader Graphs/glTF-pbrMetallicRoughness,Painted_Iron:Shader Graphs/glTF-pbrMetallicRoughness,Aged_Brass:Shader Graphs/glTF-pbrMetallicRoughness,Fulton_Umber:Shader Graphs/glTF-pbrMetallicRoughness,Simple_Party_Walls:Shader Graphs/glTF-pbrMetallicRoughness,Flat_Roof:Shader Graphs/glTF-pbrMetallicRoughness,Sign_Ivory:Shader Graphs/glTF-pbrMetallicRoughness

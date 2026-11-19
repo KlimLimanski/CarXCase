@@ -272,6 +272,14 @@ namespace CarXCase.Interaction
 
             Vector3 facing = g.onScreen ? view.forward : (position - view.position).normalized;
             var rotation = Quaternion.LookRotation(facing, view.up) * Quaternion.Euler(pitch, yaw, roll);
+            // Keep the interaction key parallel to the image plane, including off-centre prompts.
+            if (!g.onScreen && !g.urgent && g.key == "E")
+            {
+                rotation = view.rotation;
+                facing = view.forward;
+                drift = Vector3.zero;
+                pop = Mathf.SmoothStep(.78f, 1f, a);
+            }
             float size = height * Mathf.Max(pop, 0f) * (1f - .14f * press);
             var root = Matrix4x4.TRS(position + drift * height + facing * (press * .35f * height), rotation, Vector3.one * size);
 

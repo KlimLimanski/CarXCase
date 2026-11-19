@@ -58,10 +58,13 @@ namespace CarXCase.Precinct
         GUIStyle sub, spk, label, big, small, keyStyle;
         readonly CamSmoother smoother = new CamSmoother { blendTime = .6f, follow = .25f };
         Transform camTarget; float camSince;
+        bool liveConversation;
+        static readonly string[] ChoiceKeys = { "W", "A", "D", "S" };
 
         public void Begin()
         {
-            if (phase != Phase.Idle) return;
+            if (phase != Phase.Idle || liveConversation) return;
+            liveConversation = true;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
             if (cam) smoother.Apply(cam, cam.transform.position, cam.transform.rotation, cam.fieldOfView, 0);
             StartCoroutine(Run());
@@ -78,7 +81,7 @@ namespace CarXCase.Precinct
                 current = node.choices.Where(c => string.IsNullOrEmpty(c.requires) || ClueJournal.Has(c.requires)).ToArray();
                 if (current.Length == 0) break;
                 picked = null; choiceLeft = choiceTime; phase = Phase.Choosing;
-                SetCam(camOnHero);
+                SetCam(camOnSuspect);
                 while (picked == null)
                 {
                     choiceLeft -= Time.deltaTime;
@@ -86,6 +89,7 @@ namespace CarXCase.Precinct
                     yield return null;
                 }
                 bool timedOut = choiceLeft <= 0;
+                if (!timedOut) yield return new WaitForSeconds(.24f);
                 HeroFace.SetEmotion(picked.stress >= 15 ? -0.9f : picked.stress <= -10 ? 0.6f : picked.probability < 0 ? -0.4f : 0.15f);
                 Apply(timedOut ? picked.probability - 5 : picked.probability, picked.stress + (timedOut ? 5 : 0));
                 yield return Say(heroName, timedOut ? "…" : picked.heroLine, false);
@@ -142,7 +146,7 @@ namespace CarXCase.Precinct
             {
                 if ((kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame)) || (mouse != null && mouse.leftButton.wasPressedThisFrame)) skip = true;
             }
-            else if (phase == Phase.Choosing && kb != null)
+            else if (phase == Phase.Choosing && picked == null && kb != null)
             {
                 int slot = -1;
                 if (kb.wKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame) slot = 0;
@@ -182,7 +186,7 @@ namespace CarXCase.Precinct
             // letterbox
             Fill(new Rect(0, 0, W, H * .06f), Color.black); Fill(new Rect(0, H * .94f, W, H * .06f), Color.black);
 
-            if (phase != Phase.Outcome)
+            if (phase == Phase.Choosing || (phase == Phase.Talking && Time.time - deltaTime < 2.5f))
             {
                 // probability + stress (top-left, Detroit style)
                 var panel = new Rect(18 * k, H * .07f, 250 * k, 104 * k);
@@ -212,24 +216,44 @@ namespace CarXCase.Precinct
 
             if (phase == Phase.Choosing)
             {
-                Vector2[] pos = { new Vector2(W * .5f, H * .6f), new Vector2(W * .28f, H * .71f), new Vector2(W * .72f, H * .71f), new Vector2(W * .5f, H * .82f) };
-                string[] keys = { "W", "A", "D", "S" };
-                foreach (var c in current)
+                float width = Mathf.Min(265f * k, W * .43f);
+                float margin = Mathf.Min(24f * k, W * .04f);
+                float row = Mathf.Min(44f * k, H * .092f);
+                Vector3 face = cam && suspect
+                    ? cam.WorldToViewportPoint(suspect.transform.position + Vector3.up * 1.55f)
+                    : new Vector3(.5f, .5f, 1f);
+                // Place the prompts beside the interviewee, with room for every available line.
+                bool onRight = face.x <= .56f;
+                float x = onRight ? Mathf.Max(W * .55f, face.x * W + margin) :
+                    Mathf.Min(W * .45f - width, face.x * W - margin - width);
+                x = Mathf.Clamp(x, margin, W - width - margin);
+                float top = Mathf.Clamp((1f - face.y) * H - row * .45f,
+                    H * .33f, H * .90f - row * current.Length - 9f * k);
+                float progress = Mathf.Clamp01(choiceLeft / Mathf.Max(choiceTime, .01f));
+                Color accent = progress < .25f ? new Color(1f, .62f, .37f) : new Color(.56f, .83f, .92f);
+                for (int i = 0; i < current.Length; i++)
                 {
-                    var p = pos[Mathf.Clamp(c.slot, 0, 3)];
-                    var r = new Rect(p.x - 150 * k, p.y - 20 * k, 300 * k, 40 * k);
-                    bool clue = !string.IsNullOrEmpty(c.requires);
-                    bool hover = r.Contains(Event.current.mousePosition);
-                    Fill(r, hover ? new Color(.1f, .25f, .35f, .85f) : new Color(0, 0, 0, .6f));
-                    var keyR = new Rect(r.x + 6 * k, r.y + 6 * k, 28 * k, 28 * k);
-                    Fill(keyR, new Color(.55f, .85f, 1f, .9f));
-                    keyStyle.normal.textColor = Color.black; GUI.Label(keyR, keys[Mathf.Clamp(c.slot, 0, 3)], keyStyle);
-                    label.normal.textColor = clue ? new Color(1f, .85f, .4f) : Color.white;
-                    GUI.Label(new Rect(r.x + 42 * k, r.y, r.width - 48 * k, r.height), (clue ? "◆ " : "") + c.label.ToUpper(), label);
-                    if (Event.current.type == EventType.MouseDown && hover) picked = c;
+                    Choice c = current[i];
+                    var r = new Rect(x, top + i * row, width, row - 3f * k);
+                    bool hover = picked == null && r.Contains(Event.current.mousePosition);
+                    bool selected = picked == c;
+                    Color ink = !string.IsNullOrEmpty(c.requires) ? new Color(.95f,.80f,.52f) : accent;
+                    Fill(r, selected ? ink : hover ? new Color(.12f,.21f,.24f,.92f) : new Color(.035f,.055f,.065f,.82f));
+                    Fill(new Rect(x, r.y, 2f*k, r.height), ink);
+                    var keyRect = new Rect(x + 7*k, r.y, 30*k, r.height);
+                    keyStyle.normal.textColor = selected ? Color.black : ink;
+                    GUI.Label(keyRect, ChoiceKeys[Mathf.Clamp(c.slot, 0, 3)], keyStyle);
+                    label.normal.textColor = selected ? Color.black : Color.white;
+                    GUI.Label(new Rect(x + 44*k, r.y, width - 48*k, r.height), c.label, label);
+                    if (hover && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+                    {
+                        picked = c;
+                        Event.current.Use();
+                    }
                 }
-                var tb = new Rect(W * .35f, H * .9f, W * .3f, 5 * k);
-                Fill(tb, new Color(1, 1, 1, .15f)); Fill(new Rect(tb.x, tb.y, tb.width * Mathf.Clamp01(choiceLeft / choiceTime), tb.height), new Color(.55f, .85f, 1f));
+                var timer = new Rect(x, top + current.Length * row, width, 3f*k);
+                Fill(timer, new Color(.08f,.10f,.11f,.8f));
+                Fill(new Rect(timer.x, timer.y, width * progress, timer.height), accent);
             }
 
             if (phase == Phase.Outcome)
