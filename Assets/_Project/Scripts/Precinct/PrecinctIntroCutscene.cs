@@ -208,7 +208,9 @@ namespace CarXCase.Precinct
             if (frontDoorLeft) frontDoorLeft.localRotation = leftClosed * Quaternion.Euler(0, -80 * front, 0);
             if (frontDoorRight) frontDoorRight.localRotation = rightClosed * Quaternion.Euler(0, 80 * front, 0);
             float officeOpen = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(total - 4.6f, total - 3.2f, s));
-            if (officeDoor) officeDoor.localRotation = officeClosed * Quaternion.Euler(0, -95 * officeOpen, 0);
+            // Swing shut during the pause after Alexey reaches the last waypoint.
+            float officeClose = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((tau - T) / 0.85f));
+            if (officeDoor) officeDoor.localRotation = officeClosed * Quaternion.Euler(0, -95f * officeOpen * (1f - officeClose), 0);
 
             if (!shotCamera) return;
             Vector3 head = pos + Vector3.up * 1.55f, chest = pos + Vector3.up * 1.25f;
