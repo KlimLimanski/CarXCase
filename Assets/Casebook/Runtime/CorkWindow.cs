@@ -6,6 +6,9 @@ internal class CorkWindow {
  readonly Rect cork=new Rect(143,170,1167,471);const float width=202,height=154;
  string selected="",drag="";Vector2 offset;bool pan;int cluePage,pendingIndex;
  public CorkWindow(CasebookController value){desk=value;}
+ /// Part of the 1440x900 board layout that is laid onto the physical board in the scene: cork, conclusions, tabs and help line.
+ public static readonly Rect WorldArea=new Rect(119,150,1212,720);
+ public bool Modal=>desk.inspectEntry!=""||desk.inspectHint!="";
  public void Release(){drag="";pan=false;}
  public void Focus(string id){var pin=Case.Pinned(id);if(pin==null)return;selected=id;State.pan=cork.size*.5f-(pin.position+new Vector2(width/2,height/2))*State.zoom;Case.Save();}
  Vector2 Project(Vector2 board)=>board*State.zoom+State.pan;
@@ -38,9 +41,11 @@ internal class CorkWindow {
  void Memo(Vector2 position,float w,float h,string text){var r=Position(position,w,h);var old=GUI.matrix;GUIUtility.RotateAroundPivot(text.StartsWith("К")?-3f:4f,r.position+new Vector2(w/2,6)*State.zoom);ArchiveArt.Leaf(r);ArchiveArt.Write(new Rect(r.x+12*State.zoom,r.y+8*State.zoom,r.width-24*State.zoom,r.height-14*State.zoom),text,Mathf.RoundToInt(16*State.zoom),true);DeskInk.Tack(r.position+new Vector2(w/2,6)*State.zoom);GUI.matrix=old;}
  Texture2D lighting;
  Texture2D NeutralLight(){if(lighting)return lighting;const int w=128,h=80;lighting=new Texture2D(w,h,TextureFormat.RGBA32,false);for(int y=0;y<h;y++)for(int x=0;x<w;x++){float px=(x/(float)w-.51f)*1.5f,py=(1-y/(float)h)*.9f;float level=Mathf.Clamp01(1-Mathf.Sqrt(px*px+py*py));lighting.SetPixel(x,y,new Color(.96f,.97f,.97f,.22f*level*level));}lighting.Apply();return lighting;}
- public void Draw(){
-    DeskInk.Box(new Rect(-2000,-2000,5440,4900),DeskInk.Dark);ArchiveArt.Back(false);
-        bool modal=desk.inspectEntry!=""||desk.inspectHint!="";if(!modal)Handle();
+ /// world = drawn onto the 3D board's surface (no room backdrop; reading a sheet opens on screen via DrawModal).
+ public void Draw(bool world=false){
+    if(world){DeskInk.Box(WorldArea,DeskInk.C("6b5640"));DeskInk.Tile(WorldArea,DeskInk.Cork,240);DeskInk.Box(WorldArea,new Color(0,0,0,.08f));}
+    else{DeskInk.Box(new Rect(-2000,-2000,5440,4900),DeskInk.Dark);ArchiveArt.Back(false);}
+        bool modal=Modal;if(!modal)Handle();
     GUI.BeginGroup(cork);
     Memo(State.noteA,138,79,"К проверке\n________");Memo(Fit(State.noteB,134,91),134,91,"Сопоставить\nвремя и место");
     foreach(var pin in State.pins){var rect=Position(pin.position,width,height);var old=GUI.matrix;float angle=pin.id.Length%2==0?-2.4f:2.7f;GUIUtility.RotateAroundPivot(angle,Project(PinPoint(pin)));JournalWindow.DrawSlip(rect,Case.File.Find(pin.id));GUI.matrix=old;if(pin.id==selected)DeskInk.Box(new Rect(rect.x,rect.yMax-3,rect.width,3),DeskInk.Wine);}
@@ -61,7 +66,11 @@ internal class CorkWindow {
     DeskInk.Label(new Rect(119,843,1212,26),desk.carry!=""?"Щёлкните по пробке, чтобы приколоть лист.   Esc — отложить":desk.linking!=""?"Выберите две улики. Подтверждённая связь откроет подсказку.":"Тяните за лист, чтобы переместить   ·   За фон — сдвиг   ·   Колесо — масштаб   ·   ПКМ по нити — снять   ·   Esc — закрыть",15,DeskInk.Muted);
     if(desk.BoardActionAvailable?.Invoke()==true&&ArchiveArt.Tab(new Rect(1010,781,300,42),"Что дальше? →",true))desk.BoardAction?.Invoke();
     GUI.enabled=true;if(!modal&&desk.carry!=""){var mouse=Event.current.mousePosition;JournalWindow.DrawSlip(new Rect(mouse.x-85,mouse.y+12,170,129),Case.File.Find(desk.carry));}
-    if(modal){DeskInk.Box(new Rect(0,0,1440,900),new Color(0,0,0,.74f));var r=new Rect(337,94,766,632);DeskInk.Sheet(r);
+    if(modal&&!world)DrawModal();
+ }
+ /// The open sheet or conclusion, read on screen over the board.
+ public void DrawModal(){
+    {DeskInk.Box(new Rect(0,0,1440,900),new Color(0,0,0,.74f));var r=new Rect(337,94,766,632);DeskInk.Sheet(r);
         if(desk.inspectEntry!="")desk.Journal.WriteEntry(r,Case.File.Find(desk.inspectEntry),true);else desk.Journal.WriteHint(r,Case.File.deductions.Find(rule=>rule.id==desk.inspectHint));
         if(DeskInk.Button(new Rect(535,747,370,46),"Вернуться к доске"))desk.Back();}
  }

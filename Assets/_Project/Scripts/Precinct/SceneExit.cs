@@ -56,7 +56,7 @@ namespace CarXCase.Precinct
                 int found = CountFound();
                 int needed = RequiredCount;
                 if (found < needed)
-                    return $"Обязательные улики: {found}/{needed}  ·  Продолжить осмотр";
+                    return "E  Продолжить осмотр"; // the key always shows; pressing tells how many clues are left
                 return $"E  {actionText}  ·  Улики: {found}/{needed}";
             }
         }

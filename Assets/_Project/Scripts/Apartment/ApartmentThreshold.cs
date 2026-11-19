@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace CarXCase.Apartment
 {
-    public sealed class ApartmentThreshold : MonoBehaviour, IInteractable
+    public sealed class ApartmentThreshold : MonoBehaviour, IInteractable, CarXCase.Interaction.IGlyphAnchor
     {
         [SerializeField] Transform door;
         [SerializeField] Transform exteriorLock;
@@ -14,10 +14,26 @@ namespace CarXCase.Apartment
         [SerializeField] ApartmentLightSwitch lightSwitch;
         [SerializeField] Transform journalHintPoint;
         [SerializeField] float openAngle = 86f;
-        bool entered, journalHintShown;
+        [Tooltip("How far past the threshold Alexey walks in by himself before the door shuts (m).")]
+        [SerializeField] float walkInDistance = 1.7f;
+        bool entered, doorOpened, doorClosed;
+        ApartmentInteractable hinge;
 
+        const string DoorNoteId = "note_door_unlocked";
+
+        // One beat at the door (GDD 4.1): E at the lock → Alexey's line, a diary note and the J hint,
+        // then the door opens and he calls his father. Once he is inside, the door shuts behind him.
         public bool CanInteract => isActiveAndEnabled && !entered;
-        public string InteractPrompt => "E  Проверить замок";
+        public string InteractPrompt => "E  Осмотреть замок";
+        // The key hangs right at the lock, where Alexey looks.
+        public Vector3 GlyphPosition => exteriorLock ? exteriorLock.position : door.position + Vector3.up * 1.1f;
+
+        void Awake()
+        {
+            if (door) door.TryGetComponent(out hinge);
+            // The entry door is driven by this beat only, never by a free E press.
+            if (hinge) hinge.playerUsable = false;
+        }
 
         public void Interact(SimpleUIHUD hud)
         {
@@ -28,10 +44,11 @@ namespace CarXCase.Apartment
 
         void Update()
         {
-            if (journalHintShown || !entered || !officer.isActiveAndEnabled || !journalHintPoint) return;
-            if (Vector3.Dot(officer.transform.position - journalHintPoint.position, journalHintPoint.forward) <= 0) return;
-            journalHintShown = true;
-            if (officer.hud) officer.hud.ShowJournalHint();
+            if (!doorOpened || doorClosed || !officer || !officer.isActiveAndEnabled || !journalHintPoint || !hinge) return;
+            // Close only once Alexey is well inside, so the leaf never sweeps through him.
+            if (Vector3.Dot(officer.transform.position - journalHintPoint.position, journalHintPoint.forward) < .9f) return;
+            doorClosed = true;
+            hinge.SetOpen(false);
         }
 
         /// Opens the leaf away from Alexey (into the flat), so he can stay where he stopped.
@@ -57,19 +74,28 @@ namespace CarXCase.Apartment
             Vector3 into = Vector3.ProjectOnPlane(doorway - officer.transform.position, Vector3.up);
             if (into.sqrMagnitude < .01f) into = -Vector3.ProjectOnPlane(door.forward, Vector3.up);
             Vector3 inside = doorway + into.normalized * 1.5f + Vector3.up * 1.45f;
+
+            // 1) The lock: intact, no marks.
             if (exteriorLock)
             {
                 officer.FaceTowards(exteriorLock.position);
                 if (view) view.BeginFocus(exteriorLock.position);
             }
-            const float inspectionTime = 1.9f;
-            if (hud) hud.ShowInspectionComment("Замок цел. Следов взлома нет.", inspectionTime);
-            yield return new WaitForSecondsRealtime(inspectionTime);
+            // Line 1 of 2: the lock and the detail together.
+            if (hud) hud.ShowInspectionComment("Замок цел, следов взлома нет. И не заперто — либо он ушёл в спешке, либо открыл сам.", 5.2f);
 
-            // He turns to the doorway; the shot follows the door as it swings inwards.
+            // 2) The detail goes into the diary, with the J hint.
+            ClueJournal.Collect(DoorNoteId, "Дверь не заперта",
+                "Замок и косяк целы, следов взлома нет, но дверь в квартиру отца не заперта.",
+                "Взламывать не пришлось. Отец ушёл в спешке или сам открыл тому, кого знал.");
+            if (hud) hud.ShowJournalHint();
+            yield return new WaitForSecondsRealtime(5.2f);
+
+            // 3) He turns to the doorway; the shot follows the door as it swings inwards.
             officer.FaceTowards(inside);
             if (view) view.BeginFocus(inside);
-            if (hud) hud.ShowInspectionComment("Алексей (тихо): Отец? Фёдор Павлович, ты дома?", 3.4f);
+            // Line 2 of 2: he calls his father and steps in to look around.
+            if (hud) hud.ShowInspectionComment("Отец? Фёдор Павлович, ты дома?.. Нужно осмотреть квартиру.", 6.5f);
 
             Quaternion closed = door.localRotation;
             Quaternion start = door.rotation;
@@ -83,14 +109,33 @@ namespace CarXCase.Apartment
                 yield return null;
             }
 
-            if (door.TryGetComponent<ApartmentInteractable>(out var hinge))
+            if (hinge)
+            {
                 hinge.EnableOpenedHinge(closed, Quaternion.Inverse(start) * Vector3.up, signedAngle);
-            if (hud) hud.ShowInspectionComment("Нужно осмотреть квартиру. Может, здесь есть что-то, что объяснит, что случилось.");
+                hinge.playerUsable = false; // shuts by itself once Alexey is inside; the exit uses SceneExit
+            }
+            doorOpened = true;
+
+            // 4) He steps in on his own; the shot keeps looking into the flat while he walks past it.
+            Vector3 flat = into.normalized;
+            Vector3 stop = doorway + flat * walkInDistance;
+            stop.y = officer.transform.position.y;
+            officer.ClearFaceTarget();
+            if (view) view.BeginFocus(doorway + flat * (walkInDistance + 2.2f) + Vector3.up * 1.4f);
+            officer.WalkTo(stop);
+            float walkStarted = Time.unscaledTime;
+            while (officer.IsWalking && Time.unscaledTime - walkStarted < 6f) yield return null;
+            officer.StopWalking();
+
+            // 5) The door shuts behind him (Update closes it once he is far enough in), a beat, then control.
+            float waitClose = Time.unscaledTime;
+            while (!doorClosed && Time.unscaledTime - waitClose < 1.5f) yield return null;
+            if (!doorClosed && hinge) { doorClosed = true; hinge.SetOpen(false); }
+            yield return new WaitForSecondsRealtime(.6f);
             exit.enabled = true;
             lightSwitch.enabled = true;
-            // Control returns facing into the flat, so holding W simply walks in.
-            if (view) view.EndFocus(inside);
-            officer.ClearFaceTarget();
+            // Control returns facing deeper into the flat.
+            if (view) view.EndFocus(stop + flat * 2f + Vector3.up * 1.4f);
             officer.LockInput(false);
         }
     }

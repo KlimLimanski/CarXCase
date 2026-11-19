@@ -52,6 +52,23 @@ namespace DetectiveGame.Core
         [Tooltip("Steepest downward look of the staged shot (degrees).")]
         public float focusMaxPitch = 18f;
 
+        [Header("Interaction attention")]
+        [Tooltip("When a key prompt is up, the shot turns this share of the way towards the object (Heavy Rain).")]
+        [Range(0f, 1f)] public float attentionStrength = .35f;
+        public float attentionMaxYaw = 14f;
+        public float attentionMaxPitch = 8f;
+        [Tooltip("Gentle push-in while attending.")]
+        [Range(.7f, 1f)] public float attentionDistanceScale = .9f;
+        [Min(.01f)] public float attentionBlendTime = .7f;
+
+        [Header("Examination shot")]
+        [Tooltip("Time (s) to glide into the side angle when a clue is examined.")]
+        [Min(.05f)] public float shotInTime = .85f;
+        [Tooltip("Time (s) to glide back to the gameplay view afterwards.")]
+        [Min(.05f)] public float shotOutTime = 1.05f;
+        [Tooltip("Field of view narrows by this much during the shot (degrees).")]
+        public float shotFovNarrowing = 7f;
+
         private float _yaw = 0f;
         private float _pitch = 12f;
         private float _renderYaw;
@@ -84,6 +101,13 @@ namespace DetectiveGame.Core
         private bool _radialInitialized;
         private float _radialShare = 1f, _radialVelocity;
         private readonly RaycastHit[] _hits = new RaycastHit[16];
+        private bool _shot, _station;
+        private float _shotWeight, _shotVelocity, _shotStarted, _shotBaseFov;
+        private Vector3 _shotPosition, _shotLook, _shotDrift;
+        private Camera _lens;
+        private Vector3 _attendPoint;
+        private int _attendFrame = -100;
+        private float _attend, _attendVelocity, _attendYaw, _attendPitch;
 
         public bool IsFocusing => _focusing;
 
@@ -106,17 +130,19 @@ namespace DetectiveGame.Core
 
         private void LateUpdate()
         {
-            if (target == null || (_hud && _hud.IsShowingJournal))
+            // The diary freezes the view, except while the camera is gliding to or from a station (the board).
+            bool staged = _shot || _shotWeight > 0f;
+            if (target == null || (_hud && _hud.IsShowingJournal && !staged))
             {
                 return;
             }
 
-            if (Time.frameCount != _cursorLockFrame && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (!staged && Time.frameCount != _cursorLockFrame && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 SetCursorLock(!_cursorLocked);
             }
 
-            if (!_cursorLocked && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            if (!staged && !_cursorLocked && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             {
                 SetCursorLock(true);
             }
@@ -124,7 +150,11 @@ namespace DetectiveGame.Core
             bool isQteRunning = QteManager.Instance != null && QteManager.Instance.IsQteActive();
             float dt = Time.deltaTime;
 
-            if (_focusing)
+            if (_shot)
+            {
+                // The examination shot owns the view; the mouse waits.
+            }
+            else if (_focusing)
             {
                 // Staged look: the frame settles on the inspected point and ignores the mouse.
                 Vector3 eye = target.position + offset;
@@ -159,6 +189,23 @@ namespace DetectiveGame.Core
             }
             _focusAmount = Mathf.SmoothDamp(_focusAmount, _focusing ? 1f : 0f, ref _focusAmountVelocity, focusBlendTime);
 
+            // Soft attention: the look leans towards the object with a key prompt; the mouse stays live.
+            bool attending = !_focusing && !_shot && !isQteRunning && Time.frameCount - _attendFrame <= 2;
+            if (attending)
+            {
+                Vector3 toPoint = _attendPoint - transform.position;
+                if (toPoint.sqrMagnitude > .01f)
+                {
+                    Vector3 wanted = Quaternion.LookRotation(toPoint).eulerAngles;
+                    float yawOffset = Mathf.Clamp(Mathf.DeltaAngle(_renderYaw, wanted.y) * attentionStrength, -attentionMaxYaw, attentionMaxYaw);
+                    float pitchOffset = Mathf.Clamp(Mathf.DeltaAngle(_renderPitch, wanted.x) * attentionStrength, -attentionMaxPitch, attentionMaxPitch);
+                    float k = 1f - Mathf.Exp(-dt / Mathf.Max(attentionBlendTime * .5f, .01f));
+                    _attendYaw = Mathf.Lerp(_attendYaw, yawOffset, k);
+                    _attendPitch = Mathf.Lerp(_attendPitch, pitchOffset, k);
+                }
+            }
+            _attend = Mathf.SmoothDamp(_attend, attending ? 1f : 0f, ref _attendVelocity, attentionBlendTime);
+
             Quaternion rotation = Quaternion.Euler(_renderPitch, _renderYaw, 0f);
             Vector3 focus = Follow(target.position + offset, dt);
             Vector3 shoulder = rotation * Vector3.right;
@@ -167,7 +214,7 @@ namespace DetectiveGame.Core
             Vector3 pivot = focus + shoulder * _shoulderDistance;
 
             Vector3 backward = rotation * Vector3.back;
-            float requested = distance * Mathf.Lerp(1f, focusDistanceScale, _focusAmount);
+            float requested = distance * Mathf.Lerp(1f, focusDistanceScale, _focusAmount) * Mathf.Lerp(1f, attentionDistanceScale, _attend);
             _cameraDistance = ResolveOffset(pivot, backward, requested, wallSmoothTime > 0f ? 0f : .08f,
                 _cameraDistance, ref _cameraVelocity);
             _offsetsInitialized = true;
@@ -206,10 +253,31 @@ namespace DetectiveGame.Core
                     position = bobbed;
             }
 
-            transform.SetPositionAndRotation(position, Quaternion.Euler(_renderPitch, _renderYaw, roll));
+            Quaternion look = Quaternion.Euler(_renderPitch + _attendPitch * _attend, _renderYaw + _attendYaw * _attend, roll);
+            float blendTime = _shot ? shotInTime : shotOutTime;
+            _shotWeight = Mathf.SmoothDamp(_shotWeight, _shot ? 1f : 0f, ref _shotVelocity, blendTime * .45f, Mathf.Infinity, Time.unscaledDeltaTime);
+            if (!_shot && _shotWeight < .002f) _shotWeight = 0f;
+            float shotBlend = Mathf.SmoothStep(0f, 1f, _shotWeight);
+            if (shotBlend > 0f)
+            {
+                // Slow lateral dolly while holding the angle, like a camera operator easing along.
+                float held = Mathf.Min(Time.unscaledTime - _shotStarted, 6f);
+                Vector3 shotPos = _shotPosition + _shotDrift * held;
+                Quaternion shotRot = Quaternion.LookRotation(_shotLook - shotPos);
+                position = Vector3.Lerp(position, shotPos, shotBlend);
+                look = Quaternion.Slerp(look, shotRot, shotBlend);
+            }
+            if (_lens && (shotBlend > 0f || _shotBaseFov > 0f))
+            {
+                _lens.fieldOfView = _shotBaseFov - (_station ? 0f : shotFovNarrowing) * shotBlend;
+                if (shotBlend <= 0f) _shotBaseFov = 0f;
+            }
+            transform.SetPositionAndRotation(position, look);
             if (_characterRenderers != null)
             {
-                bool visible = Vector3.Dot(position - focus, backward) >= 0.85f;
+                bool clear = Vector3.Dot(position - focus, backward) >= 0.85f;
+                // Examination shots keep Alexey in frame; a station close-up (the board) looks past him, so he steps out of view.
+                bool visible = _station ? shotBlend < .4f && clear : shotBlend > .3f || clear;
                 foreach (var bodyRenderer in _characterRenderers)
                     if (bodyRenderer != null) bodyRenderer.enabled = visible;
             }
@@ -355,6 +423,94 @@ namespace DetectiveGame.Core
             Vector3 angles = Quaternion.LookRotation(direction).eulerAngles;
             _yaw = angles.y;
             _pitch = Mathf.Clamp(Mathf.DeltaAngle(0f, angles.x), pitchMin, pitchMax);
+        }
+
+        /// Detroit-style examination framing: the lens glides to the side of the line between Alexey and
+        /// the clue, a little back and above, so both read in one shot. Each clue may ask for its side.
+        public void BeginShot(Vector3 subject, ClueShot style, string seed)
+        {
+            if (!target) return;
+            _station = false;
+            if (!_lens) _lens = GetComponent<Camera>();
+            if (_lens && _shotBaseFov <= 0f) _shotBaseFov = _lens.fieldOfView;
+
+            Vector3 chest = target.position + Vector3.up * 1.45f;
+            Vector3 flat = Vector3.ProjectOnPlane(subject - chest, Vector3.up);
+            Vector3 dir = flat.sqrMagnitude > .01f ? flat.normalized : Vector3.ProjectOnPlane(target.forward, Vector3.up).normalized;
+            float separation = flat.magnitude;
+            Vector3 side = Vector3.Cross(Vector3.up, dir);
+            Vector3 look = Vector3.Lerp(chest, subject, .58f);
+            // Tight, intimate framing: closer angles also stay inside small rooms.
+            float distance = Mathf.Clamp(separation * .9f + .85f, 1.2f, 1.9f) * (style == ClueShot.Close ? .78f : 1f);
+            float lift = style == ClueShot.High ? 1.05f : subject.y < chest.y - .6f ? .5f : .15f;
+
+            int preferred = style == ClueShot.Left ? -1 : style == ClueShot.Right ? 1 : (Hash(seed) & 1) == 0 ? 1 : -1;
+            Vector3 Pose(int sign) => look + side * sign * distance * .82f - dir * distance * .42f + Vector3.up * lift;
+            float Room(int sign, out Vector3 placed)
+            {
+                Vector3 wanted = Pose(sign) - look;
+                float length = wanted.magnitude;
+                // A fat probe and a generous margin keep the lens off walls, jambs and curtains.
+                float free = Cast(look, .26f, wanted / length, length, out float hit) ? hit - .28f : length;
+                placed = look + wanted / length * Mathf.Max(free, .35f);
+                return free / length;
+            }
+            float roomA = Room(preferred, out var poseA);
+            float roomB = Room(-preferred, out var poseB);
+            bool usePreferred = style == ClueShot.Left || style == ClueShot.Right ? roomA > .45f || roomA >= roomB : roomA >= .8f || roomA >= roomB;
+            int sideSign = usePreferred ? preferred : -preferred;
+            _shotPosition = usePreferred ? poseA : poseB;
+            if ((usePreferred ? roomA : roomB) < .45f)
+            {
+                // Tight corner: fall back to a close over-the-shoulder angle on the clue.
+                Vector3 shoulder = chest - dir * 1.1f + side * sideSign * .5f + Vector3.up * .25f;
+                Vector3 path = shoulder - chest;
+                float len = path.magnitude;
+                _shotPosition = Cast(chest, .15f, path / len, len, out float hit) ? chest + path / len * Mathf.Max(hit - .1f, .3f) : shoulder;
+                look = Vector3.Lerp(chest, subject, .8f);
+            }
+            _shotLook = look;
+            _shotDrift = side * sideSign * .035f;
+            _shotStarted = Time.unscaledTime;
+            _shot = true;
+        }
+
+        /// Hands the view back: it glides from the examination angle to the gameplay framing.
+        public void EndShot()
+        {
+            _shot = false;
+        }
+
+        /// A fixed close-up (e.g. in front of the evidence board): glide there and hold until EndShot.
+        public void BeginStation(Vector3 position, Vector3 lookAt)
+        {
+            if (!_lens) _lens = GetComponent<Camera>();
+            if (_lens && _shotBaseFov <= 0f) _shotBaseFov = _lens.fieldOfView;
+            _shotPosition = position;
+            _shotLook = lookAt;
+            _shotDrift = Vector3.zero;
+            _shotStarted = Time.unscaledTime;
+            _station = true;
+            _shot = true;
+        }
+
+        public bool InShot => _shot || _shotWeight > .01f;
+
+        static int Hash(string text)
+        {
+            unchecked
+            {
+                int h = 17;
+                foreach (char ch in text ?? "") h = h * 31 + ch;
+                return h & 0x7fffffff;
+            }
+        }
+
+        /// Called every frame a key prompt is up: the shot leans gently towards the point.
+        public void Attend(Vector3 point)
+        {
+            _attendPoint = point;
+            _attendFrame = Time.frameCount;
         }
 
         /// Holds a staged view of the point (e.g. a lock) until EndFocus; the mouse is ignored meanwhile.

@@ -78,6 +78,9 @@ namespace CarXCase.Editor
                 }
                 finally { if (opened) EditorSceneManager.CloseScene(scene, true); }
             }
+            // Hand-authored pages live only in the catalog (people / places / timeline, scripted notes): keep them.
+            foreach (var entry in old.Values)
+                if ((entry.Derived || entry.section != Section.Evidence) && !entries.ContainsKey(entry.id)) entries[entry.id] = entry;
             foreach (var entry in entries.Values)
                 if (photos.TryGetValue(entry.id, out var photo) && !entry.attachments.Any(a => a.image == photo))
                     entry.attachments.Add(new Attachment { image = photo, caption = entry.title });

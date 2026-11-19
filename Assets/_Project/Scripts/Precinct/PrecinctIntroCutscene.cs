@@ -1,6 +1,8 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using DetectiveGame.Core;
 using CarXCase.Hero;
 
@@ -24,6 +26,15 @@ namespace CarXCase.Precinct
         public Line[] dialogue;
         public string title = "13-Й УЧАСТОК · БРУКЛИН";
         public string subtitle = "Тот же вечер";
+
+        [Header("Emerging from darkness")]
+        [Tooltip("Seconds over which the frame opens up from the night outside (after the black fade).")]
+        public float darknessTime = 4.2f;
+        [Tooltip("Exposure (EV) at the very start: the doorway reads as black, Alexey as a silhouette.")]
+        public float startExposure = -2.6f;
+        [Range(0f, 1f)] public float startVignette = .5f;
+        Volume reveal;
+        VolumeProfile revealProfile;
 
         public bool Finished { get; private set; }
         public float ease = 0.8f;
@@ -73,6 +84,7 @@ namespace CarXCase.Precinct
 
         void Start()
         {
+            SetupReveal();
             SetGameplay(false);
             Evaluate(0);
             if (ClueJournal.SkipPrecinctIntro)
@@ -109,6 +121,7 @@ namespace CarXCase.Precinct
                 elapsed = Mathf.Max(elapsed, Duration - 1.0f);
             elapsed += Time.deltaTime;
             live = true; Evaluate(elapsed); live = false;
+            UpdateReveal(elapsed);
             Line cur = null;
             if (dialogue != null) foreach (var l in dialogue) if (elapsed >= l.start && elapsed < l.end) { cur = l; break; }
             HeroFace.SetTalking(cur != null && cur.speaker == "АЛЕКСЕЙ");
@@ -116,8 +129,46 @@ namespace CarXCase.Precinct
             if (elapsed >= Duration) Finish();
         }
 
+        /// A temporary global volume: low exposure and a heavy vignette that lift as he steps in from the dark.
+        void SetupReveal()
+        {
+            if (reveal) return;
+            revealProfile = ScriptableObject.CreateInstance<VolumeProfile>();
+            var exposure = revealProfile.Add<ColorAdjustments>(true);
+            exposure.postExposure.value = startExposure;
+            var vignette = revealProfile.Add<Vignette>(true);
+            vignette.intensity.value = startVignette;
+            vignette.smoothness.value = .6f;
+            vignette.color.value = Color.black;
+            var go = new GameObject("Intro_Darkness_Reveal");
+            go.transform.SetParent(transform, false);
+            reveal = go.AddComponent<Volume>();
+            reveal.isGlobal = true;
+            reveal.priority = 100;
+            reveal.sharedProfile = revealProfile;
+            reveal.weight = 1f;
+        }
+
+        void UpdateReveal(float t)
+        {
+            if (!reveal) return;
+            // Starts lifting as the doors part and he steps over the threshold.
+            float k = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(walkStart - .8f, walkStart + darknessTime, t));
+            reveal.weight = 1f - k;
+        }
+
+        void EndReveal()
+        {
+            if (reveal) Destroy(reveal.gameObject);
+            if (revealProfile) Destroy(revealProfile);
+            reveal = null;
+        }
+
+        void OnDestroy() => EndReveal();
+
         void Finish()
         {
+            EndReveal();
             Evaluate(Duration);
             HeroFace.SetTalking(false);
             Finished = true;

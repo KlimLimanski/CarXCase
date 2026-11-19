@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: cf24be484e23c1f4abf065d61f2ee45b, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -35,7 +35,7 @@ RenderSettings:
   m_DefaultReflectionMode: 0
   m_DefaultReflectionResolution: 128
   m_ReflectionBounces: 1
-  m_ReflectionIntensity: 0.89
+  m_ReflectionIntensity: 0.55
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
   m_UseRadianceAmbientProbe: 0
@@ -13359,8 +13359,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 0.6, g: 0.7, b: 0.9, a: 1}
-  m_Intensity: 2.4
+  m_Color: {r: 1, g: 0.62, b: 0.34, a: 1}
+  m_Intensity: 0.8
   m_Range: 7.5
   m_SpotAngle: 115
   m_InnerSpotAngle: 55
@@ -42559,8 +42559,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 0.6, g: 0.7, b: 0.9, a: 1}
-  m_Intensity: 2.4
+  m_Color: {r: 0.45, g: 0.55, b: 0.78, a: 1}
+  m_Intensity: 0.7
   m_Range: 7.5
   m_SpotAngle: 115
   m_InnerSpotAngle: 55
@@ -50592,7 +50592,7 @@ GameObject:
   - component: {fileID: 1218397694}
   - component: {fileID: 1218397695}
   m_Layer: 0
-  m_Name: Light_Daylight
+  m_Name: Light_Street_Sodium
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -50607,7 +50607,7 @@ Transform:
   m_GameObject: {fileID: 1218397692}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.8, z: -0.8}
+  m_LocalPosition: {x: 0, y: 3.6, z: -3.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -50623,9 +50623,9 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 2
-  m_Color: {r: 0.66, g: 0.8, b: 1, a: 1}
-  m_Intensity: 1.7
-  m_Range: 5
+  m_Color: {r: 1, g: 0.58, b: 0.28, a: 1}
+  m_Intensity: 0.9
+  m_Range: 6.5
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -56472,8 +56472,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 0.6, g: 0.7, b: 0.9, a: 1}
-  m_Intensity: 2.4
+  m_Color: {r: 0.45, g: 0.55, b: 0.78, a: 1}
+  m_Intensity: 0.7
   m_Range: 7.5
   m_SpotAngle: 115
   m_InnerSpotAngle: 55
@@ -56875,8 +56875,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 0.6, g: 0.7, b: 0.9, a: 1}
-  m_Intensity: 2.4
+  m_Color: {r: 0.45, g: 0.55, b: 0.78, a: 1}
+  m_Intensity: 0.7
   m_Range: 7.5
   m_SpotAngle: 115
   m_InnerSpotAngle: 55
@@ -59435,8 +59435,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 0.6, g: 0.7, b: 0.9, a: 1}
-  m_Intensity: 2.4
+  m_Color: {r: 0.45, g: 0.55, b: 0.78, a: 1}
+  m_Intensity: 0.7
   m_Range: 7.5
   m_SpotAngle: 115
   m_InnerSpotAngle: 55
@@ -74805,6 +74805,14 @@ MonoBehaviour:
   focusDistanceScale: 0.85
   focusHeroBias: 0.2
   focusMaxPitch: 18
+  attentionStrength: 0.35
+  attentionMaxYaw: 14
+  attentionMaxPitch: 8
+  attentionDistanceScale: 0.9
+  attentionBlendTime: 0.7
+  shotInTime: 0.85
+  shotOutTime: 1.05
+  shotFovNarrowing: 7
 --- !u!81 &1723662959
 AudioListener:
   m_ObjectHideFlags: 0
@@ -86932,6 +86940,9 @@ MonoBehaviour:
   interactionRadius: 1.5
   aimToInspectClues: 0
   inspectionReach: 2
+  lookAngle: 30
+  keepAngle: 10
+  keepReach: 0.3
 --- !u!43 &1995679679
 Mesh:
   m_ObjectHideFlags: 0
@@ -87449,8 +87460,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 0
-  m_Color: {r: 0.6, g: 0.7, b: 0.9, a: 1}
-  m_Intensity: 2.4
+  m_Color: {r: 1, g: 0.62, b: 0.34, a: 1}
+  m_Intensity: 0.8
   m_Range: 7.5
   m_SpotAngle: 115
   m_InnerSpotAngle: 55
@@ -87672,6 +87683,9 @@ MonoBehaviour:
     text: "\u0421\u043F\u0430\u0441\u0438\u0431\u043E."
   title: "13-\u0419 \u0423\u0427\u0410\u0421\u0422\u041E\u041A \xB7 \u0411\u0420\u0423\u041A\u041B\u0418\u041D"
   subtitle: "\u0422\u043E\u0442 \u0436\u0435 \u0432\u0435\u0447\u0435\u0440"
+  darknessTime: 4.2
+  startExposure: -2.6
+  startVignette: 0.5
   ease: 0.8
 --- !u!4 &2000177011
 Transform:

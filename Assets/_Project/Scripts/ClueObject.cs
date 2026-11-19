@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace DetectiveGame.Core
 {
+    /// Camera angle used when Alexey examines the clue (Detroit-style framing).
+    public enum ClueShot { Auto, Left, Right, High, Close }
+
     public class ClueObject : MonoBehaviour
     {
         public string clueId = "clue_safe";
@@ -15,6 +18,13 @@ namespace DetectiveGame.Core
         public Casebook.Attachment[] journalAttachments = System.Array.Empty<Casebook.Attachment>();
         [TextArea] public string inspectionComment;
         [TextArea] public string journalThought;
+        [Header("Examination")]
+        [Tooltip("Ракурс камеры при осмотре. Auto выбирает сторону со свободным местом.")]
+        public ClueShot cameraShot = ClueShot.Auto;
+
+        bool inspected;
+        /// Every clue is examined once: after that its key no longer appears and E does nothing.
+        public bool IsDone => inspected || (addToJournal && ClueJournal.Has(clueId));
 
         public string InspectionAction =>
             TryGetComponent<CarXCase.Apartment.ApartmentAnsweringMachine>(out _) ? "Воспроизвести" : "Осмотреть";
@@ -97,6 +107,9 @@ namespace DetectiveGame.Core
 
         public void Inspect(SimpleUIHUD ui)
         {
+            if (IsDone) return;
+            inspected = true;
+            SetHighlight(false);
             if (TryGetComponent<CarXCase.Apartment.ApartmentAnsweringMachine>(out var machine))
             {
                 machine.Play(ui);

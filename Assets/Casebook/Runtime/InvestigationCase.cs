@@ -16,6 +16,9 @@ public enum Section { Evidence, Notes, People, Places, Timeline }
     public string location, time;
     [TextArea] public string observation, narrator;
     public List<Attachment> attachments = new List<Attachment>();
+    [Tooltip("Для людей, мест и времени: запись сама появится в дневнике, когда найдены все эти улики. Пусто — только через игровое событие сбора.")]
+    public List<string> revealedBy = new List<string>();
+    public bool Derived => revealedBy != null && revealedBy.Count > 0;
 }
 
 [Serializable] public class Deduction {

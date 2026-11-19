@@ -41,6 +41,7 @@ namespace CarXCase.Investigation
             ClueJournal.Changed += instance.JournalChanged;
             ClueJournal.Cleared += instance.ClearState;
             instance.desk.HintUnlocked += instance.Unlock;
+            instance.desk.ViewChanged += instance.ViewChanged;
             SceneManager.activeSceneChanged += instance.SceneChanged;
         }
 
@@ -102,6 +103,7 @@ namespace CarXCase.Investigation
                     instance.Upsert(entry.id, entry.title, entry.description, entry.thought);
                     instance.desk.Collect(entry.id);
                 }
+                RevealDerived();
                 foreach (var id in ClueJournal.Conclusions)
                 {
                     var rule = instance.catalog.deductions.Find(r => r.id == id);
@@ -112,6 +114,22 @@ namespace CarXCase.Investigation
             }
             finally { instance.syncing = false; }
         }
+        /// People, places and timeline pages follow from the clues they are built on.
+        static void RevealDerived()
+        {
+            var desk = instance.desk;
+            string keep = desk.selection;
+            bool any = false;
+            foreach (var entry in instance.catalog.entries)
+            {
+                if (entry == null || !entry.Derived || desk.Session.Get(entry.id) != null) continue;
+                if (entry.revealedBy.All(id => desk.Session.Get(id) != null || ClueJournal.Has(id)))
+                    any |= desk.Collect(entry.id);
+            }
+            // The clue that triggered them stays the open page; the toast still announces the newest record.
+            if (any && !string.IsNullOrEmpty(keep)) desk.Select(keep);
+        }
+
         void Unlock(Casebook.Deduction deduction)
         {
             ClueJournal.AddConclusion(deduction.id);
@@ -135,10 +153,35 @@ namespace CarXCase.Investigation
         public static void Close() { if (instance && instance.desk) instance.desk.Close(); }
         public static void RegisterBoard(DeductionBoard value) { Ensure(); if (instance) instance.board = value; }
         public static void UnregisterBoard(DeductionBoard value) { if (instance && instance.board == value) instance.board = null; }
+        /// At the physical board: the camera glides up to it and the board's own surface becomes the interface.
         public static void OpenBoard(DeductionBoard value)
         {
             RegisterBoard(value);
-            if (instance) instance.desk.OpenBoard();
+            if (!instance) return;
+            if (value && value.surface)
+            {
+                var follow = Camera.main ? Camera.main.GetComponent<ThirdPersonCamera>() : null;
+                if (follow && follow.isActiveAndEnabled)
+                {
+                    // Frame the whole board (cork, conclusions and tabs) with a small margin, square on.
+                    var lens = follow.GetComponent<Camera>();
+                    float vertical = Mathf.Tan((lens ? lens.fieldOfView : 50f) * .5f * Mathf.Deg2Rad);
+                    float horizontal = vertical * (lens ? lens.aspect : 16f / 9f);
+                    float distance = Mathf.Max(value.surfaceSize.y * .5f / vertical, value.surfaceSize.x * .5f / horizontal) * 1.1f;
+                    Vector3 eye = value.surface.position + value.surface.forward * distance;
+                    follow.BeginStation(eye, value.surface.position);
+                    instance.station = follow;
+                }
+                instance.desk.OpenBoardOn(value.surface, value.surfaceSize);
+            }
+            else instance.desk.OpenBoard();
+        }
+
+        ThirdPersonCamera station;
+        void ViewChanged(DeskView view)
+        {
+            // Leaving the board (or switching to the diary pages) hands the camera back smoothly.
+            if (view == DeskView.Closed && station) { station.EndShot(); station = null; }
         }
     }
 }

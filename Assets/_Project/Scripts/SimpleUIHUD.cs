@@ -31,6 +31,9 @@ namespace DetectiveGame.Core
         }
 
         public void ShowJournalHint() => journalHintUntil = Time.unscaledTime + 8f;
+        /// Drawn by JournalKeyHint: true once the scene asked for the hint, Fresh while it should stay bright.
+        public bool JournalHintRequested => journalHintUntil > 0f;
+        public bool JournalHintFresh => Time.unscaledTime < journalHintUntil;
 
         public bool HandleJournalInput(Transform view, bool freeInput)
         {
@@ -141,11 +144,7 @@ namespace DetectiveGame.Core
             float x = Screen.width * .5f;
             float y = Screen.height * .5f;
             float scale = Mathf.Clamp(Screen.height / 1080f, .7f, 1.8f);
-            float dotSize = Mathf.Max(2, 3 * scale);
-            GUI.color = new Color(0, 0, 0, .65f);
-            GUI.DrawTexture(new Rect(x-dotSize*.5f-1, y-dotSize*.5f-1, dotSize+2, dotSize+2), Texture2D.whiteTexture);
-            GUI.color = new Color(.96f, .94f, .85f, .85f);
-            GUI.DrawTexture(new Rect(x-dotSize*.5f, y-dotSize*.5f, dotSize, dotSize), Texture2D.whiteTexture);
+            // No crosshair: prompts live in the scene, the frame stays clean.
             GUI.color = Color.white;
             if (!string.IsNullOrEmpty(_promptText))
             {
@@ -162,7 +161,7 @@ namespace DetectiveGame.Core
             }
             GUI.color = Color.white;
             CarXCase.UI.Subtitles.Draw(CurrentInspectionComment);
-            if (Time.unscaledTime < journalHintUntil)
+            if (Time.unscaledTime < journalHintUntil && !GetComponent<CarXCase.Investigation.JournalKeyHint>())
             {
                 journalHintStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
                 journalHintStyle.fontSize = Mathf.RoundToInt(17 * scale);

@@ -7,9 +7,15 @@ public sealed class ApartmentInteractable : MonoBehaviour
     public float openAngle = 95f;
     public float travel = .38f;
     public bool prioritizeWhenAimed;
+    [Tooltip("Off: the player can no longer use it (e.g. the entry door once Alexey is inside).")]
+    public bool playerUsable = true;
     private Quaternion closedRotation;
     private Vector3 closedPosition;
     private bool open;
+    public bool IsOpen => open;
+    /// Scripted open/close (e.g. the entry door shutting behind Alexey); animates like a player use.
+    public void SetOpen(bool value) { open = value; enabled = true; }
+    public bool IsHeld => held;
     private bool held;
     private Transform originalParent;
     private Vector3 originalScale;

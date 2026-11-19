@@ -31,6 +31,8 @@ namespace DetectiveGame.Core
         private float _resultTimer = 0f;
         private bool _lastResultSuccess = false;
         private string _resultMessage = "";
+        private Transform _anchor;
+        private string _label;
 
         private void Awake()
         {
@@ -64,6 +66,7 @@ namespace DetectiveGame.Core
                 EndQte(false);
                 return;
             }
+            ShowGlyph();
 
             if (Keyboard.current == null)
             {
@@ -87,6 +90,7 @@ namespace DetectiveGame.Core
             {
                 if (keyControl.wasPressedThisFrame)
                 {
+                    CarXCase.Interaction.InteractionGlyphs.Press(this);
                     _currentMashes++;
                     if (_currentMashes >= _requiredMashes)
                     {
@@ -143,6 +147,9 @@ namespace DetectiveGame.Core
         {
             _isActive = false;
             ShowResult(success, success ? "УСПЕХ!" : "ПРОВАЛ!");
+            CarXCase.Interaction.InteractionGlyphs.Finish(this, success);
+            _anchor = null;
+            _label = null;
 
             if (success)
             {
@@ -163,93 +170,25 @@ namespace DetectiveGame.Core
 
         public bool IsQteActive() => _isActive;
 
-        private void OnGUI()
+        /// Where the key hangs and what it says; QteTrigger sets this before starting.
+        public void Present(Transform anchor, string label)
         {
-            if (_resultTimer > 0f && !_isActive)
-            {
-                float resWidth = 360f;
-                float resHeight = 65f;
-                Rect resRect = new Rect((Screen.width - resWidth) / 2f, (Screen.height - resHeight) / 2f - 40f, resWidth, resHeight);
-                GUI.Box(resRect, "");
+            _anchor = anchor;
+            _label = label;
+        }
 
-                var resStyle = new GUIStyle(GUI.skin.label)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    fontSize = 22,
-                    fontStyle = FontStyle.Bold
-                };
-                resStyle.normal.textColor = _lastResultSuccess ? new Color(0.2f, 1f, 0.4f) : new Color(1f, 0.25f, 0.25f);
-                GUI.Label(resRect, _resultMessage, resStyle);
-                return;
-            }
-
-            if (!_isActive)
-            {
-                return;
-            }
-
-            float width = 420f;
-            float height = 180f;
-            Rect centerBox = new Rect((Screen.width - width) / 2f, (Screen.height - height) / 2f, width, height);
-
-            GUI.color = new Color(0f, 0f, 0f, 0.85f);
-            GUI.Box(centerBox, "");
-            GUI.color = Color.white;
-
-            var titleStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 16,
-                fontStyle = FontStyle.Bold
-            };
-            titleStyle.normal.textColor = new Color(1f, 0.85f, 0.3f);
-
-            string actionTitle = _currentType == QteType.SinglePress 
-                ? "БЫСТРАЯ РЕАКЦИЯ!" 
-                : "БЫСТРО НАЖИМАЙТЕ КЛАВИШУ!";
-
-            GUI.Label(new Rect(centerBox.x, centerBox.y + 15f, width, 25f), actionTitle, titleStyle);
-
-            var keyPromptStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 32,
-                fontStyle = FontStyle.Bold
-            };
-            keyPromptStyle.normal.textColor = Color.white;
-
-            float pulse = 1f + Mathf.PingPong(Time.time * 4f, 0.15f);
-            GUI.Label(new Rect(centerBox.x, centerBox.y + 45f, width, 50f), $"[  {_targetKeyName}  ]", keyPromptStyle);
-
-            float timeRatio = Mathf.Clamp01(_timeRemaining / _timeLimit);
-            Color barColor = Color.Lerp(new Color(1f, 0.2f, 0.2f), new Color(0.2f, 0.9f, 1f), timeRatio);
-
-            float barWidth = width - 60f;
-            float barHeight = 16f;
-            Rect barBgRect = new Rect(centerBox.x + 30f, centerBox.y + 110f, barWidth, barHeight);
-            GUI.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
-            GUI.Box(barBgRect, "");
-
-            Rect barFillRect = new Rect(centerBox.x + 30f, centerBox.y + 110f, barWidth * timeRatio, barHeight);
-            GUI.color = barColor;
-            GUI.Box(barFillRect, "");
-            GUI.color = Color.white;
-
-            if (_currentType == QteType.RapidMash)
-            {
-                float mashRatio = Mathf.Clamp01((float)_currentMashes / _requiredMashes);
-                Rect mashFillRect = new Rect(centerBox.x + 30f, centerBox.y + 135f, barWidth * mashRatio, 10f);
-                GUI.color = new Color(0.3f, 1f, 0.4f);
-                GUI.Box(mashFillRect, "");
-                GUI.color = Color.white;
-
-                var mashStyle = new GUIStyle(GUI.skin.label)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    fontSize = 11
-                };
-                GUI.Label(new Rect(centerBox.x, centerBox.y + 150f, width, 20f), $"{_currentMashes} / {_requiredMashes}", mashStyle);
-            }
+        /// Detroit-style prompt: the key floats in the shot (at the object, or to the side of frame),
+        /// trembles while the window is open, and a bar under it shows the time left.
+        void ShowGlyph()
+        {
+            var cam = Camera.main;
+            if (!cam && !_anchor) return;
+            Vector3 point = _anchor ? CarXCase.Interaction.InteractionGlyphs.PointOf(_anchor)
+                : cam.ViewportToWorldPoint(new Vector3(.64f, .46f, 1.6f));
+            string label = _currentType == QteType.RapidMash
+                ? (string.IsNullOrEmpty(_label) ? "Жмите быстрее" : _label) + $"   {_currentMashes}/{_requiredMashes}"
+                : _label;
+            CarXCase.Interaction.InteractionGlyphs.Show(this, point, _targetKeyName, label, _timeRemaining / _timeLimit, true);
         }
     }
 }
