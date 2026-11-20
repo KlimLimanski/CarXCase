@@ -38,9 +38,9 @@ Material:
     m_Ints: []
     m_Floats:
     - _FloorReflectionAvailable: 0
-    - _ReflectionBlur: 1.16
+    - _ReflectionBlur: 0.85
     - _ReflectionDistortion: 0.023
-    - _ReflectionStrength: 1.22
+    - _ReflectionStrength: 0.2
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1
