@@ -82,12 +82,77 @@ namespace DetectiveGame.Core
         [Tooltip("HUD прототипа (подсказки управления, прицел, подсказка взаимодействия). Пока выключен.")]
         public bool showHud = false;
 
+        private OfficerController objectivePlayer;
+        private CarXCase.Precinct.SceneExit apartmentExit;
+        private GUIStyle objectiveStyle, objectiveCaption;
+        private string objectiveScene;
+
+        private void Start()
+        {
+            objectiveScene = gameObject.scene.name;
+            objectivePlayer = FindAnyObjectByType<OfficerController>();
+            if (objectiveScene == "01_FatherApartment")
+                apartmentExit = FindAnyObjectByType<CarXCase.Precinct.SceneExit>();
+        }
+
+        private string CurrentObjective()
+        {
+            switch (objectiveScene)
+            {
+                case "01_FatherApartment":
+                    if (apartmentExit && apartmentExit.requiredClueIds is { Length: > 0 } ids &&
+                        System.Array.TrueForAll(ids, id => ClueJournal.Has(id)))
+                        return "Отправляйтесь в бар";
+                    return "Найдите улики в квартире отца";
+                case "02_Bar": return "Поговорите с Дмитрием";
+                case "03_Pawnshop": return "Поговорите с Сёмой";
+                case "04_Precinct": return "Изучите доску расследования";
+                case "05_BrightonHarbor":
+                    return ClueJournal.Has("harbor_gate_open") ? "Осмотрите склад" : "Откройте ворота порта";
+                default: return null;
+            }
+        }
+
+        private void DrawObjective()
+        {
+            if (_isShowingClue || IsListening || (objectivePlayer && (objectivePlayer.InputLocked || !objectivePlayer.enabled)) ||
+                (QteManager.Instance && QteManager.Instance.IsQteActive())) return;
+
+            string text = CurrentObjective();
+            if (string.IsNullOrEmpty(text)) return;
+            float scale = Mathf.Clamp(Screen.height / 800f, .72f, 2f);
+            objectiveStyle ??= new GUIStyle(GUI.skin.label) { wordWrap = true, padding = new RectOffset() };
+            objectiveStyle.fontSize = Mathf.RoundToInt(19 * scale);
+            objectiveStyle.normal.textColor = new Color(.96f, .94f, .86f);
+            var content = new GUIContent(text);
+            float inset = 15 * scale;
+            float width = Mathf.Min(Screen.width * .70f, objectiveStyle.CalcSize(content).x + 2 * inset);
+            float bodyHeight = objectiveStyle.CalcHeight(content, width - 2 * inset);
+            var card = new Rect(24 * scale, showHud && !showInspectionHud ? 178 : Screen.height * .085f,
+                width, bodyHeight + 33 * scale);
+            Color previous = GUI.color;
+            GUI.color = new Color(0, 0, 0, .22f);
+            GUI.DrawTexture(new Rect(card.x + 2 * scale, card.y + 3 * scale, width, card.height), Texture2D.whiteTexture);
+            GUI.color = new Color(.08f, .12f, .12f, .91f);
+            GUI.DrawTexture(card, Texture2D.whiteTexture);
+            GUI.color = new Color(.77f, .65f, .43f);
+            GUI.DrawTexture(new Rect(card.x, card.y, 42 * scale, Mathf.Max(1, 2 * scale)), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            objectiveCaption ??= new GUIStyle(objectiveStyle) { fontStyle = FontStyle.Bold, wordWrap = false };
+            objectiveCaption.fontSize = Mathf.RoundToInt(10 * scale);
+            objectiveCaption.normal.textColor = new Color(.83f, .73f, .54f);
+            GUI.Label(new Rect(card.x + inset, card.y + 7 * scale, width - inset, 16 * scale), "ЦЕЛЬ РАССЛЕДОВАНИЯ", objectiveCaption);
+            GUI.Label(new Rect(card.x + inset, card.y + 22 * scale, width - 2 * inset, bodyHeight + scale), content, objectiveStyle);
+            GUI.color = previous;
+        }
+
         private void OnGUI()
         {
             if (IsShowingJournal)
             {
                 return;
             }
+            DrawObjective();
             if (showInspectionHud)
             {
                 DrawInspectionHud();
