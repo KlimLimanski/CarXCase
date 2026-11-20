@@ -1706,6 +1706,7 @@ MonoBehaviour:
   frequency: 0.32
   fovBreath: 0.35
   gameplayCamera: {fileID: 150359462}
+  duringExploration: 1
 --- !u!114 &150359461
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5011,7 +5012,14 @@ MonoBehaviour:
   grantId: clue_warehouse
   grantTitle: "\u0410\u0434\u0440\u0435\u0441 \u0441\u043A\u043B\u0430\u0434\u0430"
   grantText: "\u0421\u043A\u043B\u0430\u0434 \u0440\u0435\u0444\u0440\u0438\u0436\u0435\u0440\u0430\u0442\u043E\u0440\u043E\u0432 \u043D\u0430 \u0412\u0430\u043D-\u0411\u0440\u0430\u043D\u0442-\u0441\u0442\u0440\u0438\u0442: \u0442\u0430\u043C \u043B\u044E\u0434\u0438 \u0420\u0435\u0437\u043E \u0434\u0435\u0440\u0436\u0430\u0442 \u0434\u043E\u043B\u0436\u043D\u0438\u043A\u043E\u0432."
-  returnScene: 02_Precinct
+  returnScene: 05_BrightonHarbor
+  travelLabel: Поехать в порт
+  autoTravelDelay: 6.5
+  revealHarborCode: 1
+  recoveryAction: Проверить накладную у стойки
+  recoveryClueId: clue_bar_shipping_manifest
+  recoveryClueTitle: Накладная с адресом склада
+  recoveryClueText: В накладной у стойки указан старый холодильный склад на Ван-Брант-стрит. Пропуск оформлен на пирс 3.
 --- !u!4 &1014134519
 Transform:
   m_ObjectHideFlags: 0

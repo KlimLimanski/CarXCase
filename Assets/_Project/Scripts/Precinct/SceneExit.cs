@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using DetectiveGame.Core;
 
@@ -10,6 +11,9 @@ namespace CarXCase.Precinct
     {
         public string targetScene = "02_Precinct";
         public string actionText = "Поехать в участок";
+        public string alternateScene;
+        public string primaryDestinationLabel = "Бар";
+        public string alternateDestinationLabel = "Ломбард";
         [Tooltip("When set, interacting shows this subtitle and keeps the door closed.")]
         public string blockedComment;
         [Tooltip("How many clues must be inspected before the exit unlocks (0 = always open).")]
@@ -19,6 +23,10 @@ namespace CarXCase.Precinct
 
         ClueObject[] evidence = System.Array.Empty<ClueObject>();
         bool leaving;
+        bool choosing;
+        bool cursorWasLocked;
+        OfficerController chooser;
+        ThirdPersonCamera chooserCamera;
         float fade;
 
         void Start()
@@ -46,7 +54,7 @@ namespace CarXCase.Precinct
             return found;
         }
 
-        public bool CanInteract => isActiveAndEnabled && !leaving;
+        public bool CanInteract => isActiveAndEnabled && !leaving && !choosing;
 
         public string InteractPrompt
         {
@@ -75,25 +83,77 @@ namespace CarXCase.Precinct
                 if (hud) hud.ShowInspectionComment($"Ещё рано уходить. Обязательных улик: {found}/{RequiredCount}.");
                 return;
             }
-            if (!Application.CanStreamedLevelBeLoaded(targetScene))
+            if (string.IsNullOrEmpty(alternateScene))
             {
-                Debug.LogError("Scene " + targetScene + " is not in Build Settings");
+                Choose(targetScene);
                 return;
             }
-            StartCoroutine(Leave());
+            chooser = FindAnyObjectByType<OfficerController>();
+            choosing = true;
+            cursorWasLocked = Cursor.lockState == CursorLockMode.Locked;
+            if (chooser)
+            {
+                chooser.LockInput(true);
+                if (chooser.cameraTransform && chooser.cameraTransform.TryGetComponent(out chooserCamera))
+                    chooserCamera.enabled = false;
+            }
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
-        IEnumerator Leave()
+        void Update()
+        {
+            if (!choosing || Keyboard.current == null) return;
+            var keys = Keyboard.current;
+            if (keys.escapeKey.wasPressedThisFrame) CancelChoice();
+            else if (keys.digit1Key.wasPressedThisFrame || keys.numpad1Key.wasPressedThisFrame) Choose(targetScene);
+            else if (keys.digit2Key.wasPressedThisFrame || keys.numpad2Key.wasPressedThisFrame) Choose(alternateScene);
+        }
+
+        void CancelChoice()
+        {
+            choosing = false;
+            if (chooser) chooser.LockInput(false);
+            if (chooserCamera)
+            {
+                chooserCamera.enabled = true;
+                chooserCamera.SetCursorLock(cursorWasLocked);
+            }
+        }
+
+        void Choose(string scene)
+        {
+            if (leaving) return;
+            if (!Application.CanStreamedLevelBeLoaded(scene))
+            {
+                Debug.LogError("Scene " + scene + " is not in Build Settings");
+                return;
+            }
+            choosing = false;
+            StartCoroutine(Leave(scene));
+        }
+
+        IEnumerator Leave(string scene)
         {
             leaving = true;
             var player = FindAnyObjectByType<OfficerController>();
             if (player) player.enabled = false;
             while (fade < 1) { fade = Mathf.MoveTowards(fade, 1, Time.unscaledDeltaTime / Mathf.Max(.01f, fadeTime)); yield return null; }
-            SceneManager.LoadSceneAsync(targetScene, LoadSceneMode.Single);
+            SceneManager.LoadSceneAsync(scene, LoadSceneMode.Single);
         }
 
         void OnGUI()
         {
+            if (choosing)
+            {
+                float width = Mathf.Min(440f, Screen.width * .8f);
+                GUILayout.BeginArea(new Rect((Screen.width - width) * .5f, Screen.height * .34f, width, 180f), GUI.skin.box);
+                GUILayout.Label("Куда поехать?");
+                if (GUILayout.Button(primaryDestinationLabel + "  [1]", GUILayout.Height(35f))) Choose(targetScene);
+                if (GUILayout.Button(alternateDestinationLabel + "  [2]", GUILayout.Height(35f))) Choose(alternateScene);
+                if (GUILayout.Button("Остаться  [Esc]", GUILayout.Height(28f))) CancelChoice();
+                GUILayout.EndArea();
+            }
             if (fade <= 0) return;
             GUI.depth = -100;
             var c = GUI.color; GUI.color = new Color(0, 0, 0, fade);

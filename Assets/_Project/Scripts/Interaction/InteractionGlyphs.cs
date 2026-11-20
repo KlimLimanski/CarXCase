@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using DetectiveGame.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace CarXCase.Interaction
 {
@@ -9,8 +10,7 @@ namespace CarXCase.Interaction
     public interface IGlyphAnchor { Vector3 GlyphPosition { get; } }
 
     /// Heavy Rain / Detroit key prompts: a solid 3D key (rounded frame, dark plate, raised letter)
-    /// floats in the air next to the object. It spins in when Alexey comes close, drifts and sways
-    /// so its depth reads, sinks in when pressed, and the camera leans gently towards it.
+    /// is projected from the object and sinks in when pressed. The camera can lean toward the action.
     /// Callers request a glyph every frame it should stay visible; it leaves on its own afterwards.
     [DefaultExecutionOrder(10000)]
     public sealed class InteractionGlyphs : MonoBehaviour
@@ -22,12 +22,11 @@ namespace CarXCase.Interaction
             public bool onScreen;
             public Vector2 viewport;
             public float screenHeight;
+            public float opacity = 1f;
             public float progress = -1f;
-            public bool urgent, attend;
+            public bool attend;
             public int requestFrame;
-            public float appear, pulse, fail, holdUntil = -1f, seed;
-            public Vector3 smoothPosition;
-            public bool placed;
+            public float appear, pulse, fail, holdUntil = -1f;
         }
 
         sealed class KeyModel { public Mesh frame, plate, letter; public float width; }
@@ -43,7 +42,7 @@ namespace CarXCase.Interaction
         readonly Dictionary<object, Glyph> glyphs = new Dictionary<object, Glyph>();
         readonly Dictionary<string, KeyModel> models = new Dictionary<string, KeyModel>();
         readonly List<object> finished = new List<object>();
-        Material clearMat, solidMat;
+        Material plateMaterial, frameMaterial, letterMaterial;
         Mesh bar;
         MaterialPropertyBlock block;
         static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -57,7 +56,7 @@ namespace CarXCase.Interaction
         static InteractionGlyphs Get()
         {
             if (instance || failed || !Application.isPlaying) return instance;
-            var go = new GameObject("Interaction Glyphs") { hideFlags = HideFlags.DontSave };
+            var go = new GameObject("Interaction Glyphs");
             DontDestroyOnLoad(go);
             instance = go.AddComponent<InteractionGlyphs>();
             if (!instance.Setup()) { failed = true; Destroy(go); instance = null; }
@@ -70,7 +69,7 @@ namespace CarXCase.Interaction
             if (!self || owner == null || string.IsNullOrEmpty(key)) return null;
             if (!self.glyphs.TryGetValue(owner, out var g))
             {
-                g = new Glyph { seed = Random.value * 10f };
+                g = new Glyph();
                 self.glyphs[owner] = g;
             }
             g.key = NormalizeKey(key);
@@ -83,24 +82,23 @@ namespace CarXCase.Interaction
         {
             var g = Request(owner, key);
             if (g == null) return;
-            if (g.onScreen) g.placed = false;
             g.onScreen = false;
             g.anchor = position;
             g.progress = progress;
-            g.urgent = urgent;
             g.attend = !urgent;
         }
 
         /// A key pinned to the frame (viewport 0..1), height as a share of the screen. Used by the diary hint.
-        public static void ShowOnScreen(object owner, Vector2 viewport, float height, string key)
+        public static void ShowOnScreen(object owner, Vector2 viewport, float height, string key, float opacity = 1f)
         {
             var g = Request(owner, key);
             if (g == null) return;
             g.onScreen = true;
             g.viewport = viewport;
             g.screenHeight = height;
+            g.opacity = opacity;
             g.progress = -1f;
-            g.urgent = g.attend = false;
+            g.attend = false;
         }
 
         /// Accepts the game's prompt strings ("E  Осмотреть замок", "[E] Открыть"). Prompts without a key show nothing.
@@ -137,29 +135,25 @@ namespace CarXCase.Interaction
         {
             if (!target) return Vector3.zero;
             if (target is IGlyphAnchor custom) return custom.GlyphPosition;
+            var pinned = target.GetComponentInChildren<GlyphAnchor>();
+            if (pinned) return pinned.transform.position;
             if (anchorCache.TryGetValue(target, out var local)) return target.transform.TransformPoint(local);
 
-            Vector3 point;
-            var pinned = target.GetComponentInChildren<GlyphAnchor>();
-            if (pinned) point = pinned.transform.position;
-            else
+            bool has = false;
+            var bounds = new Bounds(target.transform.position, Vector3.zero);
+            foreach (var r in target.GetComponentsInChildren<Renderer>())
             {
-                bool has = false;
-                var bounds = new Bounds(target.transform.position, Vector3.zero);
-                foreach (var r in target.GetComponentsInChildren<Renderer>())
-                {
-                    if (r is ParticleSystemRenderer || !r.enabled) continue;
-                    if (!has) { bounds = r.bounds; has = true; } else bounds.Encapsulate(r.bounds);
-                }
-                if (!has)
-                    foreach (var c in target.GetComponentsInChildren<Collider>())
-                    {
-                        if (!has) { bounds = c.bounds; has = true; } else bounds.Encapsulate(c.bounds);
-                    }
-                point = bounds.center;
-                // Tall things (doors, people, boards): about chest height, not mid-air above them.
-                if (bounds.size.y > 1.4f) point.y = Mathf.Min(bounds.max.y, bounds.min.y + 1.35f);
+                if (r is ParticleSystemRenderer || !r.enabled) continue;
+                if (!has) { bounds = r.bounds; has = true; } else bounds.Encapsulate(r.bounds);
             }
+            if (!has)
+                foreach (var c in target.GetComponentsInChildren<Collider>())
+                {
+                    if (!has) { bounds = c.bounds; has = true; } else bounds.Encapsulate(c.bounds);
+                }
+            var point = bounds.center;
+            // Tall things (doors, people, boards): about chest height, not mid-air above them.
+            if (bounds.size.y > 1.4f) point.y = bounds.min.y + 1.35f;
             anchorCache[target] = target.transform.InverseTransformPoint(point);
             return point;
         }
@@ -168,37 +162,44 @@ namespace CarXCase.Interaction
         {
             var shader = Resources.Load<Shader>("CarXInteractionGlyph");
             if (!shader || !shader.isSupported) { Debug.LogError("[Glyphs] Missing shader Resources/CarXInteractionGlyph."); return false; }
-            clearMat = new Material(shader) { renderQueue = 3400, hideFlags = HideFlags.DontSave };
-            clearMat.SetFloat("_ClearDepth", 1f);
-            clearMat.SetFloat("_ZTestMode", (float)UnityEngine.Rendering.CompareFunction.Always);
-            clearMat.SetFloat("_ColorMaskMode", 0f);
-            solidMat = new Material(shader) { renderQueue = 3401, hideFlags = HideFlags.DontSave };
-            solidMat.SetFloat("_ClearDepth", 0f);
-            solidMat.SetFloat("_ZTestMode", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
-            solidMat.SetFloat("_ColorMaskMode", 15f);
+            plateMaterial = new Material(shader) { renderQueue = 3400, hideFlags = HideFlags.DontSave };
+            frameMaterial = new Material(shader) { renderQueue = 3401, hideFlags = HideFlags.DontSave };
+            letterMaterial = new Material(shader) { renderQueue = 3402, hideFlags = HideFlags.DontSave };
             var b = new MeshBuilder();
             b.Box(new Vector3(-.5f, -.5f, -.5f), new Vector3(.5f, .5f, .5f));
             bar = b.Build();
             block = new MaterialPropertyBlock();
+            SceneManager.activeSceneChanged += OnSceneChanged;
             return true;
+        }
+
+        void OnSceneChanged(Scene previous, Scene next)
+        {
+            glyphs.Clear();
+            anchorCache.Clear();
+            visible = 0;
         }
 
         void OnDestroy()
         {
+            SceneManager.activeSceneChanged -= OnSceneChanged;
+            if (instance == this) instance = null;
             foreach (var m in models.Values) { Destroy(m.frame); Destroy(m.plate); Destroy(m.letter); }
             if (bar) Destroy(bar);
-            if (clearMat) Destroy(clearMat);
-            if (solidMat) Destroy(solidMat);
+            if (plateMaterial) Destroy(plateMaterial);
+            if (frameMaterial) Destroy(frameMaterial);
+            if (letterMaterial) Destroy(letterMaterial);
         }
 
         void LateUpdate()
         {
+            if (instance != this) return;
             var cam = Camera.main;
             float t = Time.unscaledTime, dt = Time.unscaledDeltaTime;
             visible = 0;
             bool worldKeyWanted = false;
             foreach (var g in glyphs.Values)
-                worldKeyWanted |= !g.onScreen && g.requestFrame >= Time.frameCount - 1;
+                worldKeyWanted |= !g.onScreen && g.requestFrame == Time.frameCount;
             Glyph focus = null;
             float focusDistance = float.MaxValue;
             foreach (var pair in glyphs)
@@ -206,15 +207,18 @@ namespace CarXCase.Interaction
                 var g = pair.Value;
                 bool wanted = g.requestFrame >= Time.frameCount - 1;
                 bool shown = wanted || t < g.holdUntil;
-                // A world key that lost its target leaves fast when another one takes over: one E at a time.
-                float leave = !g.onScreen && worldKeyWanted ? 12f : 4f;
-                g.appear = Mathf.MoveTowards(g.appear, shown ? 1f : 0f, dt * (shown ? 3.2f : leave));
+                // Replace the previous action as soon as a different world key is requested.
+                if (!g.onScreen && worldKeyWanted && g.requestFrame < Time.frameCount)
+                {
+                    finished.Add(pair.Key);
+                    continue;
+                }
+                g.appear = Mathf.MoveTowards(g.appear, shown ? 1f : 0f, dt * (shown ? 3.2f : 4f));
                 g.pulse = Mathf.Max(0f, g.pulse - dt * 2.6f);
                 g.fail = Mathf.Max(0f, g.fail - dt * 2f);
                 if (!shown && g.appear <= 0f) { finished.Add(pair.Key); continue; }
-                if (wanted) visible++;
                 if (!cam) continue;
-                Draw(cam, g, t, dt);
+                if (Draw(cam, g, t) && wanted) visible++;
                 if (wanted && g.attend)
                 {
                     float d = (g.anchor - cam.transform.position).sqrMagnitude;
@@ -229,104 +233,47 @@ namespace CarXCase.Interaction
                 follow.Attend(focus.anchor);
         }
 
-        void Draw(Camera cam, Glyph g, float t, float dt)
+        bool Draw(Camera cam, Glyph g, float t)
         {
             var view = cam.transform;
-            var model = Model(g.key);
-            Vector3 position;
-            float height;
-            if (g.onScreen)
-            {
-                const float distance = .6f;
-                position = cam.ViewportToWorldPoint(new Vector3(g.viewport.x, g.viewport.y, distance));
-                height = 2f * distance * Mathf.Tan(cam.fieldOfView * .5f * Mathf.Deg2Rad) * g.screenHeight;
-            }
-            else
-            {
-                // Hang a little in front of the object, towards the lens, so it floats in the air.
-                Vector3 toCam = view.position - g.anchor;
-                float distance = toCam.magnitude;
-                if (Vector3.Dot(-toCam, view.forward) <= cam.nearClipPlane) return;
-                Vector3 target = g.anchor + toCam / Mathf.Max(distance, .01f) * Mathf.Min(.22f, distance * .3f) + Vector3.up * .06f;
-                target = BesideHero(view, target);
-                g.smoothPosition = g.placed ? Vector3.Lerp(g.smoothPosition, target, 1f - Mathf.Exp(-dt * 14f)) : target;
-                g.placed = true;
-                position = g.smoothPosition;
-                float scaleFov = Mathf.Tan(cam.fieldOfView * .5f * Mathf.Deg2Rad) / Mathf.Tan(30f * Mathf.Deg2Rad);
-                height = Mathf.Clamp(distance * .085f * scaleFov, .1f, .24f);
-            }
+            Vector3 point = g.onScreen ? new Vector3(g.viewport.x, g.viewport.y, 1f) : cam.WorldToViewportPoint(g.anchor);
+            if (!g.onScreen && (point.z <= cam.nearClipPlane || point.x <= 0f || point.x >= 1f ||
+                                point.y <= 0f || point.y >= 1f)) return false;
 
-            // Arrival: a quick spin-in with a slight overshoot; leaving: it shrinks away.
+            // Project the interaction point onto a plane close to the camera. This keeps the
+            // model legible at a consistent size as the player approaches or turns.
+            point.z = Mathf.Max(.6f, cam.nearClipPlane * 2f);
+            Vector3 position = cam.ViewportToWorldPoint(point);
+            point.y += g.onScreen ? g.screenHeight : .061f;
+            float height = Vector3.Distance(position, cam.ViewportToWorldPoint(point));
+
             float a = g.appear;
-            float pop = a >= 1f ? 1f : 1f + 2.7f * Mathf.Pow(a - 1f, 3f) + 1.7f * Mathf.Pow(a - 1f, 2f);
-            float spin = (1f - Mathf.SmoothStep(0f, 1f, a)) * -95f;
+            float pop = Mathf.SmoothStep(.78f, 1f, a);
             float press = Mathf.Sin(Mathf.Clamp01(g.pulse) * Mathf.PI);
-
-            // Idle drift: a slow bob and sway so the key's depth reads; QTE keys tremble.
-            float s = g.seed;
-            Vector3 drift = view.up * (Mathf.Sin(t * 1.5f + s) * .045f) + view.right * (Mathf.Sin(t * .9f + s * 1.7f) * .03f);
-            if (g.fail > 0f) drift += view.right * (Mathf.Sin(t * 60f) * .14f * g.fail);
-            float yaw = Mathf.Sin(t * .8f + s) * 18f + spin;
-            float pitch = Mathf.Sin(t * 1.1f + s * 1.3f) * 11f;
-            float roll = Mathf.Sin(t * .7f + s * .6f) * 3f + (g.urgent ? Mathf.Sin(t * 26f + s) * 2.4f : 0f);
-
-            Vector3 facing = g.onScreen ? view.forward : (position - view.position).normalized;
-            var rotation = Quaternion.LookRotation(facing, view.up) * Quaternion.Euler(pitch, yaw, roll);
-            // Keep the interaction key parallel to the image plane, including off-centre prompts.
-            if (!g.onScreen && !g.urgent && g.key == "E")
-            {
-                rotation = view.rotation;
-                facing = view.forward;
-                drift = Vector3.zero;
-                pop = Mathf.SmoothStep(.78f, 1f, a);
-            }
-            float size = height * Mathf.Max(pop, 0f) * (1f - .14f * press);
-            var root = Matrix4x4.TRS(position + drift * height + facing * (press * .35f * height), rotation, Vector3.one * size);
+            position += view.right * (Mathf.Sin(t * 60f) * .14f * g.fail * height);
+            float timerRoll = g.progress >= 0f ? Mathf.Sin(t * 26f) * 2.4f : 0f;
+            var rotation = view.rotation * Quaternion.Euler(0f, -12f * (1f - a), timerRoll);
+            float size = height * pop * (1f - .14f * press);
+            var root = Matrix4x4.TRS(position, rotation, Vector3.one * size);
 
             Color ink = Color.Lerp(new Color(.95f, .94f, .9f), new Color(1f, .38f, .33f), g.fail);
             ink = Color.Lerp(ink, Color.white, press * .6f);
-            float alpha = Mathf.Clamp01(a * 1.6f);
+            float alpha = Mathf.Clamp01(a * 1.6f) * (g.onScreen ? g.opacity : 1f);
             var plate = new Color(.05f, .05f, .05f, .28f * alpha);
             var face = new Color(ink.r, ink.g, ink.b, .72f * alpha);
             var glyphInk = new Color(ink.r, ink.g, ink.b, .92f * alpha);
 
-            // World keys obey the scene's depth: walls, doors and Alexey himself hide them.
-            // Only the screen-pinned diary key is drawn over everything.
-            if (g.onScreen)
-            {
-                Paint(cam, model.frame, root, clearMat, face);
-                Paint(cam, model.plate, root, clearMat, face);
-                Paint(cam, model.letter, root, clearMat, face);
-            }
-            Paint(cam, model.plate, root, solidMat, plate);
-            Paint(cam, model.frame, root, solidMat, face);
-            Paint(cam, model.letter, root, solidMat, glyphInk);
+            var model = Model(g.key);
+            Paint(cam, model.plate, root, plateMaterial, plate);
+            Paint(cam, model.frame, root, frameMaterial, face);
+            Paint(cam, model.letter, root, letterMaterial, glyphInk);
             if (g.progress >= 0f)
             {
                 float w = model.width * Mathf.Clamp01(g.progress);
                 var timer = root * Matrix4x4.TRS(new Vector3(0f, -.68f, 0f), Quaternion.identity, new Vector3(w, .07f, .07f));
-                if (g.onScreen) Paint(cam, bar, timer, clearMat, face);
-                Paint(cam, bar, timer, solidMat, face);
+                Paint(cam, bar, timer, letterMaterial, face);
             }
-        }
-
-        OfficerController hero;
-
-        /// Walls hide a key, but Alexey must not: if the key sits behind his silhouette, it steps just past its edge.
-        Vector3 BesideHero(Transform view, Vector3 target)
-        {
-            if (!hero || !hero.isActiveAndEnabled) hero = FindAnyObjectByType<OfficerController>();
-            if (!hero) return target;
-            Vector3 body = hero.transform.position + Vector3.up * 1.15f;
-            float heroDepth = Vector3.Dot(body - view.position, view.forward);
-            float keyDepth = Vector3.Dot(target - view.position, view.forward);
-            if (heroDepth <= .2f || keyDepth < heroDepth - .15f) return target;
-            Vector3 rel = target - body;
-            if (Mathf.Abs(Vector3.Dot(rel, view.up)) > .95f) return target;
-            float side = Vector3.Dot(rel, view.right);
-            float clear = .42f * keyDepth / heroDepth;
-            if (Mathf.Abs(side) >= clear) return target;
-            return target + view.right * ((side >= 0f ? 1f : -1f) * clear - side);
+            return true;
         }
 
         void Paint(Camera cam, Mesh mesh, Matrix4x4 matrix, Material material, Color color)

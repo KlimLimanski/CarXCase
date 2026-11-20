@@ -26,7 +26,9 @@ namespace NoirMenu
 
         public static bool IsStoryScene(string scene) => scene == "00_BrightonDrive_Models"
             || scene == "01_FatherApartment" || scene == "02_Precinct"
-            || scene == "03_Bar" || scene == "04_Pawnshop" || scene == "05_Mikhail";
+            || scene == "03_Bar" || scene == "04_Pawnshop" || scene == "05_Mikhail"
+            || scene == "02_Bar" || scene == "03_Pawnshop" || scene == "04_Precinct"
+            || scene == "05_BrightonHarbor";
 
         public static void StartNewGame()
         {

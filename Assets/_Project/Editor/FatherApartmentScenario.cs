@@ -101,9 +101,12 @@ public static class FatherApartmentScenario
         var entry = Group(root, "Enter_Father_Apartment", new Vector3(-3.22f, .75f, .47f));
         Trigger(entry, new Vector3(.93f, 1.5f, .25f));
         var threshold = entry.gameObject.AddComponent<ApartmentThreshold>();
-        var exitRoot = Group(root, "Return_To_Precinct", new Vector3(-3.23f, .81f, -.16f));
+        var exitRoot = Group(root, "Choose_Next_Destination", new Vector3(-3.23f, .81f, -.16f));
         Trigger(exitRoot, new Vector3(.7f, 1.35f, .16f));
         var exit = exitRoot.gameObject.AddComponent<SceneExit>();
+        exit.targetScene = "02_Bar";
+        exit.alternateScene = "03_Pawnshop";
+        exit.actionText = "Выбрать, куда поехать";
         exit.requiredClueIds = FatherCase.RequiredClues;
         exit.requiredClues = FatherCase.RequiredClues.Length;
         exit.blockedComment = "";

@@ -59,10 +59,13 @@ Shader "Project/Wet Ground"
    // one layer of raindrop rings: returns xz slope
    float2 Ripple(float2 p, float t){
      float2 cell=floor(p); float2 f=frac(p)-0.5;
-     float2 rnd=hash2(cell); float2 d=f-(rnd-0.5)*0.55;
-     float phase=frac(t+rnd.x*7.13);
-     float dist=length(d); float r=phase*0.42; float x=dist-r;
-     float wave=sin(x*55.0)*exp(-x*x*700.0)*(1.0-phase)*(1.0-phase);
+     float2 rnd=hash2(cell); float2 d=f-(rnd-0.5)*0.32;
+     float period=1.25+rnd.y*0.8;
+     float phase=frac(t/period+rnd.x*7.13)*period;
+     float dist=length(d); float r=phase*lerp(0.17,0.26,rnd.x); float x=dist-r;
+     float fade=smoothstep(0.02,0.12,phase)*(1.0-smoothstep(0.38,0.84,phase));
+     float edge=1.0-smoothstep(0.36,0.49,max(abs(f.x),abs(f.y)));
+     float wave=sin(x*84.0)*exp(-x*x*1900.0)*fade*edge;
      return d/max(dist,1e-4)*wave;
    }
    half4 frag(V v):SV_Target {
@@ -75,7 +78,7 @@ Shader "Project/Wet Ground"
     // puddles: irregular world-space blobs on top faces
     float pn=vnoise(float3(xz*_PuddleScale,_PuddleSeed))*0.62+vnoise(float3(xz*_PuddleScale*2.9,_PuddleSeed+5.3))*0.28+vnoise(float3(xz*_PuddleScale*9.0,_PuddleSeed+1.7))*0.10;
     float th=0.75-_PuddleAmount*0.55;
-    float puddle=smoothstep(th,th+0.035,pn)*top;
+    float puddle=smoothstep(th-0.025,th+0.056,pn)*top;
     float damp=smoothstep(th-0.12,th,pn)*top;
     // detail normal (top faces), flattened by water
     half3 dn=UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal,sampler_DetailNormal,xz*_DetailScale),_DetailStrength);
@@ -90,14 +93,14 @@ Shader "Project/Wet Ground"
     SurfaceData s=(SurfaceData)0;
     half3 alb=c.rgb*_BaseColor.rgb;
     alb*=lerp(1.0,1.0-_WetDarken,wet);
-    alb=lerp(alb,alb*0.5,puddle);
+    alb=lerp(alb,alb*0.73,puddle);
     s.albedo=alb;
     s.metallic=0;
     s.smoothness=lerp(lerp(0.12,0.32,wet),0.90,puddle);
     s.normalTS=half3(0,0,1); s.occlusion=lerp(0.75,1.0,puddle); s.alpha=1;
     InputData d=(InputData)0;d.positionWS=v.positionWS;d.normalWS=nw;d.viewDirectionWS=GetWorldSpaceNormalizeViewDir(v.positionWS);d.shadowCoord=TransformWorldToShadowCoord(v.positionWS);d.bakedGI=SampleSH(nw);d.vertexLighting=VertexLighting(v.positionWS,nw);d.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(v.positionCS);d.shadowMask=half4(1,1,1,1);
     half4 col=UniversalFragmentPBR(d,s);
-    col.rgb*=lerp(1.0,0.45,puddle);
+    col.rgb*=lerp(1.0,0.76,puddle);
     if(_PuddleReflectionOn>0.5){
      float NoV=saturate(dot(nw,d.viewDirectionWS));
      half F=0.02+0.98*pow(1.0-NoV,5.0);
@@ -107,7 +110,7 @@ Shader "Project/Wet Ground"
      float2 ruv=rc.xy/rw*0.5+0.5;
      half inside=step(1e-3,rc.w)*smoothstep(0.0,0.04,ruv.x)*smoothstep(1.0,0.96,ruv.x)*smoothstep(0.0,0.04,ruv.y)*smoothstep(1.0,0.96,ruv.y);
      ruv=saturate(ruv);
-     half3 sharp=SAMPLE_TEXTURE2D_LOD(_PuddleReflectionTex,sampler_PuddleReflectionTex,ruv,0).rgb;
+     half3 sharp=SAMPLE_TEXTURE2D_LOD(_PuddleReflectionTex,sampler_PuddleReflectionTex,ruv,0.9).rgb;
      half3 blur=0;
      [unroll] for(int k=-2;k<=2;k++) blur+=SAMPLE_TEXTURE2D_LOD(_PuddleReflectionTex,sampler_PuddleReflectionTex,ruv+float2(0,k*_StreakLength),_ReflectionBlur).rgb;
      blur*=0.2;

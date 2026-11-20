@@ -78,7 +78,7 @@ Shader "CarXCase/RainStreak"
                 }
 
                 float2 c = i.uv * 2 - 1;
-                half shape = saturate(1 - dot(c, c)); shape *= shape;
+                half shape = exp(-c.x*c.x*5.8)*pow(saturate(1.0-c.y*c.y),1.8);
 
                 float2 suv = i.screenPos.xy / i.screenPos.w;
                 float sceneEye = LinearEyeDepth(SampleSceneDepth(suv), _ZBufferParams);
@@ -106,8 +106,8 @@ Shader "CarXCase/RainStreak"
 
                 half vis = ComputeFogIntensity(i.fog);
                 half a = shape * _Opacity * i.color.a * soft * nearF * vis;
-                float3 col = clamp(light * _Color.rgb * i.color.rgb, 0.0, 12.0);
-                return half4(clamp(col * a, 0.0, 12.0), saturate(a * 0.15));
+                float3 col = clamp(light * _Color.rgb * i.color.rgb, 0.0, 3.8);
+                return half4(col * a, saturate(a * 0.65));
             }
             ENDHLSL
         }

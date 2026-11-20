@@ -30,7 +30,7 @@ Material:
     - _ForwardPower: 6
     - _ForwardScatter: 1
     - _NearFade: 0.4
-    - _Opacity: 0.14
+    - _Opacity: 0.075
     - _SoftDistance: 0.5
     m_Colors:
     - _Color: {r: 0.52, g: 0.56999993, b: 0.62, a: 1}

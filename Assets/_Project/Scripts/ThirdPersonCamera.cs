@@ -105,6 +105,7 @@ namespace DetectiveGame.Core
         private float _shotWeight, _shotVelocity, _shotStarted, _shotBaseFov;
         private Vector3 _shotPosition, _shotLook, _shotDrift;
         private Camera _lens;
+        private CarXCase.CameraFX.CinematicHandheld _handheld;
         private Vector3 _attendPoint;
         private int _attendFrame = -100;
         private float _attend, _attendVelocity, _attendYaw, _attendPitch;
@@ -113,6 +114,7 @@ namespace DetectiveGame.Core
 
         private void Start()
         {
+            _handheld = GetComponent<CarXCase.CameraFX.CinematicHandheld>();
             SetCursorLock(true);
             if (target != null)
             {
@@ -272,7 +274,7 @@ namespace DetectiveGame.Core
                 _lens.fieldOfView = _shotBaseFov - (_station ? 0f : shotFovNarrowing) * shotBlend;
                 if (shotBlend <= 0f) _shotBaseFov = 0f;
             }
-            transform.SetPositionAndRotation(position, look);
+            transform.SetPositionAndRotation(position, _handheld ? _handheld.ExplorationRotation(look) : look);
             if (_characterRenderers != null)
             {
                 bool clear = Vector3.Dot(position - focus, backward) >= 0.85f;

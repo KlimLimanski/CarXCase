@@ -1,4 +1,5 @@
 using System.Linq;
+using CarXCase.Interaction;
 using DetectiveGame.Core;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ namespace CarXCase.Investigation
     /// the floating 3D key and a short caption, no panel. Appears large at the top of the frame
     /// (on the scene cue — Alexey stepping into the flat — or when a new page lands in the diary),
     /// then settles as a small key in the corner.
+    [DisallowMultipleComponent]
     public sealed class JournalKeyHint : MonoBehaviour
     {
         [SerializeField] SimpleUIHUD hud;
@@ -21,13 +23,20 @@ namespace CarXCase.Investigation
         [SerializeField, Range(0f, 1f)] float cornerOpacity = .8f;
 
         int knownCount = -1;
+        int animationFrame = -1;
         bool started;
-        float showFrom, bannerUntil, bannerAlpha, cornerAlpha;
+        float showFrom, bannerUntil, bannerBlend, visibility;
         GUIStyle textStyle;
 
         void Start()
         {
-            if (!waitForSceneCue) { started = true; showFrom = Time.unscaledTime + startDelay; bannerUntil = showFrom + bannerTime; }
+            if (!waitForSceneCue)
+            {
+                started = true;
+                showFrom = Time.unscaledTime + startDelay;
+                bannerUntil = showFrom + bannerTime;
+                bannerBlend = 1f;
+            }
         }
 
         void OnGUI()
@@ -39,51 +48,68 @@ namespace CarXCase.Investigation
 
             float now = Time.unscaledTime;
             int found = state.found.Count;
-            if (knownCount >= 0 && found > knownCount) { bannerUntil = now + bannerTime; started = true; }
+            if (knownCount >= 0 && found > knownCount)
+            {
+                bannerUntil = now + bannerTime;
+                if (!started) bannerBlend = 1f;
+                started = true;
+            }
             knownCount = found;
-            if (hud.JournalHintFresh && !started) { started = true; bannerUntil = now + bannerTime; }
+            if (hud.JournalHintFresh && !started)
+            {
+                started = true;
+                bannerUntil = now + bannerTime;
+                bannerBlend = 1f;
+            }
             if (found > 0) started = true;
 
             bool hidden = !started || now < showFrom
                 || InvestigationIntegration.IsOpen || hud.IsShowingClue()
                 || (QteManager.Instance && QteManager.Instance.IsQteActive());
-            bool banner = !hidden && now < bannerUntil;
-            float step = Time.unscaledDeltaTime * 3f;
-            bannerAlpha = Mathf.MoveTowards(bannerAlpha, banner ? 1f : 0f, step);
-            cornerAlpha = Mathf.MoveTowards(cornerAlpha, hidden || banner ? 0f : cornerOpacity, step);
+            bool banner = now < bannerUntil;
+            if (animationFrame != Time.frameCount)
+            {
+                animationFrame = Time.frameCount;
+                float step = Time.unscaledDeltaTime * 3f;
+                bannerBlend = Mathf.MoveTowards(bannerBlend, banner ? 1f : 0f, step);
+                visibility = Mathf.MoveTowards(visibility, hidden ? 0f : 1f, step);
+            }
+            if (visibility <= .01f) return;
 
             float scale = Mathf.Clamp(Screen.height / 1080f, .7f, 1.8f);
             textStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleLeft, wordWrap = false };
             int unread = state.found.Count(r => r != null && !r.read);
             string key = KeyName((KeyCode)state.journalKey);
             var old = GUI.color;
-
-            if (bannerAlpha > .01f)
-                Draw(key, unread > 0 ? "Новая запись в дневнике" : "Открыть дневник", 30, scale, bannerAlpha, true, now);
-            if (cornerAlpha > .01f)
-                Draw(key, unread > 0 ? $"Дневник  ·  {unread}" : "Дневник", 19, scale, cornerAlpha, false, now);
+            string bannerText = unread > 0 ? "Новая запись в дневнике" : "Открыть дневник";
+            string cornerText = unread > 0 ? $"Дневник  ·  {unread}" : "Дневник";
+            Draw(key, bannerText, cornerText, scale);
             GUI.color = old;
         }
 
-        readonly object bannerKey = new object(), cornerKey = new object();
-
         /// The key itself is the 3D model from the interaction prompts; only a short caption is drawn beside it.
-        void Draw(string key, string text, int fontSize, float scale, float alpha, bool centered, float now)
+        void Draw(string key, string bannerText, string cornerText, float scale)
         {
-            float share = centered ? .085f : .05f;
+            const float cornerShare = .05f, bannerShare = .085f;
+            float blend = Mathf.SmoothStep(0f, 1f, bannerBlend);
+            float share = Mathf.Lerp(cornerShare, bannerShare, blend);
             float h = share * Screen.height;
-            textStyle.fontSize = Mathf.RoundToInt(fontSize * .8f * scale);
-            float textWidth = textStyle.CalcSize(new GUIContent(text)).x;
-            float gap = h * .35f;
-            float total = h + gap + textWidth;
-            Vector2 centre = centered
-                ? new Vector2((Screen.width - total) * .5f + h * .5f, Screen.height * .14f)
-                : new Vector2(34 * scale + h * .5f, 34 * scale + h * .5f);
-            if (alpha > .5f)
-                CarXCase.Interaction.InteractionGlyphs.ShowOnScreen(centered ? bannerKey : cornerKey,
-                    new Vector2(centre.x / Screen.width, 1f - centre.y / Screen.height), share, key);
+            float alpha = visibility * Mathf.Lerp(cornerOpacity, 1f, blend);
+            float bannerHeight = bannerShare * Screen.height;
+            textStyle.fontSize = Mathf.RoundToInt(24f * scale);
+            float bannerWidth = textStyle.CalcSize(new GUIContent(bannerText)).x;
+            var bannerCentre = new Vector2((Screen.width - bannerWidth - bannerHeight * .35f) * .5f,
+                Screen.height * .14f);
+            var cornerCentre = Vector2.one * (34f * scale + cornerShare * Screen.height * .5f);
+            Vector2 centre = Vector2.Lerp(cornerCentre, bannerCentre, blend);
+            InteractionGlyphs.ShowOnScreen(this, new Vector2(centre.x / Screen.width, 1f - centre.y / Screen.height),
+                share, key, alpha);
 
-            var textRect = new Rect(centre.x + h * .5f + gap, centre.y - h * .5f, textWidth + 8 * scale, h);
+            string text = blend > .5f ? bannerText : cornerText;
+            textStyle.fontSize = Mathf.RoundToInt(Mathf.Lerp(15.2f, 24f, blend) * scale);
+            float gap = h * .35f;
+            var textRect = new Rect(centre.x + h * .5f + gap, centre.y - h * .5f,
+                textStyle.CalcSize(new GUIContent(text)).x + 8 * scale, h);
             GUI.color = new Color(0f, 0f, 0f, .75f * alpha);
             GUI.Label(new Rect(textRect.x + 1.5f * scale, textRect.y + 1.5f * scale, textRect.width, textRect.height), text, textStyle);
             GUI.color = new Color(.97f, .96f, .92f, .95f * alpha);

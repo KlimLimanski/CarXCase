@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using CarXCase.Harbor;
 using DetectiveGame.Core;
 using CarXCase.Hero;
 
@@ -48,6 +49,11 @@ namespace CarXCase.Precinct
         public string grantId, grantTitle;
         [TextArea] public string grantText;
         public string returnScene = "02_Precinct";
+        public string travelLabel = "Вернуться в участок к доске улик";
+        [Min(0f)] public float autoTravelDelay;
+        public string recoveryAction, recoveryClueId, recoveryClueTitle;
+        public bool revealHarborCode;
+        [TextArea] public string recoveryClueText;
 
         enum Phase { Idle, Talking, Choosing, Outcome }
         Phase phase = Phase.Idle;
@@ -55,6 +61,9 @@ namespace CarXCase.Precinct
         Choice[] current; float choiceLeft; Choice picked;
         int lastDelta; float deltaTime = -10;
         bool success, shutdown; float fade, leave = -1;
+        float travelAt;
+        bool recoveredLead;
+        bool NeedsLead => !success && !recoveredLead && !string.IsNullOrEmpty(recoveryClueId);
         GUIStyle sub, spk, label, big, small, keyStyle;
         readonly CamSmoother smoother = new CamSmoother { blendTime = .6f, follow = .25f };
         Transform camTarget; float camSince;
@@ -99,7 +108,10 @@ namespace CarXCase.Precinct
             }
             success = !shutdown && probability >= successThreshold;
             if (success && !string.IsNullOrEmpty(grantId)) { ClueJournal.Collect(grantId, grantTitle, grantText); ClueJournal.AddConclusion(grantId); }
+            if (success && revealHarborCode)
+                ClueJournal.Collect(HarborGate.CodeNote, "Код ворот пирса", "Дмитрий назвал код ворот: " + HarborGate.AccessCode + ".");
             phase = Phase.Outcome;
+            travelAt = Time.unscaledTime + autoTravelDelay;
             SetCam(camWide ? camWide : camOnSuspect);
             if (suspect) suspect.talking = false;
         }
@@ -159,11 +171,43 @@ namespace CarXCase.Precinct
             {
                 if (leave >= 0)
                 {
-                    leave += Time.deltaTime / 1.2f;
-                    if (leave >= 1 && leave < 50) { leave = 99; ClueJournal.SkipPrecinctIntro = true; SceneManager.LoadSceneAsync(returnScene); }
+                    leave += Time.unscaledDeltaTime / 1.2f;
+                    if (leave >= 1 && leave < 50)
+                    {
+                        leave = 99;
+                        if (returnScene == "02_Precinct" || returnScene == "04_Precinct")
+                            ClueJournal.SkipPrecinctIntro = true;
+                        SceneManager.LoadSceneAsync(returnScene);
+                    }
                 }
-                else if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) leave = 0;
+                else if (NeedsLead)
+                {
+                    if (kb != null && kb.eKey.wasPressedThisFrame) RecoverLead();
+                }
+                else if ((autoTravelDelay > 0f && Time.unscaledTime >= travelAt) ||
+                         (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)))
+                    BeginTravel();
             }
+        }
+
+        void RecoverLead()
+        {
+            if (!NeedsLead) return;
+            ClueJournal.Collect(recoveryClueId, recoveryClueTitle, recoveryClueText);
+            recoveredLead = true;
+            travelAt = Time.unscaledTime + autoTravelDelay;
+        }
+
+        void BeginTravel()
+        {
+            if (leave >= 0f || NeedsLead) return;
+            if (!Application.CanStreamedLevelBeLoaded(returnScene))
+            {
+                Debug.LogError($"[Interrogation] Scene '{returnScene}' is missing from Build Profiles.");
+                travelAt = float.PositiveInfinity;
+                return;
+            }
+            leave = 0f;
         }
 
         // ------------------------------------------------------------------ GUI
@@ -267,6 +311,8 @@ namespace CarXCase.Precinct
                 GUILayout.Space(16 * k);
                 var body = new GUIStyle(sub) { alignment = TextAnchor.UpperCenter };
                 GUILayout.Label(shutdown ? shutdownText : success ? successText : failText, body);
+                if (success && revealHarborCode)
+                    GUILayout.Label("Дмитрий: код ворот — " + HarborGate.AccessCode + ".", body);
                 if (success && !string.IsNullOrEmpty(grantTitle))
                 {
                     GUILayout.Space(8 * k);
@@ -279,8 +325,17 @@ namespace CarXCase.Precinct
                     var e = new GUIStyle(big); e.normal.textColor = new Color(1f, .85f, .4f); e.fontSize = Mathf.RoundToInt(24 * k);
                     GUILayout.Label(endingTag, e);
                 }
+                if (recoveredLead)
+                {
+                    GUILayout.Space(12 * k);
+                    GUILayout.Label(recoveryClueText, body);
+                }
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Вернуться в участок к доске улик  [Enter]", GUILayout.Height(36 * k))) leave = 0;
+                if (NeedsLead)
+                {
+                    if (GUILayout.Button(recoveryAction + "  [E]", GUILayout.Height(36 * k))) RecoverLead();
+                }
+                else if (GUILayout.Button(travelLabel + "  [Enter]", GUILayout.Height(36 * k))) BeginTravel();
                 GUILayout.EndArea();
                 if (leave >= 0) Fill(new Rect(0, 0, W, H), new Color(0, 0, 0, Mathf.Clamp01(leave)));
             }

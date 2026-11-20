@@ -267,6 +267,7 @@ public static class ApartmentStoryArt
                 new Vector3(0f, marker.position.y - reference.y, offsetFromWall + .003f * marker.lossyScale.z),
                 Quaternion.identity);
             plaque.localScale = marker.lossyScale;
+            ConfigureNeighborDoorCollision(neighbor);
 
             void CopyDoorPart(Transform source)
             {
@@ -281,6 +282,41 @@ public static class ApartmentStoryArt
                 copy.localScale = source.lossyScale;
             }
         }
+    }
+
+    internal static void ConfigureNeighborDoorCollision(Transform door)
+    {
+        var leaf = door.Find("Wood_Joinery_Visual");
+        if (!leaf) leaf = door.Find("EntryDoor_Visual");
+        if (!leaf) return;
+
+        var bounds = new Bounds();
+        bool first = true;
+        foreach (var mesh in leaf.GetComponentsInChildren<MeshFilter>())
+        {
+            if (!mesh.sharedMesh) continue;
+            var toDoor = door.worldToLocalMatrix * mesh.transform.localToWorldMatrix;
+            var meshBounds = mesh.sharedMesh.bounds;
+            for (int corner = 0; corner < 8; ++corner)
+            {
+                var local = new Vector3(
+                    (corner & 1) == 0 ? meshBounds.min.x : meshBounds.max.x,
+                    (corner & 2) == 0 ? meshBounds.min.y : meshBounds.max.y,
+                    (corner & 4) == 0 ? meshBounds.min.z : meshBounds.max.z);
+                var point = toDoor.MultiplyPoint3x4(local);
+                if (first) { bounds = new Bounds(point, Vector3.zero); first = false; }
+                else bounds.Encapsulate(point);
+            }
+        }
+        if (first) return;
+
+        var collider = door.GetComponent<BoxCollider>();
+        if (!collider) collider = Undo.AddComponent<BoxCollider>(door.gameObject);
+        Undo.RecordObject(collider, "Fit collision to neighboring door");
+        collider.center = bounds.center;
+        collider.size = bounds.size;
+        collider.isTrigger = false;
+        PrefabUtility.RecordPrefabInstancePropertyModifications(collider);
     }
 
     static Material CeilingPlaster()
