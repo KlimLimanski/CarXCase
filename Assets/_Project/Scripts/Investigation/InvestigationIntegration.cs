@@ -104,13 +104,6 @@ namespace CarXCase.Investigation
                     instance.desk.Collect(entry.id);
                 }
                 RevealDerived();
-                foreach (var id in ClueJournal.Conclusions)
-                {
-                    var rule = instance.catalog.deductions.Find(r => r.id == id);
-                    if (rule == null) continue;
-                    if (!State.insights.Contains(id)) State.insights.Add(id);
-                    instance.desk.Collect(id);
-                }
             }
             finally { instance.syncing = false; }
         }
@@ -122,7 +115,7 @@ namespace CarXCase.Investigation
             bool any = false;
             foreach (var entry in instance.catalog.entries)
             {
-                if (entry == null || !entry.Derived || desk.Session.Get(entry.id) != null) continue;
+                if (!JournalWindow.Visible(entry) || !entry.Derived || desk.Session.Get(entry.id) != null) continue;
                 if (entry.revealedBy.All(id => desk.Session.Get(id) != null || ClueJournal.Has(id)))
                     any |= desk.Collect(entry.id);
             }
@@ -141,7 +134,7 @@ namespace CarXCase.Investigation
             Ensure();
             if (!instance || !hud || !hud.isActiveAndEnabled || !GameSession.IsStoryScene(SceneManager.GetActiveScene().name)) return false;
             if (Pressed((KeyCode)State.journalKey)) { instance.desk.OpenJournal(); return true; }
-            if (Pressed((KeyCode)State.boardKey)) { instance.desk.OpenBoard(); return true; }
+
             return false;
         }
         static bool Pressed(KeyCode key)
@@ -174,7 +167,7 @@ namespace CarXCase.Investigation
                 }
                 instance.desk.OpenBoardOn(value.surface, value.surfaceSize);
             }
-            else instance.desk.OpenBoard();
+
         }
 
         ThirdPersonCamera station;

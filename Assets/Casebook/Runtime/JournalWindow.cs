@@ -4,52 +4,39 @@ namespace Casebook {
 internal class JournalWindow {
  readonly CasebookController desk;
  CaseSession Case=>desk.Session;
- int filter,attachment;Vector2 indexScroll,detailScroll;string hint="";
- string[] sections={"Все","Улики","Заметки","Люди","Места","Время","Выводы"};
- public JournalWindow(CasebookController value){desk=value;}
- public void ResetDetail(){attachment=0;detailScroll=Vector2.zero;hint="";}
+ int attachment;
+ Vector2 indexScroll,detailScroll;
+ Section category=Section.Evidence;
+ static readonly Section[] Categories={Section.Evidence,Section.Places,Section.People};
+ static readonly string[] Titles={"Улики","Места","Люди"};
+ public JournalWindow(CasebookController controller){desk=controller;}
+ public void ResetDetail(){attachment=0;detailScroll=Vector2.zero;}
+ public static bool Visible(Entry entry)=>entry!=null && System.Array.IndexOf(Categories,entry.section)>=0;
  public void Draw(){
-    DeskInk.Box(new Rect(-2000,-2000,5440,4900),new Color(.04f,.05f,.048f,.79f));
-    bool modal=desk.tear!="";GUI.enabled=!modal;
-    var old=GUI.matrix;float open=Mathf.SmoothStep(.96f,1,Mathf.Clamp01((Time.unscaledTime-desk.opened)*5));GUIUtility.ScaleAroundPivot(new Vector2(open,open),new Vector2(720,460));
-    ArchiveArt.Back(true);
-    ArchiveArt.Write(new Rect(174,169,478,68),Case.File.heading,46,true,true);
-    ArchiveArt.Write(new Rect(177,239,480,32),"Указатель материалов",22,true);
-    ArchiveArt.Under(179,277,445);
-    for(int i=0;i<sections.Length;i++){
-        var tag=new Rect(177+i%4*113,289+i/4*32,109,29);
-        if(ArchiveArt.Inscription(tag,sections[i],17,filter==i)){filter=i;indexScroll=Vector2.zero;ResetDetail();
-           if(filter<6){var first=Case.State.found.FirstOrDefault(rec=>filter==0||(int)Case.File.Find(rec.id).section==filter-1);desk.Select(first?.id??"");}else hint=Case.State.insights.LastOrDefault()??"";}
+    DeskInk.Box(new Rect(-4000,-4000,9440,8900),new Color(.042f,.042f,.04f));
+    // A close crop inside the outer binding leaves only the open book in the frame.
+    var cover=new Rect(22,50,1396,800);
+    DeskInk.Box(cover,DeskInk.C("382b24"));
+    var texture=Resources.Load<Texture2D>("Archive/Fieldbook");
+    if(texture)GUI.DrawTextureWithTexCoords(new Rect(34,62,1372,776),DeskInk.DisplayTexture(texture),new Rect(48f/720,81f/450,612f/720,319f/450));
+    ArchiveArt.Write(new Rect(108,98,510,72),Case.File.heading,48,true,true);
+    for(int i=0;i<Categories.Length;i++){
+        if(ArchiveArt.Inscription(new Rect(108+i*164,190,146,45),Titles[i],24,category==Categories[i])){
+            category=Categories[i];indexScroll=Vector2.zero;ResetDetail();
+        }
     }
-    bool conclusions=filter==6;
-    var ids=conclusions?Case.State.insights.ToArray():Case.State.found.Where(rec=>filter==0||(int)Case.File.Find(rec.id).section==filter-1).Select(rec=>rec.id).ToArray();
-    if(!conclusions&&filter!=0&&desk.selection!=""&&!ids.Contains(desk.selection)){filter=0;ids=Case.State.found.Select(rec=>rec.id).ToArray();}
-    if(conclusions&&hint==""&&ids.Length>0)hint=ids[ids.Length-1];
-    const float rowH=44,listH=145;
-    // Scrolls with the mouse wheel; no visible scrollbars on the page.
-    indexScroll=GUI.BeginScrollView(new Rect(174,366,460,listH),indexScroll,new Rect(0,0,434,Mathf.Max(listH-2,ids.Length*rowH)),false,false,GUIStyle.none,GUIStyle.none);
-    if(ids.Length==0)ArchiveArt.Write(new Rect(4,7,398,88),conclusions?"Вернуться сюда, когда появится первая связь.":"Оставить место для первой находки.",22,true);
-    for(int i=0;i<ids.Length;i++){var id=ids[i];var title=conclusions?Case.File.deductions.Find(rule=>rule.id==id).title:Case.File.Find(id).title;var row=new Rect(1,i*rowH,424,rowH-3);bool active=conclusions?hint==id:desk.selection==id;
-        ArchiveArt.Write(new Rect(4,row.y,41,44),(i+1).ToString("00"),16,false,false,active?DeskInk.Wine:DeskInk.Ink);
-        ArchiveArt.Under(48,row.yMax-2,359,.23f);
-        if(ArchiveArt.Inscription(new Rect(48,row.y,365,rowH-3),title,20,active)){if(conclusions){hint=id;detailScroll=Vector2.zero;}else{desk.Select(id);Case.Read(id);}}}
+    var entries=Case.State.found.Select(record=>Case.File.Find(record.id)).Where(entry=>Visible(entry)&&entry.section==category).ToArray();
+    if(!entries.Any(entry=>entry.id==desk.selection))desk.Select(entries.FirstOrDefault()?.id??"");
+    indexScroll=GUI.BeginScrollView(new Rect(109,268,505,335),indexScroll,new Rect(0,0,478,Mathf.Max(333,entries.Length*58)),false,false,GUIStyle.none,GUIStyle.none);
+    for(int i=0;i<entries.Length;i++){
+        var item=entries[i];
+        if(ArchiveArt.Inscription(new Rect(5,i*58,466,54),item.title,22,item.id==desk.selection))desk.Select(item.id);
+    }
     GUI.EndScrollView();
-    int below=Mathf.CeilToInt((ids.Length*rowH-listH-indexScroll.y)/rowH);
-    if(below>0)ArchiveArt.Write(new Rect(470,514,160,24),"ещё "+below+"  ↓",15,true,false,DeskInk.Muted,TextAnchor.MiddleRight);
-    if(ArchiveArt.Inscription(new Rect(430,672,190,36),"Доска улик  →",19))desk.OpenBoard();
-    var sheet=new Rect(754,150,503,537);
-    if(conclusions){var rule=Case.File.deductions.Find(item=>item.id==hint);if(rule!=null)WriteHint(sheet,rule);else Empty(sheet,"Выводы по делу","Соедините кнопки связанных улик на доске.");}
-    else if(Case.Get(desk.selection)!=null){Case.Read(desk.selection);WriteEntry(sheet,Case.File.Find(desk.selection),true);}
-    else Empty(sheet,"Первая запись","Осмотреть квартиру. Записать, что лежит не на своём месте. Сохранить всё, к чему захочется вернуться.");
-    if(!conclusions&&Case.Get(desk.selection)!=null){var rec=Case.Get(desk.selection);
-       if(ArchiveArt.Inscription(new Rect(794,672,385,39),rec.studied?"✓  Изучено":"□  Отметить изученной",18)){rec.studied=!rec.studied;Case.Save();}
-       if(ArchiveArt.Tab(new Rect(930,715,289,44),Case.Pinned(rec.id)!=null?"Найти лист на доске →":rec.detached?"Взять отделённый лист →":"Отделить лист для доски →",true)){if(rec.detached){desk.OpenBoard();if(Case.Pinned(rec.id)==null)desk.carry=rec.id;else desk.Board.Focus(rec.id);}else desk.tear=rec.id;}}
-    ArchiveArt.Write(new Rect(53,848,460,30),"Esc   /   закрыть дневник",15,false,false,DeskInk.Cream);
-    GUI.matrix=old;GUI.enabled=true;
-    if(modal){DeskInk.Box(new Rect(0,0,1440,900),new Color(0,0,0,.52f));
-        if(desk.tearStart<0){var r=new Rect(450,323,540,210);DeskInk.Sheet(r);DeskInk.Label(new Rect(481,343,480,84),"Отделить лист? Запись останется в дневнике.",23,DeskInk.Ink,true);
-            if(DeskInk.Button(new Rect(482,455,209,48),"Оставить",true))desk.tear="";if(DeskInk.Button(new Rect(709,455,248,48),"Отделить лист",false,true))desk.tearStart=Time.unscaledTime;}
-        else{float t=Mathf.Clamp01((Time.unscaledTime-desk.tearStart)/.55f);var m=GUI.matrix;var r=new Rect(609+155*t,185-88*t,520,430);GUIUtility.RotateAroundPivot(-9*t,r.center);DrawSlip(r,Case.File.Find(desk.tear),true);GUI.matrix=m;if(t>=1)desk.TearDone();}}
+    var selected=entries.FirstOrDefault(entry=>entry.id==desk.selection);
+    if(selected!=null){Case.Read(selected.id);WriteEntry(new Rect(750,120,576,660),selected,false);}
+    else ArchiveArt.Write(new Rect(810,265,410,98),"Записей пока нет",27,true);
+    ArchiveArt.Write(new Rect(46,848,420,31),"Esc  —  закрыть",17,false,false,DeskInk.Cream);
  }
  void Empty(Rect r,string title,string text){ArchiveArt.Write(new Rect(r.x+28,r.y+27,r.width-54,50),"ИЗ ЛИЧНЫХ ЗАПИСЕЙ",14,false,true,DeskInk.Wine);ArchiveArt.Write(new Rect(r.x+27,r.y+94,r.width-52,90),title,34,true,true);ArchiveArt.Under(r.x+30,r.y+183,r.width-66);ArchiveArt.Write(new Rect(r.x+30,r.y+199,r.width-64,154),text,22,true);}
  public void WriteHint(Rect r,Deduction rule){Empty(r,rule.title,rule.hint);DeskInk.Label(new Rect(r.x+42,r.yMax-90,r.width-84,66),Case.File.Find(rule.first).title+"    ↔    "+Case.File.Find(rule.second).title,16,DeskInk.Wine,true);}
@@ -63,9 +50,7 @@ internal class JournalWindow {
     float y=header+8;DeskInk.Label(new Rect(10,y,width,obs),entry.observation,21,DeskInk.Ink);y+=obs+10;
     if(has){attachment=Mathf.Clamp(attachment,0,media.Count-1);var photo=media[attachment];var pm=GUI.matrix;GUIUtility.RotateAroundPivot(-2,new Vector2(145,y+98));DeskInk.Mount(new Rect(16,y+7,268,198),photo.image,photo.caption);GUI.matrix=pm;
         DeskInk.Label(new Rect(298,y+18,width-303,52),"ВЛОЖЕНИЕ  "+(attachment+1)+" / "+media.Count,15,DeskInk.Ink,true);if(media.Count>1&&DeskInk.Button(new Rect(296,y+82,127,40),"Следующее  →",true))attachment=(attachment+1)%media.Count;y+=230;}
-    ArchiveArt.Leaf(new Rect(5,y,width+4,voice+43));ArchiveArt.Tape(new Rect(width-56,y+1,42,10));DeskInk.Label(new Rect(23,y+3,width-44,30),Case.File.narratorName.ToUpperInvariant()+"   /   НА ПОЛЯХ",14,DeskInk.Wine,true);y+=30;ArchiveArt.Write(new Rect(23,y,width-40,voice),entry.narrator,20,true);y+=voice+25;
-    ArchiveArt.Write(new Rect(10,y,width,26),"На полях:",18,true);y+=30;
-    if(edit){ArchiveArt.Under(12,y+28,width-10);ArchiveArt.Under(12,y+53,width-10);GUI.SetNextControlName("CasebookNote");var result=GUI.TextArea(new Rect(18,y+4,width-16,50),rec.note??"",800,DeskInk.Style(17,DeskInk.Ink));if(result!=rec.note){rec.note=result;Case.Save();}}else DeskInk.Label(new Rect(10,y,width,58),rec.note,17,DeskInk.Ink);
+    if(!string.IsNullOrWhiteSpace(entry.narrator)){ArchiveArt.Leaf(new Rect(5,y,width+4,voice+43));ArchiveArt.Tape(new Rect(width-56,y+1,42,10));DeskInk.Label(new Rect(23,y+3,width-44,30),Case.File.narratorName.ToUpperInvariant()+"   /   НА ПОЛЯХ",14,DeskInk.Wine,true);y+=30;ArchiveArt.Write(new Rect(23,y,width-40,voice),entry.narrator,20,true);y+=voice+25;}
     GUI.EndScrollView();}
  public static void DrawSlip(Rect r,Entry entry,bool full=false){
     ArchiveArt.Leaf(r);var photo=entry.attachments?.FirstOrDefault(item=>item!=null&&item.image);

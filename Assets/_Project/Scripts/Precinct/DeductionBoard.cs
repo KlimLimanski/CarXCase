@@ -58,11 +58,18 @@ namespace CarXCase.Precinct
             && Enumerable.Range(0, options.Length).Any(Unlocked);
         bool Unlocked(int i) => string.IsNullOrEmpty(options[i].requiresConclusion) || ClueJournal.Has(options[i].requiresConclusion);
 
-        void OnEnable() => Investigation.InvestigationIntegration.RegisterBoard(this);
+        void OnEnable()
+        {
+            Investigation.InvestigationIntegration.RegisterBoard(this);
+            if (!TryGetComponent<PrecinctReadingBoard>(out _)) gameObject.AddComponent<PrecinctReadingBoard>();
+        }
         public void Interact(SimpleUIHUD hud)
         {
             if (!CanInteract) return;
             hud?.ClearPrompt();
+            // Existing journeys depend on story flags. Inspection now recognizes the collected evidence automatically.
+            foreach (var rule in deductions ?? Array.Empty<Deduction>())
+                if (ClueJournal.Has(rule.clueA) && ClueJournal.Has(rule.clueB)) ClueJournal.AddConclusion(rule.id);
             Investigation.InvestigationIntegration.OpenBoard(this);
         }
 
