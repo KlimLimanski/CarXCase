@@ -1,5 +1,13 @@
-SCENE Assets/_Project/Scenes/00_MainMenu.unity
-NODE Main Camera pos=(0.00, 0.00, 0.00) local=(0.00, 0.00, 0.00) rot=(0.00, 0.00, 0.00) scale=(1.00, 1.00, 1.00)
+SCENE Assets/_Project/Scenes/02_Bar.unity
+NODE Camera_01_Entry pos=(0.85, 1.57, 0.09) local=(0.85, 1.57, 0.09) rot=(2.32, 16.94, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_02_Bar pos=(1.06, 1.53, 4.47) local=(1.06, 1.53, 4.47) rot=(0.77, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_03_Reverse pos=(3.10, 1.60, 7.42) local=(3.10, 1.60, 7.42) rot=(1.57, 180.39, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_04_North pos=(3.10, 1.59, 4.55) local=(3.10, 1.59, 4.55) rot=(2.66, 0.66, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_Dialogue_Player pos=(3.10, 1.64, 3.80) local=(3.10, 1.64, 3.80) rot=(1.21, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_Dialogue_Bartender pos=(5.48, 1.64, 3.80) local=(5.48, 1.64, 3.80) rot=(1.28, 270.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_Bartender_Profile pos=(5.45, 1.65, 6.50) local=(5.45, 1.65, 6.50) rot=(2.76, 180.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Camera_Guest_Wide pos=(3.20, 1.65, 0.68) local=(3.20, 1.65, 0.68) rot=(4.70, 338.29, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Main Camera pos=(2.95, 1.85, 0.62) local=(2.95, 1.85, 0.62) rot=(12.00, 9.00, 0.00) scale=(1.00, 1.00, 1.00)
 ASSET Assets/_Project/Arts/Heroes/Animations/Source/Running.fbx imported=True
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/03_Fulton.glb imported=True
  MESH 03_Fulton_Geometry bounds=Center: (-0.30, 9.85, -4.86), Extents: (5.70, 9.85, 6.14) mat=Opaque_Window_Atlas:Shader Graphs/glTF-pbrMetallicRoughness,Hardware_Midnight:Shader Graphs/glTF-pbrMetallicRoughness,Warm_Limestone:Shader Graphs/glTF-pbrMetallicRoughness,Weathered_AC:Shader Graphs/glTF-pbrMetallicRoughness,Deep_Shadow:Shader Graphs/glTF-pbrMetallicRoughness,Painted_Iron:Shader Graphs/glTF-pbrMetallicRoughness,Aged_Brass:Shader Graphs/glTF-pbrMetallicRoughness,Fulton_Umber:Shader Graphs/glTF-pbrMetallicRoughness,Simple_Party_Walls:Shader Graphs/glTF-pbrMetallicRoughness,Flat_Roof:Shader Graphs/glTF-pbrMetallicRoughness,Sign_Ivory:Shader Graphs/glTF-pbrMetallicRoughness
@@ -1478,6 +1486,8 @@ ASSET Assets/_Project/Arts/Apartaments/Furniture/ApartmentDetails/Walnut_Cabinet
  MESH Upper cover.001 bounds=Center: (0.23, 0.95, -0.02), Extents: (0.14, 0.00, 0.10) mat=Details_BookWine:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Car/car1.glb imported=True
  MESH car1 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.48, 0.13, 0.19) mat=Material_0:Shader Graphs/glTF-pbrMetallicRoughness
+ASSET Assets/_Project/Arts/Heroes/Dmitry/Dmitri_Idle.fbx imported=True
+ MESH Dmitry_Body bounds=Center: (0.00, 0.87, 0.12), Extents: (0.38, 0.98, 0.38) mat=Material_0:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Car/ReferenceInterior/Sedan_1999_Reference_Interior.fbx imported=True
 GROUP Airbag_Label parent=Sedan_1999_Reference_Interior pos=(0.50, 0.79, 0.86)
 GROUP Ashtray parent=Sedan_1999_Reference_Interior pos=(0.00, 0.52, 0.81)
@@ -3371,6 +3381,8 @@ ASSET Assets/_Project/Arts/Lombard/lombard.blend imported=True
  MESH WallRight bounds=Center: (-5.08, 2.00, 0.00), Extents: (0.08, 2.00, 8.00) mat=WallWood:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/PrecinctDecor/box2.fbx imported=True
  MESH box2 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.47, 0.35, 0.39) mat=Material_0:Universal Render Pipeline/Lit
+ASSET Assets/_Project/Arts/Heroes/Dmitry/Dmitry_Humanoid.fbx imported=True
+ MESH Dmitry_Body bounds=Center: (0.01, 0.87, -0.03), Extents: (0.38, 0.98, 0.21) mat=Dmitry:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Car/car6.glb imported=True
  MESH car6 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.48, 0.15, 0.19) mat=Material_0:Shader Graphs/glTF-pbrMetallicRoughness
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/05_Union.blend imported=True

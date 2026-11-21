@@ -11,11 +11,14 @@ namespace CarXCase.Hero
     public sealed class HeroFace : MonoBehaviour
     {
         public static readonly List<HeroFace> All = new List<HeroFace>();
-        public static void SetTalking(bool on) { foreach (var f in All) if (f) f.talking = on; }
+        public static void SetTalking(bool on) { foreach (var f in All) if (f && f.receiveHeroDialogue) f.talking = on; }
         /// -1 = frown, 0 = neutral, +1 = raised brows
-        public static void SetEmotion(float e) { foreach (var f in All) if (f) f.emotion = Mathf.Clamp(e, -1, 1); }
+        public static void SetEmotion(float e) { foreach (var f in All) if (f && f.receiveHeroDialogue) f.emotion = Mathf.Clamp(e, -1, 1); }
 
         public bool talking;
+        public bool receiveHeroDialogue = true;
+        [SerializeField] SkinnedMeshRenderer mouthMesh;
+        [SerializeField] string mouthShape = "JawOpen";
         [Range(-1, 1)] public float emotion;
         public bool armGestures = true;
         [Range(0, 2)] public float intensity = 1;
@@ -24,6 +27,7 @@ namespace CarXCase.Hero
 
         Transform jaw, browL, browR, head, neck, chest, rArm, rFore, root;
         Quaternion jawRest;
+        int mouthShapeIndex = -1;
 
         /// Applies an offset on top of whatever the Animator wrote this frame.
         /// If the Animator did not touch the bone (constant curve), the previous offset is undone first,
@@ -56,6 +60,8 @@ namespace CarXCase.Hero
             jaw = F("Jaw"); browL = F("Brow_L"); browR = F("Brow_R"); head = F("Head"); neck = F("Neck"); chest = F("UpperChest");
             rArm = F("R_UpperArm"); rFore = F("R_LowerArm");
             if (jaw) jawRest = jaw.localRotation;
+            if (mouthMesh && mouthMesh.sharedMesh)
+                mouthShapeIndex = mouthMesh.sharedMesh.GetBlendShapeIndex(mouthShape);
             lHead = new Layer(head); lNeck = new Layer(neck); lChest = new Layer(chest); lArm = new Layer(rArm); lFore = new Layer(rFore);
             if (browL) browLBase = browL.localPosition;
             if (browR) browRBase = browR.localPosition;
@@ -94,6 +100,7 @@ namespace CarXCase.Hero
             float want = sylTarget * (sylTimer > .06f ? 1 : .25f);
             open = Mathf.SmoothDamp(open, want, ref openVel, .055f);
             if (jaw) jaw.localRotation = jawRest * Quaternion.Euler(open * maxJawAngle, 0, 0);
+            if (mouthShapeIndex >= 0) mouthMesh.SetBlendShapeWeight(mouthShapeIndex, open * 100f);
 
             // ---- brows: expression + rare lift on accents
             accent = Mathf.SmoothDamp(accent, 0, ref accentVel, .25f);

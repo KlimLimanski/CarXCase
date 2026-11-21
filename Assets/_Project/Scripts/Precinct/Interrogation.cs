@@ -54,8 +54,9 @@ namespace CarXCase.Precinct
         public string recoveryAction, recoveryClueId, recoveryClueTitle;
         public bool revealHarborCode;
         [TextArea] public string recoveryClueText;
+        [SerializeField] BarServiceRoute barServiceRoute;
 
-        enum Phase { Idle, Talking, Choosing, Outcome }
+        enum Phase { Idle, Arrival, Talking, Choosing, Outcome }
         Phase phase = Phase.Idle;
         string speaker, line; float lineLeft; bool skip;
         Choice[] current; float choiceLeft; Choice picked;
@@ -68,22 +69,41 @@ namespace CarXCase.Precinct
         readonly CamSmoother smoother = new CamSmoother { blendTime = .6f, follow = .25f };
         Transform camTarget; float camSince;
         bool liveConversation;
+        BarDmitryPerformance barPerformance;
+        Vector3 explorationCameraPosition;
+        Quaternion explorationCameraRotation;
+        float explorationFov;
         static readonly string[] ChoiceKeys = { "W", "A", "D", "S" };
 
-        public void Begin()
+        public void Begin() => Begin(null);
+
+        public void Begin(Transform listener)
         {
             if (phase != Phase.Idle || liveConversation) return;
             liveConversation = true;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
-            if (cam) smoother.Apply(cam, cam.transform.position, cam.transform.rotation, cam.fieldOfView, 0);
-            StartCoroutine(Run());
+            if (cam)
+            {
+                explorationCameraPosition = cam.transform.position;
+                explorationCameraRotation = cam.transform.rotation;
+                explorationFov = cam.fieldOfView;
+                smoother.Apply(cam, explorationCameraPosition, explorationCameraRotation, explorationFov, 0);
+            }
+            barPerformance = suspect ? suspect.GetComponent<BarDmitryPerformance>() : null;
+            StartCoroutine(Run(listener));
         }
 
-        IEnumerator Run()
+        IEnumerator Run(Transform listener)
         {
             var node = nodes.FirstOrDefault();
             SetCam(camWide ? camWide : camOnSuspect);
-            yield return new WaitForSeconds(0.6f);
+            if (barPerformance && listener)
+            {
+                phase = Phase.Arrival;
+                SetCam(camOnSuspect);
+                yield return barPerformance.TurnTo(listener);
+            }
+            else yield return new WaitForSeconds(0.6f);
             while (node != null)
             {
                 foreach (var l in node.lines) yield return Say(suspectName, l, true);
@@ -110,10 +130,41 @@ namespace CarXCase.Precinct
             if (success && !string.IsNullOrEmpty(grantId)) { ClueJournal.Collect(grantId, grantTitle, grantText); ClueJournal.AddConclusion(grantId); }
             if (success && revealHarborCode)
                 ClueJournal.Collect(HarborGate.CodeNote, "Код ворот пирса", "Дмитрий назвал код ворот: " + HarborGate.AccessCode + ".");
+            if (!success && barServiceRoute && listener && listener.TryGetComponent<OfficerController>(out var player))
+            {
+                yield return Say(suspectName, barServiceRoute.DepartureLine, true);
+                phase = Phase.Arrival;
+                SetCam(barServiceRoute.DepartureShot);
+                yield return barServiceRoute.DmitryLeaves();
+                ResumeExploration(player);
+                yield break;
+            }
             phase = Phase.Outcome;
             travelAt = Time.unscaledTime + autoTravelDelay;
             SetCam(camWide ? camWide : camOnSuspect);
-            if (suspect) suspect.talking = false;
+            SetSuspectTalking(false);
+        }
+
+        void ResumeExploration(OfficerController player)
+        {
+            phase = Phase.Idle;
+            if (cam)
+            {
+                cam.transform.SetPositionAndRotation(explorationCameraPosition, explorationCameraRotation);
+                cam.fieldOfView = explorationFov;
+                if (cam.TryGetComponent<ThirdPersonCamera>(out var follow))
+                {
+                    follow.enabled = true;
+                    follow.SetCursorLock(true);
+                }
+            }
+            if (player.hud)
+            {
+                player.hud.enabled = true;
+                player.hud.ShowInspectionComment("Надо проверить, что он оставил у кассы.");
+            }
+            player.enabled = true;
+            player.LockInput(false);
         }
 
         void Apply(int dProb, int dStress)
@@ -129,13 +180,19 @@ namespace CarXCase.Precinct
             phase = Phase.Talking; speaker = who; line = text; skip = false;
             lineLeft = Mathf.Clamp(text.Length * 0.055f, 2.2f, 7.5f);
             SetCam(isSuspect ? camOnSuspect : camOnHero);
-            if (suspect) suspect.talking = isSuspect;
+            SetSuspectTalking(isSuspect);
             HeroFace.SetTalking(!isSuspect && text != "…");
             float minShow = 0.3f;
             while (lineLeft > 0 && !(skip && minShow <= 0)) { lineLeft -= Time.deltaTime; minShow -= Time.deltaTime; yield return null; }
-            if (suspect) suspect.talking = false;
+            SetSuspectTalking(false);
             HeroFace.SetTalking(false);
             line = null;
+        }
+
+        void SetSuspectTalking(bool talking)
+        {
+            if (suspect) suspect.talking = talking;
+            if (barPerformance) barPerformance.SetTalking(talking);
         }
 
         void SetCam(Transform a)
@@ -151,7 +208,7 @@ namespace CarXCase.Precinct
             {   // slow push-in on the current shot + gentle handheld drift, blended between shots
                 float push = Mathf.Min(Time.time - camSince, 8f) * 0.012f;
                 Vector3 p = camTarget.position + camTarget.forward * push + new Vector3(Mathf.Sin(Time.time * .6f), Mathf.Sin(Time.time * .8f + 1), 0) * .006f;
-                smoother.Apply(cam, p, camTarget.rotation, 40, Time.deltaTime);
+                smoother.Apply(cam, p, camTarget.rotation, phase == Phase.Arrival ? 52f : 40f, Time.deltaTime);
             }
             var kb = Keyboard.current; var mouse = Mouse.current;
             if (phase == Phase.Talking)

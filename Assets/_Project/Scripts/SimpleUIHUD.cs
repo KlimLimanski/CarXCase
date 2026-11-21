@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using CarXCase.Precinct;
 
 namespace DetectiveGame.Core
 {
@@ -104,7 +105,9 @@ namespace DetectiveGame.Core
                         System.Array.TrueForAll(ids, id => ClueJournal.Has(id)))
                         return "Отправляйтесь в бар";
                     return "Найдите улики в квартире отца";
-                case "02_Bar": return "Поговорите с Дмитрием";
+                case "02_Bar":
+                    if (ClueJournal.Has(BarServiceRoute.CoordinatesId)) return "Отправляйтесь в порт";
+                    return ClueJournal.Has(BarServiceRoute.DepartureFlag) ? "Проверьте записку у кассы" : "Поговорите с Дмитрием";
                 case "03_Pawnshop": return "Поговорите с Сёмой";
                 case "04_Precinct": return "Изучите доску расследования";
                 case "05_BrightonHarbor":

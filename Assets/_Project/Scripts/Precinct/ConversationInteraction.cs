@@ -35,7 +35,7 @@ namespace CarXCase.Precinct
             Place(conversation.camOnHero, npcHead - direction * .35f - side * .75f + Vector3.up * .08f, heroHead);
             Place(conversation.camWide, (heroHead + npcHead) * .5f + side * 1.7f + Vector3.up * .2f,
                 (heroHead + npcHead) * .5f - Vector3.up * .15f);
-            conversation.Begin();
+            conversation.Begin(player.transform);
         }
 
         static void Place(Transform shot, Vector3 position, Vector3 target)
