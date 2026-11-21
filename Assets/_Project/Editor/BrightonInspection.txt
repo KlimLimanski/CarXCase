@@ -1,13 +1,8 @@
-SCENE Assets/_Project/Scenes/02_Bar.unity
-NODE Camera_01_Entry pos=(0.85, 1.57, 0.09) local=(0.85, 1.57, 0.09) rot=(2.32, 16.94, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Camera_02_Bar pos=(1.06, 1.53, 4.47) local=(1.06, 1.53, 4.47) rot=(0.77, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Camera_03_Reverse pos=(3.10, 1.60, 7.42) local=(3.10, 1.60, 7.42) rot=(1.57, 180.39, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Camera_04_North pos=(3.10, 1.59, 4.55) local=(3.10, 1.59, 4.55) rot=(2.66, 0.66, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Camera_Dialogue_Player pos=(3.10, 1.64, 3.80) local=(3.10, 1.64, 3.80) rot=(1.21, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Camera_Dialogue_Bartender pos=(5.48, 1.64, 3.80) local=(5.48, 1.64, 3.80) rot=(1.28, 270.00, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Camera_Bartender_Profile pos=(5.45, 1.65, 6.50) local=(5.45, 1.65, 6.50) rot=(2.76, 180.00, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Camera_Guest_Wide pos=(3.20, 1.65, 0.68) local=(3.20, 1.65, 0.68) rot=(4.70, 338.29, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Main Camera pos=(5.01, 1.68, 3.75) local=(5.01, 1.68, 3.75) rot=(2.07, 234.85, 359.97) scale=(1.00, 1.00, 1.00)
+SCENE Assets/_Project/Scenes/03_Pawnshop.unity
+NODE Main Camera pos=(1.34, 1.50, -5.85) local=(1.34, 1.50, -5.85) rot=(0.00, 344.84, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Building_1_2_Exterior pos=(-24.00, 0.00, -9.40) local=(-24.00, 0.00, -9.40) rot=(0.00, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Building_1_10_Exterior pos=(-136.40, 0.00, -9.40) local=(-136.40, 0.00, -9.40) rot=(0.00, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
+NODE Building_1_16_Exterior pos=(-216.80, 0.00, -9.40) local=(-216.80, 0.00, -9.40) rot=(0.00, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
 ASSET Assets/_Project/Arts/Heroes/Animations/Source/Running.fbx imported=True
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/03_Fulton.glb imported=True
  MESH 03_Fulton_Geometry bounds=Center: (-0.30, 9.85, -4.86), Extents: (5.70, 9.85, 6.14) mat=Opaque_Window_Atlas:Shader Graphs/glTF-pbrMetallicRoughness,Hardware_Midnight:Shader Graphs/glTF-pbrMetallicRoughness,Warm_Limestone:Shader Graphs/glTF-pbrMetallicRoughness,Weathered_AC:Shader Graphs/glTF-pbrMetallicRoughness,Deep_Shadow:Shader Graphs/glTF-pbrMetallicRoughness,Painted_Iron:Shader Graphs/glTF-pbrMetallicRoughness,Aged_Brass:Shader Graphs/glTF-pbrMetallicRoughness,Fulton_Umber:Shader Graphs/glTF-pbrMetallicRoughness,Simple_Party_Walls:Shader Graphs/glTF-pbrMetallicRoughness,Flat_Roof:Shader Graphs/glTF-pbrMetallicRoughness,Sign_Ivory:Shader Graphs/glTF-pbrMetallicRoughness
@@ -680,6 +675,8 @@ ASSET Assets/_Project/Arts/Apartaments/Evidence/Clue_Double_Coffee_Cups.fbx impo
  MESH Loop_Handle.001 bounds=Center: (-0.13, 0.05, -0.04), Extents: (0.02, 0.03, 0.01) mat=Clue_GreenGlaze:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Precint/Generated/Door_Office.fbx imported=True
  MESH Door_Office bounds=Center: (-0.49, 1.09, 0.00), Extents: (0.49, 1.09, 0.08) mat=Wood:Universal Render Pipeline/Lit,Glass:Universal Render Pipeline/Lit,Metal:Universal Render Pipeline/Lit
+ASSET Assets/_Project/Arts/Lombard/PawnshopDecor/Refined/Bass guitar.fbx imported=True
+ MESH Bass guitar bounds=Center: (0.01, 0.52, -0.01), Extents: (0.16, 0.52, 0.04) mat=Mahogany back:Universal Render Pipeline/Lit,Bound ivory:Universal Render Pipeline/Lit,Bass guitar soundboard:Universal Render Pipeline/Lit,Oiled rosewood:Universal Render Pipeline/Lit,Graphite vinyl:Universal Render Pipeline/Lit,Nickel bezel:Universal Render Pipeline/Lit,Wound steel:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Car/Sedan_2000/Sedan_2000_Rear_Passenger.blend imported=True
 GROUP 01_Hudson parent=Sedan_2000_Rear_Passenger pos=(18.45, 0.00, 0.00)
 GROUP 02_Mercer parent=Sedan_2000_Rear_Passenger pos=(9.45, 0.00, 0.00)
@@ -2808,6 +2805,8 @@ ASSET Assets/_Project/Arts/Apartaments/StoryProps/Answering_Machine.glb imported
  MESH Weighted bottom plate bounds=Center: (0.00, -0.02, 0.00), Extents: (0.16, 0.01, 0.11) mat=Graphite bakelite.001:Shader Graphs/glTF-pbrMetallicRoughness
 ASSET Assets/_Project/Arts/Heroes/Main Hero/MainHero_Rigged.glb imported=True
  MESH Body bounds=Center: (0.00, 0.95, 0.00), Extents: (0.94, 0.95, 0.20) mat=Hero_Mat:Shader Graphs/glTF-pbrMetallicRoughness
+ASSET Assets/_Project/Arts/Lombard/PawnshopDecor/Refined/Secondhand watch tray.fbx imported=True
+ MESH Secondhand watch tray bounds=Center: (0.00, 0.03, 0.00), Extents: (0.21, 0.03, 0.14) mat=Tobacco oak:Universal Render Pipeline/Lit,Petrol sleeve:Universal Render Pipeline/Lit,Graphite vinyl:Universal Render Pipeline/Lit,Nickel bezel:Universal Render Pipeline/Lit,Faded parchment:Universal Render Pipeline/Lit,Brushed champagne:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Heroes/Animations/Source/main_char_Running.fbx imported=True
 ASSET Assets/_Project/Arts/Car/car5.glb imported=True
  MESH car5 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.48, 0.17, 0.21) mat=Material_0:Shader Graphs/glTF-pbrMetallicRoughness
@@ -2828,6 +2827,8 @@ ASSET Assets/_Project/Arts/Heroes/police npc/Rigged/police_npc1_Rigged.fbx impor
  MESH police_npc1 bounds=Center: (0.00, -0.03, 0.00), Extents: (0.46, 0.50, 0.11) mat=Material_0.002:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/02_Mercer.glb imported=True
  MESH 02_Mercer_Geometry bounds=Center: (-0.30, 6.75, -4.36), Extents: (4.50, 6.75, 5.64) mat=Opaque_Window_Atlas:Shader Graphs/glTF-pbrMetallicRoughness,Pharmacy_Oxblood:Shader Graphs/glTF-pbrMetallicRoughness,Warm_Limestone:Shader Graphs/glTF-pbrMetallicRoughness,Weathered_AC:Shader Graphs/glTF-pbrMetallicRoughness,Deep_Shadow:Shader Graphs/glTF-pbrMetallicRoughness,Painted_Iron:Shader Graphs/glTF-pbrMetallicRoughness,Aged_Brass:Shader Graphs/glTF-pbrMetallicRoughness,Mercer_Ochre:Shader Graphs/glTF-pbrMetallicRoughness,Simple_Party_Walls:Shader Graphs/glTF-pbrMetallicRoughness,Flat_Roof:Shader Graphs/glTF-pbrMetallicRoughness,Sign_Ivory:Shader Graphs/glTF-pbrMetallicRoughness
+ASSET Assets/_Project/Arts/Lombard/PawnshopDecor/Refined/Acoustic guitar.fbx imported=True
+ MESH Acoustic guitar bounds=Center: (0.00, 0.51, -0.03), Extents: (0.19, 0.51, 0.06) mat=Mahogany back:Universal Render Pipeline/Lit,Bound ivory:Universal Render Pipeline/Lit,Acoustic guitar soundboard:Universal Render Pipeline/Lit,Oiled rosewood:Universal Render Pipeline/Lit,Soundhole shadow:Universal Render Pipeline/Lit,Tortoise guard:Universal Render Pipeline/Lit,Nickel bezel:Universal Render Pipeline/Lit,Wound steel:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Heroes/police npc/police npc3.blend imported=True
  MESH police npc3 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.30, 0.48, 0.09) mat=Material_0:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Apartaments/Furniture/Carpet.glb imported=True
@@ -6575,6 +6576,8 @@ ASSET Assets/_Project/Arts/Infrastructure/BrightonElevated/Brighton_Elevated_Bay
  MESH Elevated_Oxidized_Joints bounds=Center: (0.00, 0.16, 0.00), Extents: (8.28, 0.09, 0.52) mat=Elevated_Oxidized_Joints:Universal Render Pipeline/Lit
  MESH Elevated_Painted_Graphite bounds=Center: (0.00, 3.72, -8.78), Extents: (8.35, 3.72, 9.26) mat=Elevated_Painted_Graphite:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Heroes/police npc/Animations/police_npc4Talking.fbx imported=True
+ASSET Assets/_Project/Arts/Lombard/PawnshopDecor/Refined/Valve combo.fbx imported=True
+ MESH Valve combo bounds=Center: (0.00, 0.24, 0.01), Extents: (0.26, 0.24, 0.13) mat=Graphite vinyl:Universal Render Pipeline/Lit,Grille linen:Universal Render Pipeline/Lit,Brushed champagne:Universal Render Pipeline/Lit,Nickel bezel:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Precint/american flag.fbx imported=True
  MESH american flag bounds=Center: (0.00, 0.00, 0.00), Extents: (0.09, 0.48, 0.06) mat=Material_0:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Lombard/PawnshopDecor/tv monitor.fbx imported=True
@@ -7208,6 +7211,8 @@ ASSET Assets/_Project/Arts/Apartaments/Furniture/ApartmentDetails/Rug_Dining_Win
  MESH Rug_Dining_Wine_Bound_Edges bounds=Center: (0.00, 0.01, 0.00), Extents: (0.82, 0.01, 1.07) mat=Rug_Dining_Wine_Binding:Universal Render Pipeline/Lit
  MESH Rug_Dining_Wine_Knotted_Fringe bounds=Center: (0.00, 0.01, 0.00), Extents: (0.81, 0.00, 1.10) mat=Rug_Dining_Wine_Fringe:Universal Render Pipeline/Lit
  MESH Rug_Dining_Wine_Pile bounds=Center: (0.00, 0.01, 0.00), Extents: (0.81, 0.00, 1.06) mat=Rug_Dining_Wine:Universal Render Pipeline/Lit
+ASSET Assets/_Project/Arts/Lombard/PawnshopDecor/Refined/Used record bin.fbx imported=True
+ MESH Used record bin bounds=Center: (0.00, 0.19, 0.00), Extents: (0.20, 0.19, 0.19) mat=Tobacco oak:Universal Render Pipeline/Lit,Oxblood sleeve:Universal Render Pipeline/Lit,Faded parchment:Universal Render Pipeline/Lit,Petrol sleeve:Universal Render Pipeline/Lit,Graphite vinyl:Universal Render Pipeline/Lit,Grille linen:Universal Render Pipeline/Lit,Brushed champagne:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/05_Union.glb imported=True
  MESH 05_Union_Geometry bounds=Center: (-0.30, 6.75, -4.36), Extents: (4.65, 6.75, 5.64) mat=Opaque_Window_Atlas:Shader Graphs/glTF-pbrMetallicRoughness,Laundry_Petrol:Shader Graphs/glTF-pbrMetallicRoughness,Warm_Limestone:Shader Graphs/glTF-pbrMetallicRoughness,Weathered_AC:Shader Graphs/glTF-pbrMetallicRoughness,Deep_Shadow:Shader Graphs/glTF-pbrMetallicRoughness,Painted_Iron:Shader Graphs/glTF-pbrMetallicRoughness,Aged_Brass:Shader Graphs/glTF-pbrMetallicRoughness,Union_Painted:Shader Graphs/glTF-pbrMetallicRoughness,Simple_Party_Walls:Shader Graphs/glTF-pbrMetallicRoughness,Flat_Roof:Shader Graphs/glTF-pbrMetallicRoughness,Sign_Ivory:Shader Graphs/glTF-pbrMetallicRoughness
 ASSET Assets/_Project/Arts/Heroes/Animations/Source/Hero_TPose.fbx imported=True
