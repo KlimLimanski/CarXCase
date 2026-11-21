@@ -269,8 +269,8 @@ namespace CarXCase.Intro
                 subtitleStyle.normal.textColor = Color.white;
                 speakerStyle = new GUIStyle(subtitleStyle);
                 speakerStyle.normal.textColor = new Color(1, .82f, .51f);
-                smallStyle = new GUIStyle(subtitleStyle) { alignment = TextAnchor.MiddleRight };
-                titleStyle = new GUIStyle(subtitleStyle) { fontStyle = FontStyle.Bold };
+                smallStyle = new GUIStyle(subtitleStyle) { font = GameTypography.Face, alignment = TextAnchor.MiddleRight };
+                titleStyle = new GUIStyle(subtitleStyle) { font = GameTypography.Face, fontStyle = FontStyle.Bold };
             }
 
             float s = Mathf.Clamp(Screen.height / 720f, .65f, 2);
@@ -285,7 +285,7 @@ namespace CarXCase.Intro
             if (elapsed < 7)
             {
                 GUI.Label(new Rect(0, Screen.height * .12f, Screen.width, 45 * s), "БРАЙТОН-БИЧ · 1999", titleStyle);
-                GUI.Label(new Rect(0, Screen.height * .12f + 45 * s, Screen.width, 30 * s), "Ночной дождь", subtitleStyle);
+                GUI.Label(new Rect(0, Screen.height * .12f + 45 * s, Screen.width, 30 * s), "Ночной дождь", new GUIStyle(GameTypography.Label) { fontSize = subtitleStyle.fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true });
             }
 
             float storyTime = elapsed / Mathf.Max(1, duration) * 150;
@@ -308,7 +308,7 @@ namespace CarXCase.Intro
 
             if (loadError != null)
             {
-                GUI.Label(new Rect(40, Screen.height / 2 - 60, Screen.width - 80, 120), loadError, subtitleStyle);
+                GUI.Label(new Rect(40, Screen.height / 2 - 60, Screen.width - 80, 120), loadError, new GUIStyle(GameTypography.Label) { fontSize = subtitleStyle.fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true });
             }
         }
 

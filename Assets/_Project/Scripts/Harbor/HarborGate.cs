@@ -214,7 +214,7 @@ namespace CarXCase.Harbor
             {
                 var area = new Rect(Screen.width * .25f, Screen.height * .81f, Screen.width * .5f, 56f);
                 Paint(area, new Color(.04f,.06f,.07f,.88f));
-                GUI.Label(area, $"   {pulses + 1} / {Sequence.Length}     Нажмите {(pulses == 3 ? "Пробел" : Symbols[pulses])}     ·     Esc — отойти");
+                GUI.Label(area, $"   {pulses + 1} / {Sequence.Length}     Нажмите {(pulses == 3 ? "Пробел" : Symbols[pulses])}     ·     Esc — отойти", GameTypography.Label);
                 Paint(new Rect(area.x, area.yMax - 4, area.width * TimeLeft, 4), new Color(.83f,.68f,.43f));
                 return;
             }
@@ -223,7 +223,6 @@ namespace CarXCase.Harbor
 
         float openedAt;
         GUIStyle lettering;
-        Font panelFont;
         Texture2D patina;
         static readonly Color Bronze = new Color(.56f,.44f,.33f);
         static readonly Color Ivory = new Color(.89f,.79f,.66f);
@@ -231,8 +230,7 @@ namespace CarXCase.Harbor
         void PreparePanel()
         {
             if (lettering != null) return;
-            panelFont = Font.CreateDynamicFontFromOSFont(new[] { "Georgia", "Times New Roman", "Arial" }, 32);
-            lettering = new GUIStyle(GUI.skin.label) { font = panelFont, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            lettering = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
             patina = new Texture2D(256, 160, TextureFormat.RGBA32, false);
             var pixels = new Color32[256 * 160];
             var grain = new System.Random(17);
@@ -250,7 +248,6 @@ namespace CarXCase.Harbor
         void OnDestroy()
         {
             if (patina) Destroy(patina);
-            if (panelFont) Destroy(panelFont);
         }
 
         void Caption(Rect r, string value, int size, Color ink)
@@ -305,7 +302,7 @@ namespace CarXCase.Harbor
             if(PanelButton(new Rect(89,393,368,46),"0",30)) AddDigit(0);
             if(PanelButton(new Rect(495,244,241,75),"ПОПРОБОВАТЬ\nВЗЛОМ",21,true)) BeginTiming();
             if(PanelButton(new Rect(495,343,241,64),"ОТОЙТИ",20)) ClosePanel();
-            if(entry.Length>0 && GUI.Button(new Rect(495,415,241,28),"Стереть цифру",GUI.skin.label)) DeleteDigit();
+            if(entry.Length>0 && GUI.Button(new Rect(495,415,241,28),"Стереть цифру",GameTypography.Label)) DeleteDigit();
             GUI.matrix=previous;
         }
 

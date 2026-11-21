@@ -14,7 +14,6 @@ namespace CarXCase.Precinct
         static readonly Color Ink = new Color(.15f, .125f, .11f);
         readonly Texture2D[] stationery = new Texture2D[3];
         Texture2D pencilStroke;
-        Font titleFont;
         static readonly Vector2[] Offsets = {
             new Vector2(-6,18), new Vector2(4,-26), new Vector2(0,8), new Vector2(6,-9),
             new Vector2(-8,-15), new Vector2(12,23), new Vector2(5,-9)
@@ -92,9 +91,8 @@ namespace CarXCase.Precinct
             sheetLayer.localScale=Vector3.one*(board.surfaceSize.x/1340f);
             sheetLayer.sizeDelta=new Vector2(1200,680);
             sheetLayer.GetComponent<Canvas>().renderMode=RenderMode.WorldSpace;
-            font = Resources.Load<Font>("EvidenceLettering/LiberationSerif-Regular");
+            font = GameTypography.Face;
             if (!font) font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            titleFont = Resources.Load<Font>("EvidenceLettering/TT2020StyleB-Regular");
             pencilStroke = MakePencilStroke();
             for (int i = 0; i < stationery.Length; i++) stationery[i] = MakeStationery(i);
         }
@@ -154,7 +152,7 @@ namespace CarXCase.Precinct
             if (entry.id=="clue_bar_matches") heading="Коробок «Стерлядь»";
             float width = size.x - left - 13f;
             var title = TextLine(note, heading, new Vector2(left, 14), new Vector2(width, 44), 28, Ink);
-            title.font = titleFont ? titleFont : font;
+            title.font = font;
             title.resizeTextForBestFit = false;
             float naturalWidth = title.preferredWidth;
             title.fontSize = Mathf.Clamp(Mathf.FloorToInt(28f * width / Mathf.Max(1f, naturalWidth)), 21, 28);

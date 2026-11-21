@@ -77,7 +77,7 @@ namespace CarXCase.Investigation
             if (visibility <= .01f) return;
 
             float scale = Mathf.Clamp(Screen.height / 1080f, .7f, 1.8f);
-            textStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleLeft, wordWrap = false };
+            textStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft, wordWrap = false };
             int unread = state.found.Count(r => r != null && !r.read);
             string key = KeyName((KeyCode)state.journalKey);
             var old = GUI.color;

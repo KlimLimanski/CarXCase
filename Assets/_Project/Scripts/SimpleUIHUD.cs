@@ -124,7 +124,7 @@ namespace DetectiveGame.Core
             string text = CurrentObjective();
             if (string.IsNullOrEmpty(text)) return;
             float scale = Mathf.Clamp(Screen.height / 800f, .72f, 2f);
-            objectiveStyle ??= new GUIStyle(GUI.skin.label) { wordWrap = true, padding = new RectOffset() };
+            objectiveStyle ??= new GUIStyle(GameTypography.Label) { wordWrap = true, padding = new RectOffset() };
             objectiveStyle.fontSize = Mathf.RoundToInt(19 * scale);
             objectiveStyle.normal.textColor = new Color(.96f, .94f, .86f);
             var content = new GUIContent(text);
@@ -163,14 +163,14 @@ namespace DetectiveGame.Core
             GUI.Box(infoRect, "");
             GUILayout.BeginArea(new Rect(30, 25, 300, 135));
             GUI.color = new Color(1f, 0.85f, 0.4f);
-            GUILayout.Label("CASE 1999: TEST PROTO");
+            GUILayout.Label("CASE 1999: TEST PROTO", GameTypography.Label);
             GUI.color = Color.white;
-            GUILayout.Label("WASD — Перемещение");
-            GUILayout.Label("Left Shift — Бег");
-            GUILayout.Label("Мышь — Обзор (Esc — курсор)");
-            GUILayout.Label("F — Фонарик | E — Осмотр");
+            GUILayout.Label("WASD — Перемещение", GameTypography.Label);
+            GUILayout.Label("Left Shift — Бег", GameTypography.Label);
+            GUILayout.Label("Мышь — Обзор (Esc — курсор)", GameTypography.Label);
+            GUILayout.Label("F — Фонарик | E — Осмотр", GameTypography.Label);
             GUI.color = new Color(0.4f, 0.95f, 1f);
-            GUILayout.Label("T — Быстрый тест QTE");
+            GUILayout.Label("T — Быстрый тест QTE", GameTypography.Label);
             GUILayout.EndArea();
 
             if (!_isShowingClue && (QteManager.Instance == null || !QteManager.Instance.IsQteActive()))
@@ -187,7 +187,7 @@ namespace DetectiveGame.Core
                 float height = 44;
                 Rect promptRect = new Rect((Screen.width - width) / 2f, Screen.height - 110, width, height);
                 GUI.Box(promptRect, "");
-                var centeredStyle = new GUIStyle(GUI.skin.label)
+                var centeredStyle = new GUIStyle(GameTypography.Label)
                 {
                     alignment = TextAnchor.MiddleCenter,
                     fontSize = 15,
@@ -213,7 +213,7 @@ namespace DetectiveGame.Core
             if (!string.IsNullOrEmpty(_promptText))
             {
                 if (_inspectionPromptStyle == null)
-                    _inspectionPromptStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true, richText = false };
+                    _inspectionPromptStyle = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true, richText = false };
                 _inspectionPromptStyle.fontSize = Mathf.RoundToInt(19 * scale);
                 float width = Mathf.Min(Screen.width * .88f, _inspectionPromptStyle.CalcSize(new GUIContent(_promptText)).x + 22 * scale);
                 var area = new Rect(x-width*.5f, y+14*scale, width, 40*scale);
@@ -227,7 +227,7 @@ namespace DetectiveGame.Core
             CarXCase.UI.Subtitles.Draw(CurrentInspectionComment);
             if (Time.unscaledTime < journalHintUntil && !GetComponent<CarXCase.Investigation.JournalKeyHint>())
             {
-                journalHintStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
+                journalHintStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter };
                 journalHintStyle.fontSize = Mathf.RoundToInt(17 * scale);
                 var hint = new Rect(Screen.width - 264 * scale, 24 * scale, 240 * scale, 40 * scale);
                 GUI.color = new Color(.03f, .025f, .02f, .83f);
@@ -250,7 +250,7 @@ namespace DetectiveGame.Core
 
                 GUILayout.BeginArea(new Rect(dialogRect.x + 25, dialogRect.y + 20, dialogWidth - 50, dialogHeight - 40));
                 
-                var titleStyle = new GUIStyle(GUI.skin.label)
+                var titleStyle = new GUIStyle(GameTypography.Label)
                 {
                     fontSize = 18,
                     fontStyle = FontStyle.Bold
@@ -260,7 +260,7 @@ namespace DetectiveGame.Core
 
                 GUILayout.Space(12);
 
-                var bodyStyle = new GUIStyle(GUI.skin.label)
+                var bodyStyle = new GUIStyle(GameTypography.Label)
                 {
                     fontSize = 14,
                     wordWrap = true
@@ -270,7 +270,7 @@ namespace DetectiveGame.Core
 
                 GUILayout.FlexibleSpace();
 
-                var footStyle = new GUIStyle(GUI.skin.label)
+                var footStyle = new GUIStyle(GameTypography.Label)
                 {
                     fontSize = 12,
                     fontStyle = FontStyle.Italic

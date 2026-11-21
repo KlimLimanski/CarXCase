@@ -146,13 +146,13 @@ namespace CarXCase.Precinct
         void Styles()
         {
             if (h1 != null) return;
-            h1 = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            h1 = new GUIStyle(GameTypography.Label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true };
             h1.normal.textColor = new Color(1f, .85f, .4f);
-            body = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            body = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
             body.normal.textColor = Color.white;
             bodySmall = new GUIStyle(body);
             bodySmall.normal.textColor = new Color(.78f, .78f, .78f);
-            optionStyle = new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true, richText = true };
+            optionStyle = new GUIStyle(GameTypography.Label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true, richText = true };
         }
 
         void OnGUI()
@@ -196,7 +196,7 @@ namespace CarXCase.Precinct
                 GUILayout.FlexibleSpace();
                 var status = options[chosen].unavailableStatus;
                 if (!string.IsNullOrEmpty(status)) GUILayout.Label(status, bodySmall);
-                else if (GUILayout.Button("Отправиться  [Enter]", GUILayout.Height(36 * k))) Go();
+                else if (GUILayout.Button("Отправиться  [Enter]", GameTypography.Button, GUILayout.Height(36 * k))) Go();
                 if (!string.IsNullOrEmpty(travelError)) GUILayout.Label(travelError, bodySmall);
                 GUILayout.Label("Esc — выбрать другой путь", bodySmall);
                 GUILayout.EndArea();

@@ -148,10 +148,10 @@ namespace CarXCase.Precinct
             {
                 float width = Mathf.Min(440f, Screen.width * .8f);
                 GUILayout.BeginArea(new Rect((Screen.width - width) * .5f, Screen.height * .34f, width, 180f), GUI.skin.box);
-                GUILayout.Label("Куда поехать?");
-                if (GUILayout.Button(primaryDestinationLabel + "  [1]", GUILayout.Height(35f))) Choose(targetScene);
-                if (GUILayout.Button(alternateDestinationLabel + "  [2]", GUILayout.Height(35f))) Choose(alternateScene);
-                if (GUILayout.Button("Остаться  [Esc]", GUILayout.Height(28f))) CancelChoice();
+                GUILayout.Label("Куда поехать?", GameTypography.Label);
+                if (GUILayout.Button(primaryDestinationLabel + "  [1]", GameTypography.Button, GUILayout.Height(35f))) Choose(targetScene);
+                if (GUILayout.Button(alternateDestinationLabel + "  [2]", GameTypography.Button, GUILayout.Height(35f))) Choose(alternateScene);
+                if (GUILayout.Button("Остаться  [Esc]", GameTypography.Button, GUILayout.Height(28f))) CancelChoice();
                 GUILayout.EndArea();
             }
             if (fade <= 0) return;

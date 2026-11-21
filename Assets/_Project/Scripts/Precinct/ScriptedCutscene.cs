@@ -135,8 +135,8 @@ namespace CarXCase.Precinct
             {
                 sub = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; sub.normal.textColor = Color.white;
                 spk = new GUIStyle(sub); spk.normal.textColor = new Color(1, .82f, .51f);
-                big = new GUIStyle(sub) { fontStyle = FontStyle.Bold };
-                small = new GUIStyle(sub) { alignment = TextAnchor.MiddleRight };
+                big = new GUIStyle(sub) { font = GameTypography.Face, fontStyle = FontStyle.Bold };
+                small = new GUIStyle(sub) { font = GameTypography.Face, alignment = TextAnchor.MiddleRight };
             }
             float k = Mathf.Clamp(Screen.height / 720f, .65f, 2);
             sub.fontSize = Mathf.RoundToInt(21 * k); spk.fontSize = Mathf.RoundToInt(16 * k);
@@ -146,7 +146,7 @@ namespace CarXCase.Precinct
             if (elapsed < 4.5f && !string.IsNullOrEmpty(title))
             {
                 GUI.Label(new Rect(0, Screen.height * .13f, Screen.width, 44 * k), title, big);
-                GUI.Label(new Rect(0, Screen.height * .13f + 44 * k, Screen.width, 30 * k), subtitle, sub);
+                GUI.Label(new Rect(0, Screen.height * .13f + 44 * k, Screen.width, 30 * k), subtitle, new GUIStyle(GameTypography.Label) { fontSize = sub.fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true });
             }
             if (dialogue != null)
                 foreach (var l in dialogue)

@@ -275,10 +275,10 @@ namespace CarXCase.Precinct
             {
                 sub = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.UpperCenter, wordWrap = true }; sub.normal.textColor = Color.white;
                 spk = new GUIStyle(sub) { fontStyle = FontStyle.Bold }; spk.normal.textColor = new Color(.55f, .85f, 1f);
-                label = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleLeft, wordWrap = true, fontStyle = FontStyle.Bold }; label.normal.textColor = Color.white;
-                big = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
-                small = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; small.normal.textColor = new Color(.8f, .8f, .8f);
-                keyStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                label = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft, wordWrap = true, fontStyle = FontStyle.Bold }; label.normal.textColor = Color.white;
+                big = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
+                small = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; small.normal.textColor = new Color(.8f, .8f, .8f);
+                keyStyle = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             }
             float k = Mathf.Clamp(Screen.height / 720f, .7f, 2f), W = Screen.width, H = Screen.height;
             sub.fontSize = Mathf.RoundToInt(20 * k); spk.fontSize = Mathf.RoundToInt(15 * k); label.fontSize = Mathf.RoundToInt(16 * k);
@@ -366,7 +366,7 @@ namespace CarXCase.Precinct
                 GUILayout.Label(shutdown ? shutdownTitle : success ? successTitle : failTitle, t);
                 GUILayout.Label($"Итоговая вероятность успеха: {probability}%  ·  стресс: {Mathf.RoundToInt(stress)}", small);
                 GUILayout.Space(16 * k);
-                var body = new GUIStyle(sub) { alignment = TextAnchor.UpperCenter };
+                var body = new GUIStyle(GameTypography.Label) { wordWrap = true, alignment = TextAnchor.UpperCenter };
                 GUILayout.Label(shutdown ? shutdownText : success ? successText : failText, body);
                 if (success && revealHarborCode)
                     GUILayout.Label("Дмитрий: код ворот — " + HarborGate.AccessCode + ".", body);
@@ -390,9 +390,9 @@ namespace CarXCase.Precinct
                 GUILayout.FlexibleSpace();
                 if (NeedsLead)
                 {
-                    if (GUILayout.Button(recoveryAction + "  [E]", GUILayout.Height(36 * k))) RecoverLead();
+                    if (GUILayout.Button(recoveryAction + "  [E]", GameTypography.Button, GUILayout.Height(36 * k))) RecoverLead();
                 }
-                else if (GUILayout.Button(travelLabel + "  [Enter]", GUILayout.Height(36 * k))) BeginTravel();
+                else if (GUILayout.Button(travelLabel + "  [Enter]", GameTypography.Button, GUILayout.Height(36 * k))) BeginTravel();
                 GUILayout.EndArea();
                 if (leave >= 0) Fill(new Rect(0, 0, W, H), new Color(0, 0, 0, Mathf.Clamp01(leave)));
             }
