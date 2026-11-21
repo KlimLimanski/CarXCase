@@ -10,7 +10,7 @@ namespace CarXCase.Harbor
         public const string AccessCode = "7043";
         public const string CodeNote = "clue_dmitry_harbor_code";
         const string OpenFlag = "harbor_gate_open";
-        const int PulseCount = 4;
+
         static readonly Key[] Digits = { Key.Digit0, Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4,
             Key.Digit5, Key.Digit6, Key.Digit7, Key.Digit8, Key.Digit9 };
         static readonly Key[] Numpad = { Key.Numpad0, Key.Numpad1, Key.Numpad2, Key.Numpad3, Key.Numpad4,
@@ -50,6 +50,7 @@ namespace CarXCase.Harbor
             if (!CanInteract) return;
             hud = sourceHud;
             panel = true;
+            openedAt = Time.unscaledTime;
             timing = false;
             entry = status = "";
             cursorWasLocked = Cursor.lockState == CursorLockMode.Locked;
@@ -71,13 +72,13 @@ namespace CarXCase.Harbor
             if (!panel || keyboard == null) return;
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
-                if (timing) { timing = false; status = ""; }
+                if (timing) { EndTiming(); status = ""; }
                 else ClosePanel();
                 return;
             }
             if (timing)
             {
-                if (keyboard.spaceKey.wasPressedThisFrame) MatchPulse();
+                UpdateSequence(keyboard);
                 return;
             }
             for (int i = 0; i < Digits.Length; i++)
@@ -89,7 +90,10 @@ namespace CarXCase.Harbor
 
         void AddDigit(int digit)
         {
-            if (entry.Length < AccessCode.Length) entry += digit;
+            if (!panel || entry.Length >= AccessCode.Length) return;
+            entry += digit;
+            status = "";
+            if (entry.Length == AccessCode.Length) TryCode();
         }
 
         void DeleteDigit()
@@ -105,34 +109,64 @@ namespace CarXCase.Harbor
             entry = "";
         }
 
+        public Transform lockDetail;
+        static readonly Key[] Sequence = { Key.A, Key.D, Key.W, Key.Space };
+        static readonly string[] Symbols = { "A", "D", "W", "Space" };
+        const float ApproachDuration = .55f;
+        float approachStart;
+        Vector3 previousCameraPosition;
+        Quaternion previousCameraRotation;
+
         void BeginTiming()
         {
             timing = true;
             pulses = 0;
             status = "";
             pulseStart = Time.unscaledTime;
+            if (follow && lockDetail)
+            {
+                previousCameraPosition = follow.transform.position;
+                previousCameraRotation = follow.transform.rotation;
+                approachStart = Time.unscaledTime;
+                pulseStart = approachStart + ApproachDuration;
+            }
         }
 
-        float PulsePosition => Mathf.PingPong((Time.unscaledTime - pulseStart) * (.60f + pulses * .17f), 1f);
-        float TargetPosition => pulses % 2 == 0 ? .64f - pulses * .04f : .31f + pulses * .04f;
-        float TargetHalfWidth => .122f - pulses * .011f;
-
-        void MatchPulse()
+        void LateUpdate()
         {
-            if (Mathf.Abs(PulsePosition - TargetPosition) <= TargetHalfWidth)
+            if (!timing || !follow || !lockDetail) return;
+            float blend = Mathf.SmoothStep(0, 1, (Time.unscaledTime - approachStart) / ApproachDuration);
+            Vector3 end = lockDetail.position + lockDetail.rotation * new Vector3(.06f, .06f, -.48f);
+            Quaternion aim = Quaternion.LookRotation(lockDetail.position + Vector3.up * .04f - end);
+            follow.transform.SetPositionAndRotation(Vector3.Lerp(previousCameraPosition, end, blend),
+                Quaternion.Slerp(previousCameraRotation, aim, blend));
+        }
+
+        void EndTiming()
+        {
+            if (timing && follow && lockDetail)
+                follow.transform.SetPositionAndRotation(previousCameraPosition, previousCameraRotation);
+            timing = false;
+        }
+
+        float TimeLeft => Mathf.Clamp01(1f - (Time.unscaledTime - pulseStart) / (2.1f - pulses * .16f));
+
+        void UpdateSequence(Keyboard keyboard)
+        {
+            if (Time.unscaledTime < pulseStart) return;
+            if (lockDetail)
+                InteractionGlyphs.Show(this, lockDetail.position + Vector3.right * .20f, Symbols[pulses], progress: TimeLeft, urgent: true);
+            if (TimeLeft <= 0 || System.Array.Exists(Sequence, key => key != Sequence[pulses] && keyboard[key].wasPressedThisFrame))
             {
-                pulses++;
-                if (pulses == PulseCount) { Unlock(); return; }
-                status = "Импульс пойман.";
+                EndTiming();
+                status = "Попытка сорвалась. F — повторить.";
+                return;
             }
-            else
-            {
-                pulses = 0;
-                status = "Сигнал сбился. Начните последовательность заново.";
-            }
+            if (!keyboard[Sequence[pulses]].wasPressedThisFrame) return;
+            InteractionGlyphs.Press(this);
+            if (++pulses == Sequence.Length) { Unlock(); return; }
             pulseStart = Time.unscaledTime;
         }
-
         void Unlock()
         {
             if (open) return;
@@ -153,6 +187,7 @@ namespace CarXCase.Harbor
 
         void ClosePanel()
         {
+            EndTiming();
             panel = false;
             if (player) player.LockInput(false);
             if (follow)
@@ -170,61 +205,103 @@ namespace CarXCase.Harbor
         void OnGUI()
         {
             if (!panel) return;
-            float width = Mathf.Min(420f, Screen.width * .9f);
-            var bounds = new Rect((Screen.width - width) * .5f, Screen.height * .19f, width, 352f);
-            Paint(bounds, new Color(.045f, .062f, .074f, .96f));
-            GUILayout.BeginArea(new Rect(bounds.x + 22f, bounds.y + 15f, bounds.width - 44f, bounds.height - 30f));
-            GUILayout.Label(timing ? "Синхронизация замка" : "Кодовый замок пирса");
-            GUILayout.Space(8f);
-            if (timing) DrawTiming();
-            else DrawKeypad();
-            GUILayout.Label(status, GUILayout.Height(34f));
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button(timing ? "К вводу кода  [Esc]" : "Отойти  [Esc]", GUILayout.Height(25f)))
+            if (timing)
             {
-                if (timing) { timing = false; status = ""; }
-                else ClosePanel();
+                var area = new Rect(Screen.width * .25f, Screen.height * .81f, Screen.width * .5f, 56f);
+                Paint(area, new Color(.04f,.06f,.07f,.88f));
+                GUI.Label(area, $"   {pulses + 1} / {Sequence.Length}     Нажмите {(pulses == 3 ? "Пробел" : Symbols[pulses])}     ·     Esc — отойти");
+                Paint(new Rect(area.x, area.yMax - 4, area.width * TimeLeft, 4), new Color(.83f,.68f,.43f));
+                return;
             }
-            GUILayout.EndArea();
+            DrawKeypad();
+        }
+
+        float openedAt;
+        GUIStyle lettering;
+        Font panelFont;
+        Texture2D patina;
+        static readonly Color Bronze = new Color(.56f,.44f,.33f);
+        static readonly Color Ivory = new Color(.89f,.79f,.66f);
+
+        void PreparePanel()
+        {
+            if (lettering != null) return;
+            panelFont = Font.CreateDynamicFontFromOSFont(new[] { "Georgia", "Times New Roman", "Arial" }, 32);
+            lettering = new GUIStyle(GUI.skin.label) { font = panelFont, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            patina = new Texture2D(256, 160, TextureFormat.RGBA32, false);
+            var pixels = new Color32[256 * 160];
+            var grain = new System.Random(17);
+            for (int y = 0; y < 160; y++)
+                for (int x = 0; x < 256; x++)
+                {
+                    float edge = Mathf.Clamp01(1f - Mathf.Min(Mathf.Min(x,255-x),Mathf.Min(y,159-y))/20f);
+                    int v = 19 + grain.Next(5) + (int)((5 + edge * 15) * Mathf.PerlinNoise(x*.09f,y*.09f));
+                    pixels[y*256+x] = new Color32((byte)(v+4),(byte)v,(byte)(v-3),252);
+                }
+            patina.SetPixels32(pixels);
+            patina.Apply(false, true);
+        }
+
+        void OnDestroy()
+        {
+            if (patina) Destroy(patina);
+            if (panelFont) Destroy(panelFont);
+        }
+
+        void Caption(Rect r, string value, int size, Color ink)
+        {
+            lettering.fontSize = size;
+            lettering.normal.textColor = ink;
+            GUI.Label(r, value, lettering);
+        }
+
+        static void Edge(Rect r, Color ink)
+        {
+            Paint(new Rect(r.x,r.y,r.width,1),ink);
+            Paint(new Rect(r.x,r.yMax-1,r.width,1),ink);
+            Paint(new Rect(r.x,r.y,1,r.height),ink);
+            Paint(new Rect(r.xMax-1,r.y,1,r.height),ink);
+        }
+
+        bool PanelButton(Rect r, string title, int size, bool accent = false)
+        {
+            bool hover = r.Contains(Event.current.mousePosition);
+            Paint(r, hover ? new Color(.31f,.22f,.16f,.92f) : new Color(.21f,.17f,.14f,.72f));
+            Edge(r, hover || accent ? new Color(.82f,.56f,.41f) : Bronze);
+            Caption(r,title,size,Ivory);
+            return GUI.Button(r, GUIContent.none, GUIStyle.none);
         }
 
         void DrawKeypad()
         {
-            GUILayout.Label(ClueJournal.Has(CodeNote) ? "Код от Дмитрия: " + AccessCode : "Введите четырёхзначный код.");
-            GUILayout.Label(string.Join("  ", entry.PadRight(AccessCode.Length, '·').ToCharArray()), GUILayout.Height(25f));
-            for (int row = 0; row < 3; row++)
+            PreparePanel();
+            float appear = Mathf.SmoothStep(0,1,Mathf.Clamp01((Time.unscaledTime-openedAt)/.18f));
+            Paint(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,.48f*appear));
+            float scale = Mathf.Min(Screen.width/850f, Screen.height/605f, 1.5f);
+            var previous = GUI.matrix;
+            GUI.matrix = Matrix4x4.TRS(new Vector3((Screen.width-800*scale)/2,
+                (Screen.height-480*scale)/2 + (1-appear)*16*scale,0),Quaternion.identity,Vector3.one*scale);
+            GUI.DrawTexture(new Rect(0,0,800,480),patina);
+            Edge(new Rect(8,8,784,464),Bronze);
+            Paint(new Rect(95,48,610,1),Bronze);
+            Caption(new Rect(75,54,650,44),"ВВЕДИТЕ КОД ДОСТУПА",27,Ivory);
+            Paint(new Rect(95,102,610,1),Bronze);
+            if (PanelButton(new Rect(744,22,34,34),"×",24)) ClosePanel();
+            for (int i=0;i<AccessCode.Length;i++)
             {
-                GUILayout.BeginHorizontal();
-                for (int col = 1; col <= 3; col++)
-                {
-                    int digit = row * 3 + col;
-                    if (GUILayout.Button(digit.ToString(), GUILayout.Height(26f))) AddDigit(digit);
-                }
-                GUILayout.EndHorizontal();
+                var cell=new Rect(232+86*i,119,74,65);
+                Paint(cell,new Color(.04f,.035f,.03f,.89f));
+                Edge(cell,i==entry.Length?Ivory:Bronze);
+                Caption(cell,i<entry.Length?entry[i].ToString():i==entry.Length?"│":"",30,Ivory);
             }
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Стереть", GUILayout.Height(26f))) DeleteDigit();
-            if (GUILayout.Button("0", GUILayout.Height(26f))) AddDigit(0);
-            if (GUILayout.Button("Ввод  [Enter]", GUILayout.Height(26f))) TryCode();
-            GUILayout.EndHorizontal();
-            if (GUILayout.Button("Попробовать взлом  [F]", GUILayout.Height(27f))) BeginTiming();
-        }
-
-        void DrawTiming()
-        {
-            GUILayout.Label($"Поймайте четыре импульса. Сейчас: {pulses}/{PulseCount}");
-            GUILayout.Space(16f);
-            var bar = GUILayoutUtility.GetRect(1f, 24f, GUILayout.ExpandWidth(true));
-            if (Event.current.type == EventType.Repaint)
-            {
-                Paint(bar, new Color(.14f, .19f, .22f));
-                var zone = new Rect(bar.x + (TargetPosition - TargetHalfWidth) * bar.width,
-                    bar.y, 2f * TargetHalfWidth * bar.width, bar.height);
-                Paint(zone, new Color(.32f, .58f, .51f));
-                Paint(new Rect(bar.x + PulsePosition * bar.width - 2f, bar.y - 2f, 4f, bar.height + 4f), Color.white);
-            }
-            GUILayout.Space(13f);
-            if (GUILayout.Button("Поймать импульс  [Пробел]", GUILayout.Height(32f))) MatchPulse();
+            Caption(new Rect(60,188,680,34),status.Length>0?status:ClueJournal.Has(CodeNote)?"Код от Дмитрия: "+AccessCode:"",16,Ivory);
+            for(int i=0;i<9;i++)
+                if(PanelButton(new Rect(89+(i%3)*126,231+(i/3)*54,116,46),(i+1).ToString(),30)) AddDigit(i+1);
+            if(PanelButton(new Rect(89,393,368,46),"0",30)) AddDigit(0);
+            if(PanelButton(new Rect(495,244,241,75),"ПОПРОБОВАТЬ\nВЗЛОМ",21,true)) BeginTiming();
+            if(PanelButton(new Rect(495,343,241,64),"ОТОЙТИ",20)) ClosePanel();
+            if(entry.Length>0 && GUI.Button(new Rect(495,415,241,28),"Стереть цифру",GUI.skin.label)) DeleteDigit();
+            GUI.matrix=previous;
         }
 
         static void Paint(Rect area, Color color)

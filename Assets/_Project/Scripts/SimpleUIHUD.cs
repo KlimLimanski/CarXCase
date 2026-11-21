@@ -84,7 +84,7 @@ namespace DetectiveGame.Core
 
         private OfficerController objectivePlayer;
         private CarXCase.Precinct.SceneExit apartmentExit;
-        private GUIStyle objectiveStyle, objectiveCaption;
+        private GUIStyle objectiveStyle;
         private string objectiveScene;
 
         private void Start()
@@ -129,7 +129,7 @@ namespace DetectiveGame.Core
             float width = Mathf.Min(Screen.width * .70f, objectiveStyle.CalcSize(content).x + 2 * inset);
             float bodyHeight = objectiveStyle.CalcHeight(content, width - 2 * inset);
             var card = new Rect(24 * scale, showHud && !showInspectionHud ? 178 : Screen.height * .085f,
-                width, bodyHeight + 33 * scale);
+                width, bodyHeight + 20 * scale);
             Color previous = GUI.color;
             GUI.color = new Color(0, 0, 0, .22f);
             GUI.DrawTexture(new Rect(card.x + 2 * scale, card.y + 3 * scale, width, card.height), Texture2D.whiteTexture);
@@ -138,11 +138,7 @@ namespace DetectiveGame.Core
             GUI.color = new Color(.77f, .65f, .43f);
             GUI.DrawTexture(new Rect(card.x, card.y, 42 * scale, Mathf.Max(1, 2 * scale)), Texture2D.whiteTexture);
             GUI.color = Color.white;
-            objectiveCaption ??= new GUIStyle(objectiveStyle) { fontStyle = FontStyle.Bold, wordWrap = false };
-            objectiveCaption.fontSize = Mathf.RoundToInt(10 * scale);
-            objectiveCaption.normal.textColor = new Color(.83f, .73f, .54f);
-            GUI.Label(new Rect(card.x + inset, card.y + 7 * scale, width - inset, 16 * scale), "ЦЕЛЬ РАССЛЕДОВАНИЯ", objectiveCaption);
-            GUI.Label(new Rect(card.x + inset, card.y + 22 * scale, width - 2 * inset, bodyHeight + scale), content, objectiveStyle);
+            GUI.Label(new Rect(card.x + inset, card.y + 10 * scale, width - 2 * inset, bodyHeight + scale), content, objectiveStyle);
             GUI.color = previous;
         }
 
