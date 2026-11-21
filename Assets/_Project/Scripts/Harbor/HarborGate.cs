@@ -91,6 +91,7 @@ namespace CarXCase.Harbor
         void AddDigit(int digit)
         {
             if (!panel || entry.Length >= AccessCode.Length) return;
+            LocationAudio.Effect("Keypad digit", .57f);
             entry += digit;
             status = "";
             if (entry.Length == AccessCode.Length) TryCode();
@@ -98,7 +99,8 @@ namespace CarXCase.Harbor
 
         void DeleteDigit()
         {
-            if (entry.Length > 0) entry = entry[..^1];
+            if (entry.Length == 0) return;
+            entry = entry[..^1];
         }
 
         void TryCode()
@@ -156,7 +158,9 @@ namespace CarXCase.Harbor
             if (Time.unscaledTime < pulseStart) return;
             if (lockDetail)
                 InteractionGlyphs.Show(this, lockDetail.position + Vector3.right * .20f, Symbols[pulses], progress: TimeLeft, urgent: true);
-            if (TimeLeft <= 0 || System.Array.Exists(Sequence, key => key != Sequence[pulses] && keyboard[key].wasPressedThisFrame))
+            bool wrongKey = System.Array.Exists(Sequence, key => key != Sequence[pulses] && keyboard[key].wasPressedThisFrame);
+            if (wrongKey || keyboard[Sequence[pulses]].wasPressedThisFrame) LocationAudio.Effect("Lock key press", .57f);
+            if (TimeLeft <= 0 || wrongKey)
             {
                 EndTiming();
                 status = "Попытка сорвалась. F — повторить.";
@@ -170,6 +174,7 @@ namespace CarXCase.Harbor
         void Unlock()
         {
             if (open) return;
+            LocationAudio.Effect("Gate unlocked", .72f);
             open = true;
             SetGate();
             ClueJournal.AddConclusion(OpenFlag);

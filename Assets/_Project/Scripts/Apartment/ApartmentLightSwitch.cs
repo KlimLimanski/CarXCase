@@ -48,7 +48,9 @@ namespace CarXCase.Apartment
 
         public void Interact(SimpleUIHUD hud)
         {
-            if (CanInteract) SetPowered(!powered);
+            if (!CanInteract) return;
+            LocationAudio.Effect(powered ? "Light switch off" : "Light switch on", .65f);
+            SetPowered(!powered);
         }
 
         void SetPowered(bool on)

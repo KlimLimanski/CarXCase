@@ -44,6 +44,7 @@ namespace CarXCase.Apartment
         public void Play(SimpleUIHUD hud)
         {
             if (IsPlaying || !hud) return;
+            LocationAudio.Effect("Cassette button", .72f);
             IsPlaying = true;
             playbackHud = hud;
             hud.IsListening = true;

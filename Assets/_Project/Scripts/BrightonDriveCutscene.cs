@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using CarXCase.Hero;
+using NoirMenu;
 
 namespace CarXCase.Intro
 {
@@ -25,6 +26,8 @@ namespace CarXCase.Intro
             public float speed;
             public float startZ;
             public float endZ;
+            [NonSerialized] public AudioSource approachAudio;
+            [NonSerialized] public AudioSource passAudio;
         }
 
         [Header("Timing and destination")]
@@ -40,6 +43,8 @@ namespace CarXCase.Intro
         [Header("Temporary dialogue")]
         public DialogueLine[] dialogue;
 
+        const float PassPeakSeconds = 1.7f;
+        AudioClip approachClip, passClip;
         float elapsed, skipFade, previousZ;
         bool loading, skipping;
         string loadError;
@@ -64,6 +69,8 @@ namespace CarXCase.Intro
             }
             ApplyPose(0);
             previousZ = car != null ? car.position.z : 0;
+            approachClip = Resources.Load<AudioClip>("LocationAudio/Effects/Approaching traffic");
+            passClip = Resources.Load<AudioClip>("LocationAudio/Effects/Passing car");
         }
 
         void Update()
@@ -76,6 +83,11 @@ namespace CarXCase.Intro
             if (skipping)
             {
                 skipFade = Mathf.MoveTowards(skipFade, 1, Time.deltaTime / 1.2f);
+                foreach (var vehicle in oncomingVehicles)
+                {
+                    if (vehicle.approachAudio) vehicle.approachAudio.volume = 0;
+                    if (vehicle.passAudio) vehicle.passAudio.volume *= 1 - skipFade;
+                }
                 if (skipFade >= 1) LoadApartment();
                 return;
             }
@@ -134,8 +146,52 @@ namespace CarXCase.Intro
                     Vector3 pos = v.root.position;
                     pos.z = currentZ;
                     v.root.position = pos;
+                    if (car && shotCamera) UpdateTrafficAudio(v);
                 }
             }
+        }
+
+        void UpdateTrafficAudio(OncomingVehicle vehicle)
+        {
+            float distance = vehicle.root.position.z - car.position.z;
+            float heroSpeed = (car.position.z - previousZ) / Mathf.Max(Time.deltaTime, .001f);
+            float timeToPass = distance / Mathf.Max(.1f, vehicle.speed + heroSpeed);
+            if (!vehicle.approachAudio)
+            {
+                Vector3 screen = shotCamera.WorldToViewportPoint(vehicle.root.position + Vector3.up * .65f);
+                if (screen.z < shotCamera.nearClipPlane || screen.z > shotCamera.farClipPlane ||
+                    screen.x < -.025f || screen.x > 1.025f || screen.y < 0 || screen.y > 1) return;
+                if (approachClip && timeToPass > 0)
+                    vehicle.approachAudio = PlayTraffic(vehicle, approachClip, true);
+            }
+
+            if (vehicle.approachAudio && timeToPass <= PassPeakSeconds && !vehicle.passAudio && passClip)
+            {
+                vehicle.passAudio = PlayTraffic(vehicle, passClip, false);
+                vehicle.passAudio.time = Mathf.Clamp(PassPeakSeconds - timeToPass, 0, passClip.length - .02f);
+            }
+            if (vehicle.approachAudio)
+            {
+                float proximity = Mathf.Clamp01(1 - distance / 130f);
+                float handoff = vehicle.passAudio ? 1 - Mathf.Clamp01(vehicle.passAudio.time / .8f) : 1;
+                if (vehicle.passAudio && !vehicle.passAudio.isPlaying) handoff = 0;
+                float target = GameSettings.SfxGain * Mathf.Lerp(.055f, .21f, proximity) * handoff;
+                vehicle.approachAudio.volume = Mathf.MoveTowards(vehicle.approachAudio.volume, target, Time.deltaTime);
+                if (vehicle.passAudio && vehicle.approachAudio.volume <= .001f) vehicle.approachAudio.Stop();
+            }
+            if (vehicle.passAudio) vehicle.passAudio.volume = GameSettings.SfxGain * .32f;
+        }
+
+        AudioSource PlayTraffic(OncomingVehicle vehicle, AudioClip clip, bool loop)
+        {
+            var source = gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = loop;
+            source.clip = clip;
+            source.volume = 0;
+            source.panStereo = vehicle.root.position.x < car.position.x ? -.34f : .34f;
+            source.Play();
+            return source;
         }
 
         void ApplyPose(float t)

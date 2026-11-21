@@ -14,7 +14,7 @@ public sealed class ApartmentInteractable : MonoBehaviour
     private bool open;
     public bool IsOpen => open;
     /// Scripted open/close (e.g. the entry door shutting behind Alexey); animates like a player use.
-    public void SetOpen(bool value) { open = value; enabled = true; }
+    public void SetOpen(bool value) { if (open != value && kind == "hinge") LocationAudio.Effect(value ? "Door movement open" : "Door movement close"); open = value; enabled = true; }
     public bool IsHeld => held;
     private bool held;
     private Transform originalParent;
@@ -38,7 +38,7 @@ public sealed class ApartmentInteractable : MonoBehaviour
     public void Use(Transform eye)
     {
         if(kind=="locked")return;
-        if (kind != "pickup") { open = !open; return; }
+        if (kind != "pickup") { if (kind == "drawer") LocationAudio.Effect("Fumbling With Box", .35f); SetOpen(!open); return; }
         if (!held)
         {
             originalParent = transform.parent;
@@ -63,7 +63,7 @@ public sealed class ApartmentInteractable : MonoBehaviour
             transform.localScale=originalScale;
             for(int i=0;i<itemColliders.Length;i++) if(itemColliders[i]) itemColliders[i].enabled=colliderStates[i];
         }
-        held=!held;
+        if (held) LocationAudio.Effect("Place Open Box Bottles Ff", .28f); held=!held;
     }
     void Update()
     {

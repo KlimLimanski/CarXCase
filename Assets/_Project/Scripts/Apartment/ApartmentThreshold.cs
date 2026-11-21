@@ -132,6 +132,7 @@ namespace CarXCase.Apartment
             yield return new WaitForSecondsRealtime(5.2f);
 
             // 3) He turns to the doorway; the shot follows the door as it swings inwards.
+            LocationAudio.Effect("Door Knock Wood", .42f);
             officer.FaceTowards(inside);
             if (view) view.BeginFocus(inside);
             // Line 2 of 2: he calls his father and steps in to look around.
@@ -141,6 +142,7 @@ namespace CarXCase.Apartment
             Quaternion start = door.rotation;
             float signedAngle = OpenAngle(start);
             Quaternion target = Quaternion.AngleAxis(signedAngle, Vector3.up) * start;
+            LocationAudio.Effect("Door movement open");
             const float swingTime = 1.1f;
             float elapsed = 0;
             while (elapsed < swingTime)

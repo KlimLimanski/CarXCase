@@ -22,6 +22,7 @@ internal class JournalWindow {
     ArchiveArt.Write(new Rect(108,98,510,72),Case.File.heading,48,true,true);
     for(int i=0;i<Categories.Length;i++){
         if(ArchiveArt.Inscription(new Rect(108+i*164,190,146,45),Titles[i],24,category==Categories[i])){
+            LocationAudio.Effect("Journal page turn", .68f);
             category=Categories[i];indexScroll=Vector2.zero;ResetDetail();
         }
     }
@@ -30,7 +31,10 @@ internal class JournalWindow {
     indexScroll=GUI.BeginScrollView(new Rect(109,268,505,335),indexScroll,new Rect(0,0,478,Mathf.Max(333,entries.Length*58)),false,false,GUIStyle.none,GUIStyle.none);
     for(int i=0;i<entries.Length;i++){
         var item=entries[i];
-        if(ArchiveArt.Inscription(new Rect(5,i*58,466,54),item.title,22,item.id==desk.selection))desk.Select(item.id);
+        if(ArchiveArt.Inscription(new Rect(5,i*58,466,54),item.title,22,item.id==desk.selection)){
+            LocationAudio.Effect("Journal page turn", .68f);
+            desk.Select(item.id);
+        }
     }
     GUI.EndScrollView();
     var selected=entries.FirstOrDefault(entry=>entry.id==desk.selection);
@@ -49,7 +53,7 @@ internal class JournalWindow {
     ArchiveArt.Write(new Rect(10,48,width,header-90),entry.title,30,true,true);DeskInk.Label(new Rect(10,header-34,width,29),string.Join("   ·   ",new[]{entry.location,entry.time}.Where(value=>!string.IsNullOrEmpty(value))),16,DeskInk.Ink);
     float y=header+8;DeskInk.Label(new Rect(10,y,width,obs),entry.observation,21,DeskInk.Ink);y+=obs+10;
     if(has){attachment=Mathf.Clamp(attachment,0,media.Count-1);var photo=media[attachment];var pm=GUI.matrix;GUIUtility.RotateAroundPivot(-2,new Vector2(145,y+98));DeskInk.Mount(new Rect(16,y+7,268,198),photo.image,photo.caption);GUI.matrix=pm;
-        DeskInk.Label(new Rect(298,y+18,width-303,52),"ВЛОЖЕНИЕ  "+(attachment+1)+" / "+media.Count,15,DeskInk.Ink,true);if(media.Count>1&&DeskInk.Button(new Rect(296,y+82,127,40),"Следующее  →",true))attachment=(attachment+1)%media.Count;y+=230;}
+        DeskInk.Label(new Rect(298,y+18,width-303,52),"ВЛОЖЕНИЕ  "+(attachment+1)+" / "+media.Count,15,DeskInk.Ink,true);if(media.Count>1&&DeskInk.Button(new Rect(296,y+82,127,40),"Следующее  →",true)){LocationAudio.Effect("Journal page turn", .68f);attachment=(attachment+1)%media.Count;}y+=230;}
     if(!string.IsNullOrWhiteSpace(entry.narrator)){ArchiveArt.Leaf(new Rect(5,y,width+4,voice+43));ArchiveArt.Tape(new Rect(width-56,y+1,42,10));DeskInk.Label(new Rect(23,y+3,width-44,30),Case.File.narratorName.ToUpperInvariant()+"   /   НА ПОЛЯХ",14,DeskInk.Wine,true);y+=30;ArchiveArt.Write(new Rect(23,y,width-40,voice),entry.narrator,20,true);y+=voice+25;}
     GUI.EndScrollView();}
  public static void DrawSlip(Rect r,Entry entry,bool full=false){
