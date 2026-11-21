@@ -53,6 +53,13 @@ namespace CarXCase.Apartment
             SetPowered(!powered);
         }
 
+        public void SwitchOnAtEntry(bool playSound)
+        {
+            if (powered) return;
+            if (playSound) LocationAudio.Effect("Light switch on", .65f);
+            SetPowered(true);
+        }
+
         void SetPowered(bool on)
         {
             powered = on;

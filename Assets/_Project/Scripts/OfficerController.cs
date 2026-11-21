@@ -21,7 +21,6 @@ namespace DetectiveGame.Core
         public SimpleUIHUD hud;
 
         public float interactionRadius = 2.4f;
-        public bool aimToInspectClues;
         [Min(.1f)] public float inspectionReach = 2f;
 
         private CharacterController _controller;
@@ -38,7 +37,7 @@ namespace DetectiveGame.Core
         private IInteractable _nearestInteractable;
         public bool CanUseLegacyInteraction => isActiveAndEnabled && !_inputLocked && _nearestClue == null &&
             _nearestInteractable == null && _nearestQte == null && _nearestDoor == null &&
-            (!hud || (!hud.IsShowingJournal && !hud.IsListening && !hud.IsShowingClue())) &&
+            (!hud || (!hud.IsShowingJournal && !hud.IsListening)) &&
             (!QteManager.Instance || !QteManager.Instance.IsQteActive());
 
         /// Horizontal velocity the controller is currently moving with (m/s).
@@ -125,12 +124,6 @@ namespace DetectiveGame.Core
             }
 
             if (QteManager.Instance != null && QteManager.Instance.IsQteActive())
-            {
-                StopInPlace();
-                return;
-            }
-
-            if (hud != null && hud.IsShowingClue())
             {
                 StopInPlace();
                 return;
@@ -275,7 +268,7 @@ namespace DetectiveGame.Core
                 Target previous = _target;
                 _seen.Clear();
                 // 1) A clue right under the crosshair always wins.
-                var aimed = aimToInspectClues ? FindAimedClue() : null;
+                var aimed = FindAimedClue();
                 if (aimed) best = new Target { kind = TargetKind.Clue, component = aimed, point = InteractionGlyphs.PointOf(aimed), score = -1f };
                 else
                 {
@@ -285,7 +278,7 @@ namespace DetectiveGame.Core
                         _allClues = FindObjectsByType<ClueObject>(FindObjectsInactive.Exclude);
                         _cluesListedAt = Time.unscaledTime;
                     }
-                    if (aimToInspectClues && _allClues != null)
+                    if (_allClues != null)
                         foreach (var clue in _allClues)
                             if (clue && clue.isActiveAndEnabled && !clue.IsDone)
                                 Consider(ref best, previous, cam, center, TargetKind.Clue, clue, InteractionGlyphs.PointOf(clue), inspectionReach, null);
@@ -411,7 +404,7 @@ namespace DetectiveGame.Core
             float started = Time.unscaledTime;
             yield return null;
             while (Time.unscaledTime - started < 1.6f ||
-                   (hud && (hud.IsListening || hud.IsShowingClue() || !string.IsNullOrEmpty(hud.CurrentInspectionComment))))
+                   (hud && (hud.IsListening || !string.IsNullOrEmpty(hud.CurrentInspectionComment))))
                 yield return null;
             if (view) view.EndShot();
             ClearFaceTarget();

@@ -47,8 +47,11 @@ namespace CarXCase.Editor
                 try
                 {
                     string location = scene.name == "01_FatherApartment" ? "Квартира отца" :
-                        scene.name == "02_Precinct" ? "Участок" : scene.name == "03_Bar" ? "Бар «Стерлядь»" :
-                        scene.name == "04_Pawnshop" ? "Ломбард" : scene.name == "05_Mikhail" ? "Квартира Михаила" : "Брайтон";
+                        scene.name is "02_Precinct" or "04_Precinct" ? "Участок" :
+                        scene.name is "02_Bar" or "03_Bar" ? "Бар «Стерлядь»" :
+                        scene.name is "03_Pawnshop" or "04_Pawnshop" ? "Ломбард «Золотой Якорь»" :
+                        scene.name == "05_BrightonHarbor" ? "Порт Шипсхед-Бей" :
+                        scene.name == "05_Mikhail" ? "Квартира Михаила" : "Брайтон";
                     foreach (var root in scene.GetRootGameObjects())
                     {
                         foreach (var clue in root.GetComponentsInChildren<ClueObject>(true))

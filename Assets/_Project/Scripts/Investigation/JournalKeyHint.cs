@@ -64,7 +64,7 @@ namespace CarXCase.Investigation
             if (found > 0) started = true;
 
             bool hidden = !started || now < showFrom
-                || InvestigationIntegration.IsOpen || hud.IsShowingClue()
+                || InvestigationIntegration.IsOpen
                 || (QteManager.Instance && QteManager.Instance.IsQteActive());
             bool banner = now < bannerUntil;
             if (animationFrame != Time.frameCount)

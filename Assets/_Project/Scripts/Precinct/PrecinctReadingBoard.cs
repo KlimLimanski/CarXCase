@@ -25,6 +25,8 @@ namespace CarXCase.Precinct
         int lastCount = -1;
         bool reading;
         string selected;
+        string deductionLine;
+        float deductionUntil;
         readonly System.Collections.Generic.Dictionary<string, RectTransform> notes = new();
         readonly System.Collections.Generic.List<GameObject> yarn = new();
 
@@ -104,7 +106,11 @@ namespace CarXCase.Precinct
         {
             var desk = InvestigationIntegration.Controller;
             reading = desk && desk.View == DeskView.Board && board.isActiveAndEnabled;
-            if (!reading) selected = null;
+            if (!reading)
+            {
+                selected = null;
+                deductionLine = null;
+            }
             if (reading && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
                 PickNote(desk.Session);
             if (reading && Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame && board.DecisionReady)
@@ -152,7 +158,12 @@ namespace CarXCase.Precinct
                     var pos = notes[id].anchoredPosition;
                     session.Place(id, new Vector2(pos.x, -pos.y));
                 }
-                session.Tie(first, item.Key);
+                var match = session.Tie(first, item.Key);
+                if (match is Match.Discovered or Match.Linked)
+                {
+                    deductionLine = rule.hint;
+                    deductionUntil = Time.unscaledTime + Mathf.Clamp(rule.hint.Length * .045f, 3.6f, 7f);
+                }
                 DrawThreads(session);
                 return;
             }
@@ -369,19 +380,14 @@ namespace CarXCase.Precinct
             if (!reading) return;
             string hint = selected == null ? "Сопоставьте две улики"
                 : "Найдите пару для улики «" + InvestigationIntegration.Controller.caseFile.Find(selected).title + "»";
-            var previousColor = GUI.color;
-            var previousContent = GUI.contentColor;
-            GUI.color = GUI.contentColor = Color.white;
-            DetectiveGame.Core.SimpleUIHUD.DrawObjectiveCard(hint, Screen.height * .085f);
-
             controlsStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter };
             controlsStyle.normal.textColor = Color.white;
             float scale = Mathf.Clamp(Screen.height / 900f, .75f, 2f);
             controlsStyle.fontSize = Mathf.RoundToInt(15 * scale);
+            if (Time.unscaledTime < deductionUntil) CarXCase.UI.Subtitles.Draw(deductionLine, .76f);
             string controls = board.DecisionReady ? "Esc — отойти     F — куда отправиться" : "Esc — отойти";
+            GUI.Label(new Rect(0, Screen.height - 69 * scale, Screen.width, 24 * scale), hint, controlsStyle);
             GUI.Label(new Rect(0, Screen.height - 38 * scale, Screen.width, 24 * scale), controls, controlsStyle);
-            GUI.contentColor = previousContent;
-            GUI.color = previousColor;
         }
     }
 }

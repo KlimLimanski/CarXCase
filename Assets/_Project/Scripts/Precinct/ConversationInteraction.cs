@@ -10,7 +10,8 @@ namespace CarXCase.Precinct
         public string characterName = "Дмитрий";
         bool started;
 
-        public bool CanInteract => isActiveAndEnabled && conversation && !started;
+        public bool CanInteract => isActiveAndEnabled && conversation && !started &&
+            (string.IsNullOrEmpty(conversation.completedFlag) || !ClueJournal.Has(conversation.completedFlag));
         public string InteractPrompt => "E  Поговорить · " + characterName;
 
         public void Interact(SimpleUIHUD hud)

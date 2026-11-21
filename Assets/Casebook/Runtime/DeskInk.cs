@@ -22,8 +22,7 @@ internal static class DeskInk {
     static GUIStyle basis;static Font face;
     public static Color C(string hex){ColorUtility.TryParseHtmlString("#"+hex,out var c);return c;}
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] static void ResetCache(){guiTextures.Clear();Cork=null;}
-    static string[] InstalledFonts(params string[] wanted){var installed=new System.Collections.Generic.HashSet<string>(Font.GetOSInstalledFontNames());var found=System.Array.FindAll(wanted,installed.Contains);return found.Length>0?found:new[]{"Arial"};}
-    public static void Init(){if(Cork)return;face=Font.CreateDynamicFontFromOSFont(InstalledFonts("Avenir Next","Segoe UI","Arial","Liberation Sans","DejaVu Sans"),22);
+    public static void Init(){if(Cork)return;face=GameTypography.Face;
         basis=new GUIStyle{font=face,wordWrap=true,clipping=TextClipping.Clip};Cork=Grain(0);Wall=Grain(1);Paper=Grain(2);Wood=Grain(3);
         Metal=new Texture2D(32,32,TextureFormat.RGBA32,false);
         for(int y=0;y<32;y++)for(int x=0;x<32;x++){float radius=Vector2.Distance(new Vector2(x,y),new Vector2(15.5f,15.5f))/15f;float light=Mathf.Clamp01(1-Vector2.Distance(new Vector2(x,y),new Vector2(11,23))/22f);var col=Color.Lerp(C("282827"),C("d1d1c9"),light*light);col.a=Mathf.Clamp01((1-radius)*16);Metal.SetPixel(x,y,col);}Metal.Apply();}

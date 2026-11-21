@@ -265,7 +265,7 @@ namespace CarXCase.Intro
         {
             if (subtitleStyle == null)
             {
-                subtitleStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+                subtitleStyle = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
                 subtitleStyle.normal.textColor = Color.white;
                 speakerStyle = new GUIStyle(subtitleStyle);
                 speakerStyle.normal.textColor = new Color(1, .82f, .51f);

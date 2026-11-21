@@ -118,8 +118,9 @@ namespace DetectiveGame.Core
 
             AddEntry();
             if (!ui) return;
-            if (!string.IsNullOrWhiteSpace(inspectionComment)) ui.ShowInspectionComment(inspectionComment);
-            else ui.ShowClue(clueTitle, clueDescription);
+            var line = !string.IsNullOrWhiteSpace(inspectionComment) ? inspectionComment :
+                !string.IsNullOrWhiteSpace(journalThought) ? journalThought : clueDescription;
+            if (!string.IsNullOrWhiteSpace(line)) ui.ShowInspectionComment(line);
         }
     }
 }

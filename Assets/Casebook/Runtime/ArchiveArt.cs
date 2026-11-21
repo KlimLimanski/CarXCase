@@ -3,14 +3,11 @@ using UnityEngine;
 namespace Casebook {
 internal static class ArchiveArt {
     static Texture2D book, room, rag, shade;
-    static Font serif, mono;
     internal static Texture2D Room { get { Init(); return room; } }
     static Color ink=DeskInk.C("342d28"), pencil=DeskInk.C("504943"), red=DeskInk.C("783e39");
     public static void Init(){
         if(rag)return;
         book=Resources.Load<Texture2D>("Archive/Fieldbook");room=Resources.Load<Texture2D>("Archive/Study");
-        serif=Font.CreateDynamicFontFromOSFont(new[]{"Georgia","Times New Roman","Liberation Serif","Arial"},28);
-        mono=Font.CreateDynamicFontFromOSFont(new[]{"Courier New","Courier","Liberation Mono","Arial"},17);
         int w=256,h=224;rag=new Texture2D(w,h,TextureFormat.RGBA32,false);shade=new Texture2D(w,h,TextureFormat.RGBA32,false);var colors=new Color32[w*h];var shadows=new Color32[w*h];var rng=new System.Random(415);
         for(int y=0;y<h;y++)for(int x=0;x<w;x++){
             float fiber=Mathf.PerlinNoise(x*.047f,y*.054f),grain=(float)rng.NextDouble();
@@ -22,7 +19,7 @@ internal static class ArchiveArt {
     }
     public static void Back(bool journal){Init();var source=journal?book:room;if(source)DeskInk.DrawTexture(new Rect(0,0,1440,900),source,ScaleMode.StretchToFill);}
     public static void Leaf(Rect r){Init();DeskInk.DrawTexture(new Rect(r.x+3,r.y+5,r.width,r.height),shade);DeskInk.DrawTexture(r,rag);}
-    public static GUIStyle Type(int size,Color color,bool script=false,bool bold=false,TextAnchor align=TextAnchor.MiddleLeft){Init();var style=DeskInk.Style(size,color,bold,align);style.font=script?serif:mono;style.fontStyle=script?(bold?FontStyle.BoldAndItalic:FontStyle.Italic):(bold?FontStyle.Bold:FontStyle.Normal);return style;}
+    public static GUIStyle Type(int size,Color color,bool script=false,bool bold=false,TextAnchor align=TextAnchor.MiddleLeft){Init();return DeskInk.Style(size,color,bold,align);}
     public static void Write(Rect r,string text,int size,bool script=false,bool bold=false,Color? color=null,TextAnchor align=TextAnchor.MiddleLeft){GUI.Label(r,text??"",Type(size,color??ink,script,bold,align));}
     public static void Under(float x,float y,float width,float alpha=.35f){DeskInk.Rule(new Vector2(x,y),new Vector2(x+width,y-.7f),new Color(.22f,.18f,.16f,alpha),1);}
     public static bool Inscription(Rect r,string text,int size=18,bool active=false){var hover=r.Contains(Event.current.mousePosition);Write(r,text,size,true,active,active||hover?red:ink);if(hover||active)Under(r.x,r.yMax-5,r.width*.8f,.5f);return GUI.Button(r,GUIContent.none,GUIStyle.none);}

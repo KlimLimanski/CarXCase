@@ -45,11 +45,17 @@ namespace CarXCase.Precinct
         bool restoreOfficer, restoreFollow;
         CursorLockMode cursor;
         bool cursorVisible;
-        GUIStyle h1, body, bodySmall, optionStyle;
+        int focus;
+        float openedAt;
+        GUIStyle title, heading, detail, caption;
+        static readonly Color Paper = new Color(.95f, .93f, .87f);
+        static readonly Color Steel = new Color(.71f, .78f, .77f);
+        static readonly Color Amber = new Color(1f, .79f, .45f);
 
         public bool CanInteract => mode == Mode.Closed && !Investigation.InvestigationIntegration.IsOpen;
         public string InteractPrompt => "E  Осмотреть доску улик";
-        public bool DecisionReady => options != null && options.Any(Unlocked);
+        public bool DecisionReady => HasAvailableDestination;
+        internal bool IsChoosingRoute => mode != Mode.Closed;
         internal bool HasAvailableDestination => options != null && options.Any(option =>
             Unlocked(option) && string.IsNullOrEmpty(option.unavailableStatus) &&
             !string.IsNullOrEmpty(option.targetScene) && Application.CanStreamedLevelBeLoaded(option.targetScene));
@@ -83,6 +89,10 @@ namespace CarXCase.Precinct
             if (follow) follow.enabled = false;
             cursor = Cursor.lockState; cursorVisible = Cursor.visible;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
+            openedAt = Time.unscaledTime;
+            focus = Array.FindIndex(options, Unlocked);
+            chosen = -1;
+            travelError = null;
             mode = Mode.Decision;
         }
         void CloseDecision(bool reopen)
@@ -101,7 +111,7 @@ namespace CarXCase.Precinct
         void Choose(int i)
         {
             if (options == null || i < 0 || i >= options.Length || !Unlocked(options[i])) return;
-            chosen = i; travelError = null; mode = Mode.Outcome;
+            chosen = focus = i; travelError = null; mode = Mode.Outcome;
         }
         void Go()
         {
@@ -110,7 +120,6 @@ namespace CarXCase.Precinct
             if (string.IsNullOrEmpty(target) || !Application.CanStreamedLevelBeLoaded(target))
             { travelError = "Сцена " + target + " не добавлена в Build Settings"; return; }
             ClueJournal.Decision = options[chosen].label;
-            NoirMenu.GameSession.SaveCurrent();
             leaveFade = 0;
         }
         void Update()
@@ -132,79 +141,114 @@ namespace CarXCase.Precinct
                 return;
             }
             if (mode == Mode.Outcome && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) Go();
-            if (mode == Mode.Decision)
+            if (mode != Mode.Decision) return;
+            if (kb.digit1Key.wasPressedThisFrame || kb.numpad1Key.wasPressedThisFrame) Choose(0);
+            else if (kb.digit2Key.wasPressedThisFrame || kb.numpad2Key.wasPressedThisFrame) Choose(1);
+            else if (kb.digit3Key.wasPressedThisFrame || kb.numpad3Key.wasPressedThisFrame) Choose(2);
+            else if (kb.leftArrowKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame) MoveFocus(-1);
+            else if (kb.rightArrowKey.wasPressedThisFrame || kb.downArrowKey.wasPressedThisFrame) MoveFocus(1);
+            else if (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame) Choose(focus);
+        }
+
+        void MoveFocus(int direction)
+        {
+            for (int step = 1; step <= options.Length; step++)
             {
-                var visible = options.Where(Unlocked).Take(3).ToArray();
-                if (visible.Length > 0 && kb.digit1Key.wasPressedThisFrame) Choose(Array.IndexOf(options, visible[0]));
-                if (visible.Length > 1 && kb.digit2Key.wasPressedThisFrame) Choose(Array.IndexOf(options, visible[1]));
-                if (visible.Length > 2 && kb.digit3Key.wasPressedThisFrame) Choose(Array.IndexOf(options, visible[2]));
+                int index = (focus + direction * step + options.Length) % options.Length;
+                if (!Unlocked(options[index])) continue;
+                focus = index;
+                break;
             }
         }
 
-        // Travel selection uses the existing separate screen, after leaving the board close-up.
         void Styles()
         {
-            if (h1 != null) return;
-            h1 = new GUIStyle(GameTypography.Label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true };
-            h1.normal.textColor = new Color(1f, .85f, .4f);
-            body = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
-            body.normal.textColor = Color.white;
-            bodySmall = new GUIStyle(body);
-            bodySmall.normal.textColor = new Color(.78f, .78f, .78f);
-            optionStyle = new GUIStyle(GameTypography.Label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true, richText = true };
+            if (title != null) return;
+            title = new GUIStyle(GameTypography.Label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            heading = new GUIStyle(title) { wordWrap = true };
+            detail = new GUIStyle(GameTypography.Label) { wordWrap = true, alignment = TextAnchor.UpperLeft };
+            caption = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft };
         }
 
         void OnGUI()
         {
             if (mode == Mode.Closed) return;
             Styles();
-            float k = Mathf.Clamp(Screen.height / 720f, .7f, 2f);
-            h1.fontSize = Mathf.RoundToInt(22 * k);
-            body.fontSize = Mathf.RoundToInt(14 * k);
-            bodySmall.fontSize = Mathf.RoundToInt(12 * k);
-            optionStyle.fontSize = Mathf.RoundToInt(24 * k);
-            float W = Screen.width, H = Screen.height;
+            float w = Screen.width, h = Screen.height;
+            float k = Mathf.Clamp(Mathf.Min(w / 1100f, h / 720f), .52f, 2f);
+            float arrival = Mathf.Clamp01((Time.unscaledTime - openedAt) / .28f);
+            float margin = Mathf.Min(w * .09f, 120f * k);
+            Fill(new Rect(0f, 0f, w, h), new Color(.023f, .036f, .042f, .73f * arrival));
+            Fill(new Rect(0f, 0f, w, h * .095f), new Color(.016f, .022f, .027f, .92f));
+            Fill(new Rect(0f, h * .9f, w, h * .1f), new Color(.016f, .022f, .027f, .92f));
+            Label(new Rect(margin, h * .135f, w - 2f * margin, 24f * k), "60-Й УЧАСТОК   /   01:20", caption, Steel, 17f * k);
+            Label(new Rect(margin, h * .178f, w - 2f * margin, 66f * k), "Куда ехать?", title, Paper, 52f * k);
 
             if (mode == Mode.Decision)
-            {
-                Fill(new Rect(0, 0, W, H), new Color(0, 0, 0, .72f));
-                GUI.Label(new Rect(0, H * .18f, W, 40 * k), "ЧТО ДЕЛАТЬ ДАЛЬШЕ?", h1);
-                GUI.Label(new Rect(0, H * .18f + 38 * k, W, 24 * k), "Выберите направление. Esc — вернуться к доске.", bodySmall);
-                Vector2 center = new Vector2(W / 2, H * .56f);
-                var visible = options.Where(Unlocked).Take(3).ToArray();
-                for (int slot = 0; slot < visible.Length; slot++)
-                {
-                    int i = Array.IndexOf(options, visible[slot]);
-                    Vector2 position = center;
-                    if (visible.Length == 2) position.x += (slot - .5f) * W * .47f;
-                    if (visible.Length == 3)
-                    {
-                        float angle = (-90 + slot * 120) * Mathf.Deg2Rad;
-                        position += new Vector2(Mathf.Cos(angle) * W * .22f, Mathf.Sin(angle) * H * .2f);
-                    }
-                    var rect = new Rect(position.x - 170 * k, position.y - 34 * k, 340 * k, 68 * k);
-                    bool hover = rect.Contains(Event.current.mousePosition);
-                    optionStyle.normal.textColor = hover ? new Color(1f, .85f, .4f) : Color.white;
-                    GUI.Label(rect, (slot + 1) + ".  " + options[i].label, optionStyle);
-                    if (Event.current.type == EventType.MouseDown && hover) Choose(i);
-                }
-            }
+                DrawOptions(w, h, k, margin, arrival);
             else if (chosen >= 0)
+                DrawConfirmation(w, h, k, margin);
+
+            if (leaveFade >= 0f) Fill(new Rect(0, 0, w, h), new Color(0, 0, 0, Mathf.Clamp01(leaveFade)));
+        }
+
+        void DrawOptions(float w, float h, float k, float margin, float arrival)
+        {
+            int count = Mathf.Min(3, options.Length);
+            bool stacked = w / h < 1.35f;
+            float gap = 24f * k;
+            float width = stacked ? w - 2f * margin : (w - 2f * margin - (count - 1) * gap) / count;
+            float height = stacked ? 100f * k : 145f * k;
+            for (int i = 0; i < count; i++)
             {
-                Fill(new Rect(0, 0, W, H), new Color(0, 0, 0, .8f));
-                GUILayout.BeginArea(new Rect(W * .2f, H * .22f, W * .6f, H * .5f));
-                GUILayout.Label("РЕШЕНИЕ: " + options[chosen].label.ToUpper(), h1);
-                GUILayout.Space(14 * k);
-                GUILayout.Label(options[chosen].outcome, body);
-                GUILayout.FlexibleSpace();
-                var status = options[chosen].unavailableStatus;
-                if (!string.IsNullOrEmpty(status)) GUILayout.Label(status, bodySmall);
-                else if (GUILayout.Button("Отправиться  [Enter]", GameTypography.Button, GUILayout.Height(36 * k))) Go();
-                if (!string.IsNullOrEmpty(travelError)) GUILayout.Label(travelError, bodySmall);
-                GUILayout.Label("Esc — выбрать другой путь", bodySmall);
-                GUILayout.EndArea();
+                var option = options[i];
+                if (option == null) continue;
+                var rect = new Rect(margin + (stacked ? 0f : i * (width + gap)),
+                    h * .42f + (stacked ? i * (height + gap) : i * 30f * k) + (1f - arrival) * 10f * k,
+                    width, height);
+                bool available = Unlocked(option);
+                bool active = available && (i == focus || rect.Contains(Event.current.mousePosition));
+                Color edge = active ? Amber : available ? Steel : new Color(.45f, .48f, .48f);
+                Fill(new Rect(rect.x + 3f * k, rect.y + 5f * k, rect.width, rect.height), new Color(0f, 0f, 0f, .28f));
+                Fill(rect, active ? new Color(.12f, .16f, .16f, .9f) : new Color(.05f, .075f, .082f, .83f));
+                Fill(new Rect(rect.x, rect.y, rect.width, Mathf.Max(1f, k)), edge);
+                Fill(new Rect(rect.x, rect.y, 3f * k, rect.height), edge);
+                Label(new Rect(rect.x + 18f * k, rect.y + 12f * k, 32f * k, 26f * k), available ? $"[{i + 1}]" : "—", caption, edge, 17f * k);
+                Label(new Rect(rect.x + 55f * k, rect.y + 10f * k, rect.width - 68f * k, 49f * k),
+                    option.label, heading, available ? Paper : Steel, 32f * k);
+                Label(new Rect(rect.x + 18f * k, rect.y + 65f * k, rect.width - 36f * k, rect.height - 68f * k),
+                    available ? option.outcome : "Свяжите улики на доске", detail, Steel, 17f * k);
+                if (available && GUI.Button(rect, GUIContent.none, GUIStyle.none)) Choose(i);
             }
-            if (leaveFade >= 0) Fill(new Rect(0, 0, W, H), new Color(0, 0, 0, Mathf.Clamp01(leaveFade)));
+            Label(new Rect(margin, h * .92f, w - 2f * margin, h * .044f), "← / →  Выбрать     Enter  Открыть     Esc  К доске", caption, Steel, 17f * k);
+        }
+
+        void DrawConfirmation(float w, float h, float k, float margin)
+        {
+            var option = options[chosen];
+            float width = Mathf.Min(w - 2f * margin, 610f * k);
+            var rect = new Rect(margin, h * .39f, width, 190f * k);
+            Fill(rect, new Color(.045f, .069f, .076f, .9f));
+            Fill(new Rect(rect.x, rect.y, rect.width, 2f * k), Amber);
+            Label(new Rect(rect.x + 19f * k, rect.y + 12f * k, width - 38f * k, 50f * k), option.label, heading, Paper, 38f * k);
+            Label(new Rect(rect.x + 19f * k, rect.y + 70f * k, width - 38f * k, 60f * k), option.outcome, detail, Steel, 20f * k);
+            string status = travelError ?? option.unavailableStatus;
+            if (string.IsNullOrEmpty(status))
+            {
+                var confirm = new Rect(rect.x + 19f * k, rect.yMax - 53f * k, width - 38f * k, 36f * k);
+                Fill(confirm, confirm.Contains(Event.current.mousePosition) ? new Color(.22f, .19f, .13f, .94f) : new Color(.11f, .13f, .13f, .92f));
+                Label(new Rect(confirm.x + 12f * k, confirm.y, confirm.width - 16f * k, confirm.height), "[Enter]   Поехать", caption, Amber, 21f * k);
+                if (GUI.Button(confirm, GUIContent.none, GUIStyle.none)) Go();
+            }
+            else Label(new Rect(rect.x + 19f * k, rect.yMax - 52f * k, width - 38f * k, 38f * k), status, detail, Amber, 17f * k);
+            Label(new Rect(margin, h * .92f, w - 2f * margin, h * .044f), "Esc  Сменить направление", caption, Steel, 17f * k);
+        }
+
+        static void Label(Rect rect, string text, GUIStyle style, Color color, float size)
+        {
+            style.fontSize = Mathf.Max(11, Mathf.RoundToInt(size));
+            style.normal.textColor = color;
+            GUI.Label(rect, text, style);
         }
 
         static void Fill(Rect rect, Color color)

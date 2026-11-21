@@ -19,6 +19,7 @@ namespace CarXCase.Precinct
         [Tooltip("How many clues must be inspected before the exit unlocks (0 = always open).")]
         public int requiredClues = 3;
         public string[] requiredClueIds;
+        public string[] alternateClueIds;
         public float fadeTime = 1.2f;
 
         ClueObject[] evidence = System.Array.Empty<ClueObject>();
@@ -54,7 +55,9 @@ namespace CarXCase.Precinct
             return found;
         }
 
-        public bool CanInteract => isActiveAndEnabled && !leaving && !choosing;
+        public bool CanInteract => isActiveAndEnabled && !leaving && !choosing &&
+            (alternateClueIds == null || alternateClueIds.Length == 0 ||
+             System.Array.Exists(alternateClueIds, ClueJournal.Has));
 
         public string InteractPrompt
         {
@@ -65,7 +68,7 @@ namespace CarXCase.Precinct
                 int needed = RequiredCount;
                 if (found < needed)
                     return "E  Продолжить осмотр"; // the key always shows; pressing tells how many clues are left
-                return $"E  {actionText}  ·  Улики: {found}/{needed}";
+                return needed == 0 ? $"E  {actionText}" : $"E  {actionText}  ·  Улики: {found}/{needed}";
             }
         }
 

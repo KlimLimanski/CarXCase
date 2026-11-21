@@ -22,12 +22,16 @@ namespace CarXCase.HeroCar
         public Color tint = new Color(0.78f, 0.80f, 0.82f, 1f);
         [Tooltip("Clip at the surface itself so nearby subjects remain visible.")]
         public bool clipAtGlass;
+        [Min(.002f)] public float surfaceBias = .002f;
         [Min(0)] public float visibleDistance;
+        [Tooltip("Optional panes sharing this capture. The projection mesh spans the entire group.")]
+        public Renderer[] sharedPanes;
 
         static readonly List<CarMirror> all = new List<CarMirror>();
         Camera cam; RenderTexture rt; MaterialPropertyBlock mpb; MeshRenderer rend;
         Vector3 localCenter, localNormal; Vector3[] localCorners;
         readonly Plane[] viewerFrustum = new Plane[6];
+        bool UsesSharedPanes => sharedPanes != null && sharedPanes.Length > 0;
 
         public static void RenderAllFor(Camera v) { foreach (var m in all) if (m && m.isActiveAndEnabled) m.RenderFor(v, true); }
 
@@ -63,7 +67,7 @@ namespace CarXCase.HeroCar
             data.renderShadows = false; data.renderPostProcessing = false; data.requiresDepthTexture = true; data.requiresColorTexture = true;
             cam.enabled = Application.isPlaying && visibleDistance <= 0;
             rend = GetComponent<MeshRenderer>();
-            if (rend.sharedMaterial != mirrorMaterial) rend.sharedMaterial = mirrorMaterial;
+            if (!UsesSharedPanes && rend.sharedMaterial != mirrorMaterial) rend.sharedMaterial = mirrorMaterial;
             rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mpb = new MaterialPropertyBlock();
         }
@@ -73,7 +77,12 @@ namespace CarXCase.HeroCar
             all.Remove(this);
             if (cam) DestroyImmediate(cam.gameObject);
             if (rt) { rt.Release(); DestroyImmediate(rt); }
-            if (rend) rend.SetPropertyBlock(null);
+            if (UsesSharedPanes)
+            {
+                foreach (var pane in sharedPanes)
+                    if (pane) pane.SetPropertyBlock(null);
+            }
+            else if (rend) rend.SetPropertyBlock(null);
         }
 
         void LateUpdate()
@@ -103,9 +112,10 @@ namespace CarXCase.HeroCar
             if (side < 0.004f) return;
             Vector3 virtualEye = eye - 2f * side * n;            // viewer mirrored behind the glass
             Vector3 up = Vector3.ProjectOnPlane(transform.parent ? transform.parent.up : Vector3.up, n);
-            if (up.sqrMagnitude < 1e-4f) up = Vector3.ProjectOnPlane(Vector3.up, n);
+            if (up.sqrMagnitude < 1e-4f)
+                up = Vector3.ProjectOnPlane(Mathf.Abs(n.y) > .95f ? Vector3.forward : Vector3.up, n);
             cam.transform.SetPositionAndRotation(virtualEye, Quaternion.LookRotation(n, up));
-            float near = (clipAtGlass ? side : 2f * side) + 0.002f;
+            float near = (clipAtGlass ? side : 2f * side) + surfaceBias;
             var view = cam.worldToCameraMatrix;
             float l = float.MaxValue, rr = float.MinValue, b = float.MaxValue, t = float.MinValue;
             foreach (var c in localCorners)
@@ -117,11 +127,21 @@ namespace CarXCase.HeroCar
             cam.nearClipPlane = near; cam.farClipPlane = farClip;
             cam.projectionMatrix = Matrix4x4.Frustum(l, rr, b, t, near, farClip);
             cam.cullingMask = v.cullingMask; cam.clearFlags = v.clearFlags; cam.backgroundColor = v.backgroundColor;
-            rend.GetPropertyBlock(mpb);
+            if (UsesSharedPanes)
+            {
+                foreach (var pane in sharedPanes)
+                    if (pane) ApplyReflection(pane);
+            }
+            else ApplyReflection(rend);
+            if (renderNow) cam.Render();
+        }
+
+        void ApplyReflection(Renderer pane)
+        {
+            pane.GetPropertyBlock(mpb);
             mpb.SetTexture("_MirrorTex", rt); mpb.SetColor("_Tint", tint);
             mpb.SetMatrix("_MirrorVP", cam.projectionMatrix * cam.worldToCameraMatrix);
-            rend.SetPropertyBlock(mpb);
-            if (renderNow) cam.Render();
+            pane.SetPropertyBlock(mpb);
         }
     }
 }

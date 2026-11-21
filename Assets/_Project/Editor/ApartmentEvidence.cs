@@ -70,7 +70,6 @@ public static class ApartmentEvidence
         InstallRecordInspection(Find("RecordPlayer"), Find("RP_Record"));
 
         var officer = roots.SelectMany(g => g.GetComponentsInChildren<OfficerController>()).Single();
-        officer.aimToInspectClues = true;
         officer.hud.showInspectionHud = true;
         var follow = officer.cameraTransform.GetComponent<ThirdPersonCamera>();
         if (follow)

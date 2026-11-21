@@ -41,6 +41,12 @@ namespace CarXCase.Precinct
         public int successThreshold = 60;
         public float choiceTime = 12;
         public Node[] nodes;
+        [Header("Trust and follow-up")]
+        public bool useTrust;
+        public int failureThreshold = 25;
+        public bool interruptAtFailureThreshold;
+        [TextArea] public string openingLine, partialReply, followUpThought, failureThought;
+        public string followUpFlag, completedFlag;
 
         [Header("Outcome")]
         public string successTitle, failTitle, shutdownTitle = "ДОПРОС СОРВАН";
@@ -104,6 +110,7 @@ namespace CarXCase.Precinct
                 yield return barPerformance.TurnTo(listener);
             }
             else yield return new WaitForSeconds(0.6f);
+            if (!string.IsNullOrEmpty(openingLine)) yield return SayLines(heroName, openingLine, false);
             while (node != null)
             {
                 foreach (var l in node.lines) yield return Say(suspectName, l, true);
@@ -120,14 +127,38 @@ namespace CarXCase.Precinct
                 bool timedOut = choiceLeft <= 0;
                 if (!timedOut) yield return new WaitForSeconds(.24f);
                 HeroFace.SetEmotion(picked.stress >= 15 ? -0.9f : picked.stress <= -10 ? 0.6f : picked.probability < 0 ? -0.4f : 0.15f);
-                Apply(timedOut ? picked.probability - 5 : picked.probability, picked.stress + (timedOut ? 5 : 0));
-                yield return Say(heroName, timedOut ? "…" : picked.heroLine, false);
-                if (!string.IsNullOrEmpty(picked.reply)) yield return Say(suspectName, picked.reply, true);
-                if (stress >= 100) { shutdown = true; break; }
+                Apply(timedOut && !useTrust ? picked.probability - 5 : picked.probability, picked.stress + (timedOut ? 5 : 0));
+                yield return SayLines(heroName, timedOut ? "…" : picked.heroLine, false);
+                if (!string.IsNullOrEmpty(picked.reply)) yield return SayLines(suspectName, picked.reply, true);
+                if (useTrust ? interruptAtFailureThreshold && probability <= failureThreshold : stress >= 100)
+                {
+                    shutdown = true;
+                    break;
+                }
                 node = picked.next == "END" ? null : nodes.FirstOrDefault(n => n.id == picked.next);
             }
             success = !shutdown && probability >= successThreshold;
+            if (useTrust)
+            {
+                if (success) yield return SayLines(suspectName, successText, true);
+                else if (listener && listener.TryGetComponent<OfficerController>(out var detective))
+                {
+                    bool failed = probability <= failureThreshold;
+                    yield return SayLines(suspectName, failed ? shutdownText : partialReply, true);
+                    if (failed && barServiceRoute)
+                    {
+                        phase = Phase.Arrival;
+                        SetCam(barServiceRoute.DepartureShot);
+                        yield return barServiceRoute.DmitryLeaves();
+                    }
+                    else ClueJournal.AddConclusion(followUpFlag);
+                    ClueJournal.AddConclusion(completedFlag);
+                    ResumeExploration(detective, failed ? failureThought : followUpThought);
+                    yield break;
+                }
+            }
             if (success && !string.IsNullOrEmpty(grantId)) { ClueJournal.Collect(grantId, grantTitle, grantText); ClueJournal.AddConclusion(grantId); }
+            if (useTrust && success) ClueJournal.AddConclusion(completedFlag);
             if (success && revealHarborCode)
                 ClueJournal.Collect(HarborGate.CodeNote, "Код ворот пирса", "Дмитрий назвал код ворот: " + HarborGate.AccessCode + ".");
             if (!success && barServiceRoute && listener && listener.TryGetComponent<OfficerController>(out var player))
@@ -136,16 +167,17 @@ namespace CarXCase.Precinct
                 phase = Phase.Arrival;
                 SetCam(barServiceRoute.DepartureShot);
                 yield return barServiceRoute.DmitryLeaves();
-                ResumeExploration(player);
+                ResumeExploration(player, "Надо проверить, что он оставил у кассы.");
                 yield break;
             }
             phase = Phase.Outcome;
             travelAt = Time.unscaledTime + autoTravelDelay;
             SetCam(camWide ? camWide : camOnSuspect);
             SetSuspectTalking(false);
+            if (useTrust && success) BeginTravel();
         }
 
-        void ResumeExploration(OfficerController player)
+        void ResumeExploration(OfficerController player, string thought)
         {
             phase = Phase.Idle;
             if (cam)
@@ -161,7 +193,7 @@ namespace CarXCase.Precinct
             if (player.hud)
             {
                 player.hud.enabled = true;
-                player.hud.ShowInspectionComment("Надо проверить, что он оставил у кассы.");
+                if (!string.IsNullOrEmpty(thought)) player.hud.ShowInspectionComment(thought);
             }
             player.enabled = true;
             player.LockInput(false);
@@ -169,10 +201,16 @@ namespace CarXCase.Precinct
 
         void Apply(int dProb, int dStress)
         {
-            probability = Mathf.Clamp(probability + dProb, 0, 99);
+            probability = Mathf.Clamp(probability + dProb, 0, useTrust ? 100 : 99);
             stress = Mathf.Clamp(stress + dStress, 0, 100);
             if (suspect) suspect.stress = stress;
             lastDelta = dProb; deltaTime = Time.time;
+        }
+
+        IEnumerator SayLines(string who, string text, bool isSuspect)
+        {
+            foreach (var part in (text ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                yield return Say(who, part.Trim(), isSuspect);
         }
 
         IEnumerator Say(string who, string text, bool isSuspect)
@@ -271,9 +309,14 @@ namespace CarXCase.Precinct
         void OnGUI()
         {
             if (phase == Phase.Idle) return;
+            if (useTrust && success && phase == Phase.Outcome && leave >= 0f)
+            {
+                Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, Mathf.Clamp01(leave)));
+                return;
+            }
             if (sub == null)
             {
-                sub = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.UpperCenter, wordWrap = true }; sub.normal.textColor = Color.white;
+                sub = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.UpperCenter, wordWrap = true }; sub.normal.textColor = Color.white;
                 spk = new GUIStyle(sub) { fontStyle = FontStyle.Bold }; spk.normal.textColor = new Color(.55f, .85f, 1f);
                 label = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft, wordWrap = true, fontStyle = FontStyle.Bold }; label.normal.textColor = Color.white;
                 big = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
@@ -290,22 +333,25 @@ namespace CarXCase.Precinct
             if (phase == Phase.Choosing || (phase == Phase.Talking && Time.time - deltaTime < 2.5f))
             {
                 // probability + stress (top-left, Detroit style)
-                var panel = new Rect(18 * k, H * .07f, 250 * k, 104 * k);
+                var panel = new Rect(18 * k, H * .07f, 250 * k, (useTrust ? 61 : 104) * k);
                 Fill(panel, new Color(0, 0, 0, .55f));
                 small.alignment = TextAnchor.MiddleLeft; small.normal.textColor = new Color(.55f, .85f, 1f);
-                GUI.Label(new Rect(panel.x + 12 * k, panel.y + 6 * k, panel.width, 20 * k), "ВЕРОЯТНОСТЬ УСПЕХА", small);
+                GUI.Label(new Rect(panel.x + 12 * k, panel.y + 6 * k, panel.width, 20 * k), useTrust ? "ДОВЕРИЕ" : "ВЕРОЯТНОСТЬ УСПЕХА", small);
                 big.alignment = TextAnchor.MiddleLeft; big.normal.textColor = Color.white;
-                GUI.Label(new Rect(panel.x + 12 * k, panel.y + 24 * k, 120 * k, 36 * k), probability + "%", big);
+                GUI.Label(new Rect(panel.x + 12 * k, panel.y + 24 * k, 120 * k, 36 * k), probability + (useTrust ? " / 100" : "%"), big);
                 if (Time.time - deltaTime < 2.5f && lastDelta != 0)
                 {
                     var arrow = new GUIStyle(big); arrow.normal.textColor = lastDelta > 0 ? new Color(.4f, 1f, .5f) : new Color(1f, .35f, .3f);
                     arrow.fontSize = Mathf.RoundToInt(22 * k);
                     GUI.Label(new Rect(panel.x + 110 * k, panel.y + 26 * k, 120 * k, 32 * k), (lastDelta > 0 ? "▲ +" : "▼ ") + lastDelta, arrow);
                 }
-                GUI.Label(new Rect(panel.x + 12 * k, panel.y + 62 * k, panel.width, 18 * k), "СТРЕСС · " + suspectName, small);
-                var bar = new Rect(panel.x + 12 * k, panel.y + 84 * k, panel.width - 24 * k, 8 * k);
-                Fill(bar, new Color(1, 1, 1, .15f));
-                Fill(new Rect(bar.x, bar.y, bar.width * stress / 100f, bar.height), Color.Lerp(new Color(.4f, .8f, 1f), new Color(1f, .25f, .2f), stress / 100f));
+                if (!useTrust)
+                {
+                    GUI.Label(new Rect(panel.x + 12 * k, panel.y + 62 * k, panel.width, 18 * k), "СТРЕСС · " + suspectName, small);
+                    var bar = new Rect(panel.x + 12 * k, panel.y + 84 * k, panel.width - 24 * k, 8 * k);
+                    Fill(bar, new Color(1, 1, 1, .15f));
+                    Fill(new Rect(bar.x, bar.y, bar.width * stress / 100f, bar.height), Color.Lerp(new Color(.4f, .8f, 1f), new Color(1f, .25f, .2f), stress / 100f));
+                }
                 small.alignment = TextAnchor.MiddleCenter; small.normal.textColor = new Color(.8f, .8f, .8f);
                 big.alignment = TextAnchor.MiddleCenter;
             }
