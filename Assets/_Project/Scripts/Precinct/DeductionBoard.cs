@@ -49,14 +49,15 @@ namespace CarXCase.Precinct
 
         public bool CanInteract => mode == Mode.Closed && !Investigation.InvestigationIntegration.IsOpen;
         public string InteractPrompt => "E  Осмотреть доску улик";
-        public bool DecisionReady => options != null && options.Length > 0 &&
-            (requiredConclusions != null && requiredConclusions.Length > 0
-                ? requiredConclusions.All(ClueJournal.Has)
-                : (deductions ?? Array.Empty<Deduction>()).Count(d => ClueJournal.Has(d.id)) >=
-                  Mathf.Max(1, Mathf.Min(conclusionsForDecision,
-                    (deductions ?? Array.Empty<Deduction>()).Count(d => ClueJournal.Has(d.clueA) && ClueJournal.Has(d.clueB)))))
-            && Enumerable.Range(0, options.Length).Any(Unlocked);
-        bool Unlocked(int i) => string.IsNullOrEmpty(options[i].requiresConclusion) || ClueJournal.Has(options[i].requiresConclusion);
+        public bool DecisionReady => options != null && options.Any(Unlocked);
+        internal bool HasAvailableDestination => options != null && options.Any(option =>
+            Unlocked(option) && string.IsNullOrEmpty(option.unavailableStatus) &&
+            !string.IsNullOrEmpty(option.targetScene) && Application.CanStreamedLevelBeLoaded(option.targetScene));
+        static bool Unlocked(Option option) => option != null &&
+            HasRouteThread(Investigation.InvestigationIntegration.State, option.requiresConclusion);
+
+        static bool HasRouteThread(Casebook.CaseState state, string conclusion) =>
+            !string.IsNullOrEmpty(conclusion) && state?.threads.Contains(conclusion) == true;
 
         void OnEnable()
         {
@@ -67,9 +68,6 @@ namespace CarXCase.Precinct
         {
             if (!CanInteract) return;
             hud?.ClearPrompt();
-            // Existing journeys depend on story flags. Inspection now recognizes the collected evidence automatically.
-            foreach (var rule in deductions ?? Array.Empty<Deduction>())
-                if (ClueJournal.Has(rule.clueA) && ClueJournal.Has(rule.clueB)) ClueJournal.AddConclusion(rule.id);
             Investigation.InvestigationIntegration.OpenBoard(this);
         }
 
@@ -102,12 +100,12 @@ namespace CarXCase.Precinct
         }
         void Choose(int i)
         {
-            if (options == null || i < 0 || i >= options.Length || !Unlocked(i)) return;
+            if (options == null || i < 0 || i >= options.Length || !Unlocked(options[i])) return;
             chosen = i; travelError = null; mode = Mode.Outcome;
         }
         void Go()
         {
-            if (chosen < 0 || leaveFade >= 0 || !string.IsNullOrEmpty(options[chosen].unavailableStatus)) return;
+            if (chosen < 0 || !Unlocked(options[chosen]) || leaveFade >= 0 || !string.IsNullOrEmpty(options[chosen].unavailableStatus)) return;
             var target = options[chosen].targetScene;
             if (string.IsNullOrEmpty(target) || !Application.CanStreamedLevelBeLoaded(target))
             { travelError = "Сцена " + target + " не добавлена в Build Settings"; return; }
@@ -136,9 +134,10 @@ namespace CarXCase.Precinct
             if (mode == Mode.Outcome && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) Go();
             if (mode == Mode.Decision)
             {
-                if (kb.digit1Key.wasPressedThisFrame) Choose(0);
-                if (kb.digit2Key.wasPressedThisFrame) Choose(1);
-                if (kb.digit3Key.wasPressedThisFrame) Choose(2);
+                var visible = options.Where(Unlocked).Take(3).ToArray();
+                if (visible.Length > 0 && kb.digit1Key.wasPressedThisFrame) Choose(Array.IndexOf(options, visible[0]));
+                if (visible.Length > 1 && kb.digit2Key.wasPressedThisFrame) Choose(Array.IndexOf(options, visible[1]));
+                if (visible.Length > 2 && kb.digit3Key.wasPressedThisFrame) Choose(Array.IndexOf(options, visible[2]));
             }
         }
 
@@ -172,17 +171,21 @@ namespace CarXCase.Precinct
                 GUI.Label(new Rect(0, H * .18f, W, 40 * k), "ЧТО ДЕЛАТЬ ДАЛЬШЕ?", h1);
                 GUI.Label(new Rect(0, H * .18f + 38 * k, W, 24 * k), "Выберите направление. Esc — вернуться к доске.", bodySmall);
                 Vector2 center = new Vector2(W / 2, H * .56f);
-                for (int i = 0; i < options.Length && i < 3; i++)
+                var visible = options.Where(Unlocked).Take(3).ToArray();
+                for (int slot = 0; slot < visible.Length; slot++)
                 {
-                    float angle = (-90 + i * 120) * Mathf.Deg2Rad;
-                    Vector2 position = center + new Vector2(Mathf.Cos(angle) * W * .22f, Mathf.Sin(angle) * H * .2f);
-                    if (options.Length == 2) position = center + new Vector2((i - .5f) * W * .47f, 0);
-                    position += new Vector2(Mathf.Sin(Time.time * 1.3f + i * 2) * 6 * k, Mathf.Cos(Time.time * 1.1f + i) * 5 * k);
+                    int i = Array.IndexOf(options, visible[slot]);
+                    Vector2 position = center;
+                    if (visible.Length == 2) position.x += (slot - .5f) * W * .47f;
+                    if (visible.Length == 3)
+                    {
+                        float angle = (-90 + slot * 120) * Mathf.Deg2Rad;
+                        position += new Vector2(Mathf.Cos(angle) * W * .22f, Mathf.Sin(angle) * H * .2f);
+                    }
                     var rect = new Rect(position.x - 170 * k, position.y - 34 * k, 340 * k, 68 * k);
-                    bool open = Unlocked(i);
-                    bool hover = open && rect.Contains(Event.current.mousePosition);
-                    optionStyle.normal.textColor = !open ? new Color(.45f, .45f, .45f) : hover ? new Color(1f, .85f, .4f) : Color.white;
-                    GUI.Label(rect, open ? (i + 1) + ".  " + options[i].label : (i + 1) + ".  ???\n<size=" + Mathf.RoundToInt(13 * k) + ">не хватает связи улик</size>", optionStyle);
+                    bool hover = rect.Contains(Event.current.mousePosition);
+                    optionStyle.normal.textColor = hover ? new Color(1f, .85f, .4f) : Color.white;
+                    GUI.Label(rect, (slot + 1) + ".  " + options[i].label, optionStyle);
                     if (Event.current.type == EventType.MouseDown && hover) Choose(i);
                 }
             }

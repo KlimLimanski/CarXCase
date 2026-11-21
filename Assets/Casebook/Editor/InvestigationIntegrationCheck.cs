@@ -187,7 +187,7 @@ namespace CarXCase.Editor
                 else if (stage == 3)
                 {
                     var board = Object.FindAnyObjectByType<DeductionBoard>();
-                    Check(board && !board.DecisionReady, "travel still requires both authored conclusions");
+                    Check(board && board.DecisionReady, "the previously matched bar evidence unlocks its route");
                     board.Interact(Object.FindAnyObjectByType<SimpleUIHUD>());
                     Check(desk.View == DeskView.Board, "world board interaction opens integrated board");
                     Check(desk.Session.Tie(FatherCase.Valuables, FatherCase.Messages) == Match.Discovered, "actual port deduction unlocks");

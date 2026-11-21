@@ -416,7 +416,7 @@ public static class FatherApartmentScenario
         };
         board.options = new[]
         {
-            new DeductionBoard.Option { label = "Бар Дмитрия", requiresConclusion = FatherCase.Bar, targetScene = "03_Bar",
+            new DeductionBoard.Option { label = "Бар Дмитрия", requiresConclusion = FatherCase.Bar, targetScene = "02_Bar",
                 outcome = "Поехать в бар «Стерлядь». Спросить Дмитрия о звонке и выяснить, когда он видел отца." },
             new DeductionBoard.Option { label = "Порт · работа отца", requiresConclusion = FatherCase.Port,
                 outcome = "Отец работал в порту. Двенадцатый пирс и пропавшие бумаги — зацепки о его последней смене.",

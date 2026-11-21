@@ -69,6 +69,12 @@ namespace DetectiveGame.Core
 
         private void Update()
         {
+            if (!destinationAnnounced && DestinationAvailable())
+            {
+                destinationAnnounced = true;
+                locationNoticeUntil = Time.unscaledTime + 4f;
+            }
+
             if (_isShowingClue && Keyboard.current != null)
             {
                 if (Keyboard.current.spaceKey.wasPressedThisFrame ||
@@ -85,8 +91,27 @@ namespace DetectiveGame.Core
 
         private OfficerController objectivePlayer;
         private CarXCase.Precinct.SceneExit apartmentExit;
-        private GUIStyle objectiveStyle;
+        private static GUIStyle objectiveStyle;
         private string objectiveScene;
+        private DeductionBoard precinctBoard;
+        private bool destinationAnnounced;
+        private float locationNoticeUntil;
+
+        private bool DestinationAvailable()
+        {
+            switch (objectiveScene)
+            {
+                case "01_FatherApartment":
+                    return apartmentExit && apartmentExit.requiredClueIds is { Length: > 0 } ids &&
+                        System.Array.TrueForAll(ids, ClueJournal.Has);
+                case "04_Precinct":
+                    return precinctBoard && precinctBoard.HasAvailableDestination;
+                case "02_Bar":
+                    return ClueJournal.Has(BarServiceRoute.CoordinatesId);
+                default:
+                    return false;
+            }
+        }
 
         private void Start()
         {
@@ -94,6 +119,9 @@ namespace DetectiveGame.Core
             objectivePlayer = FindAnyObjectByType<OfficerController>();
             if (objectiveScene == "01_FatherApartment")
                 apartmentExit = FindAnyObjectByType<CarXCase.Precinct.SceneExit>();
+            if (objectiveScene == "04_Precinct")
+                precinctBoard = FindAnyObjectByType<DeductionBoard>();
+            destinationAnnounced = DestinationAvailable();
         }
 
         private string CurrentObjective()
@@ -101,9 +129,8 @@ namespace DetectiveGame.Core
             switch (objectiveScene)
             {
                 case "01_FatherApartment":
-                    if (apartmentExit && apartmentExit.requiredClueIds is { Length: > 0 } ids &&
-                        System.Array.TrueForAll(ids, id => ClueJournal.Has(id)))
-                        return "Отправляйтесь в бар";
+                    if (DestinationAvailable())
+                        return "Отправляйтесь в полицейский участок";
                     return "Найдите улики в квартире отца";
                 case "02_Bar":
                     if (ClueJournal.Has(BarServiceRoute.CoordinatesId)) return "Отправляйтесь в порт";
@@ -123,6 +150,11 @@ namespace DetectiveGame.Core
 
             string text = CurrentObjective();
             if (string.IsNullOrEmpty(text)) return;
+            DrawObjectiveCard(text, showHud && !showInspectionHud ? 178 : Screen.height * .085f);
+        }
+
+        internal static void DrawObjectiveCard(string text, float top)
+        {
             float scale = Mathf.Clamp(Screen.height / 800f, .72f, 2f);
             objectiveStyle ??= new GUIStyle(GameTypography.Label) { wordWrap = true, padding = new RectOffset() };
             objectiveStyle.fontSize = Mathf.RoundToInt(19 * scale);
@@ -131,7 +163,7 @@ namespace DetectiveGame.Core
             float inset = 15 * scale;
             float width = Mathf.Min(Screen.width * .70f, objectiveStyle.CalcSize(content).x + 2 * inset);
             float bodyHeight = objectiveStyle.CalcHeight(content, width - 2 * inset);
-            var card = new Rect(24 * scale, showHud && !showInspectionHud ? 178 : Screen.height * .085f,
+            var card = new Rect(24 * scale, top,
                 width, bodyHeight + 20 * scale);
             Color previous = GUI.color;
             GUI.color = new Color(0, 0, 0, .22f);
@@ -147,6 +179,8 @@ namespace DetectiveGame.Core
 
         private void OnGUI()
         {
+            if (Time.unscaledTime < locationNoticeUntil)
+                DrawObjectiveCard("Открыта новая локация", Screen.height * .19f);
             if (IsShowingJournal)
             {
                 return;

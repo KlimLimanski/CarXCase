@@ -24,6 +24,9 @@ namespace CarXCase.Precinct
         CaseSession lastSession;
         int lastCount = -1;
         bool reading;
+        string selected;
+        readonly System.Collections.Generic.Dictionary<string, RectTransform> notes = new();
+        readonly System.Collections.Generic.List<GameObject> yarn = new();
 
 
         void Start()
@@ -101,12 +104,18 @@ namespace CarXCase.Precinct
         {
             var desk = InvestigationIntegration.Controller;
             reading = desk && desk.View == DeskView.Board && board.isActiveAndEnabled;
+            if (!reading) selected = null;
+            if (reading && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+                PickNote(desk.Session);
             if (reading && Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame && board.DecisionReady)
                 board.OpenDecision();
 
             if (!desk || desk.Session == null) return;
             var session = desk.Session;
             if (session == lastSession && lastCount == session.State.found.Count) return;
+            selected = null;
+            notes.Clear();
+            yarn.Clear();
             foreach (Transform child in sheetLayer)
             {
                 child.gameObject.SetActive(false);
@@ -115,8 +124,67 @@ namespace CarXCase.Precinct
             var entries = session.State.found.Select(record => desk.caseFile.Find(record.id))
                 .Where(entry => entry != null && entry.section == Section.Evidence).ToList();
             for (int i = 0; i < entries.Count; i++) DrawNote(entries[i], i, entries.Count);
+            DrawThreads(session);
             lastSession = session;
             lastCount = session.State.found.Count;
+        }
+
+        void PickNote(CaseSession session)
+        {
+            var point = Mouse.current.position.ReadValue();
+            foreach (var item in notes)
+            {
+                if (!RectTransformUtility.RectangleContainsScreenPoint(item.Value, point, Camera.main)) continue;
+                if (selected == null) { selected = item.Key; return; }
+                string first = selected;
+                selected = null;
+                if (first == item.Key) return;
+                var rule = session.File.deductions.Find(d => d.Matches(first, item.Key));
+                if (rule == null)
+                {
+                    InvestigationIntegration.Controller.Notify("Эти улики пока нечем связать.");
+                    return;
+                }
+                foreach (string id in new[] { first, item.Key })
+                {
+                    if (session.Pinned(id) != null) continue;
+                    session.Detach(id);
+                    var pos = notes[id].anchoredPosition;
+                    session.Place(id, new Vector2(pos.x, -pos.y));
+                }
+                session.Tie(first, item.Key);
+                DrawThreads(session);
+                return;
+            }
+        }
+
+        Vector2 PinPosition(RectTransform note)
+        {
+            bool carbon = note.GetComponent<RawImage>().texture == stationery[2];
+            return sheetLayer.InverseTransformPoint(note.TransformPoint(new Vector3(
+                note.rect.xMin + note.rect.width * (carbon ? .79f : .47f),
+                note.rect.yMax - note.rect.height * 11f / 304f, 0)));
+        }
+
+        void DrawThreads(CaseSession session)
+        {
+            foreach (var line in yarn) Destroy(line);
+            yarn.Clear();
+            foreach (string id in session.State.threads)
+            {
+                var rule = session.File.deductions.Find(d => d.id == id);
+                if (rule == null || !notes.TryGetValue(rule.first, out var first) ||
+                    !notes.TryGetValue(rule.second, out var second)) continue;
+                Vector2 a = PinPosition(first), b = PinPosition(second);
+                var line = Node(sheetLayer, "Красная нить", Vector2.zero, new Vector2((b-a).magnitude, 3));
+                line.pivot = new Vector2(0, .5f);
+                line.localPosition = a;
+                line.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(b.y-a.y, b.x-a.x) * Mathf.Rad2Deg);
+                var image = line.gameObject.AddComponent<Image>();
+                image.color = new Color(.55f,.045f,.035f);
+                image.raycastTarget = false;
+                yarn.Add(line.gameObject);
+            }
         }
 
         void DrawNote(Entry entry, int index, int count)
@@ -134,6 +202,7 @@ namespace CarXCase.Precinct
             int stock = index % 3;
             Vector2 size = stock == 1 ? new Vector2(226,164) : stock == 2 ? new Vector2(241,145) : new Vector2(248,151);
             var note = Node(sheetLayer, entry.id, pos, size);
+            notes.Add(entry.id, note);
             note.pivot = new Vector2(.5f, .5f);
             note.anchoredPosition += Offsets[index % Offsets.Length] * scale;
             note.localScale = Vector3.one * scale;
@@ -293,12 +362,26 @@ namespace CarXCase.Precinct
             text.font=font;text.fontSize=pt;text.resizeTextForBestFit=true;text.resizeTextMinSize=10;text.resizeTextMaxSize=pt;
             text.text=value;text.color=color;text.raycastTarget=false;text.supportRichText=false;return text;
         }
+        GUIStyle controlsStyle;
+
         void OnGUI()
         {
-            if(!reading)return;
-            string hint="Esc — отойти";
-            if(board.DecisionReady)hint+="     F — куда отправиться";
-            GUI.Box(new Rect(Screen.width*.2f, Screen.height-40,Screen.width*.6f,31),hint);
+            if (!reading) return;
+            string hint = selected == null ? "Сопоставьте две улики"
+                : "Найдите пару для улики «" + InvestigationIntegration.Controller.caseFile.Find(selected).title + "»";
+            var previousColor = GUI.color;
+            var previousContent = GUI.contentColor;
+            GUI.color = GUI.contentColor = Color.white;
+            DetectiveGame.Core.SimpleUIHUD.DrawObjectiveCard(hint, Screen.height * .085f);
+
+            controlsStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter };
+            controlsStyle.normal.textColor = Color.white;
+            float scale = Mathf.Clamp(Screen.height / 900f, .75f, 2f);
+            controlsStyle.fontSize = Mathf.RoundToInt(15 * scale);
+            string controls = board.DecisionReady ? "Esc — отойти     F — куда отправиться" : "Esc — отойти";
+            GUI.Label(new Rect(0, Screen.height - 38 * scale, Screen.width, 24 * scale), controls, controlsStyle);
+            GUI.contentColor = previousContent;
+            GUI.color = previousColor;
         }
     }
 }
