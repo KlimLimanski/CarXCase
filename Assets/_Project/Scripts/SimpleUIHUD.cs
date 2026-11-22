@@ -113,7 +113,7 @@ namespace DetectiveGame.Core
                     return "Поговорите с Дмитрием";
                 case "03_Pawnshop":
                     if (PortLead.HasAny(PortLead.Pawnshop)) return "Отправляйтесь в Шипсхед-Бей";
-                    return ClueJournal.Has(PortLead.CheckSafe) ? "Найдите сейф в глубине ломбарда" : "Поговорите с Борисом Марковичем";
+                    return ClueJournal.Has(PortLead.CheckSafe) ? "Найдите сейф за стойкой" : "Осмотрите ломбард";
                 case "04_Precinct": return "Осмотрите кабинет";
                 case "05_BrightonHarbor":
                     return ClueJournal.Has("harbor_gate_open") ? (harborFinale ? harborFinale.Objective : "Осмотрите склад") : "Откройте ворота порта";
