@@ -17,7 +17,7 @@ namespace CarXCase.Precinct
         [Serializable]
         public class Choice
         {
-            [Tooltip("0 = up (W), 1 = left (A), 2 = right (D), 3 = down (S)")] public int slot;
+            [Tooltip("Order in the list of available answers, starting at zero.")] public int slot;
             public string label;
             [TextArea] public string heroLine;
             public int probability;
@@ -41,6 +41,12 @@ namespace CarXCase.Precinct
         public int successThreshold = 60;
         public float choiceTime = 12;
         public Node[] nodes;
+        [Header("Trust and follow-up")]
+        public bool useTrust;
+        public int failureThreshold = 25;
+        public bool interruptAtFailureThreshold;
+        [TextArea] public string openingLine, partialReply, followUpThought, failureThought;
+        public string followUpFlag, completedFlag;
 
         [Header("Outcome")]
         public string successTitle, failTitle, shutdownTitle = "ДОПРОС СОРВАН";
@@ -65,7 +71,13 @@ namespace CarXCase.Precinct
         float travelAt;
         bool recoveredLead;
         bool NeedsLead => !success && !recoveredLead && !string.IsNullOrEmpty(recoveryClueId);
-        GUIStyle sub, spk, label, big, small, keyStyle;
+        GUIStyle big, small;
+        readonly CarXCase.UI.DialogueChoiceRows choiceRows = new();
+        GUIStyle trustLabel, trustValue;
+        Font displayFont;
+        float displayedTrust;
+        static readonly Color DialogueGold = new Color(.88f, .73f, .41f);
+        static readonly Color DialogueCream = new Color(.99f, .95f, .82f);
         readonly CamSmoother smoother = new CamSmoother { blendTime = .6f, follow = .25f };
         Transform camTarget; float camSince;
         bool liveConversation;
@@ -73,7 +85,6 @@ namespace CarXCase.Precinct
         Vector3 explorationCameraPosition;
         Quaternion explorationCameraRotation;
         float explorationFov;
-        static readonly string[] ChoiceKeys = { "W", "A", "D", "S" };
 
         public void Begin() => Begin(null);
 
@@ -81,6 +92,7 @@ namespace CarXCase.Precinct
         {
             if (phase != Phase.Idle || liveConversation) return;
             liveConversation = true;
+            displayedTrust = probability;
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
             if (cam)
             {
@@ -104,10 +116,12 @@ namespace CarXCase.Precinct
                 yield return barPerformance.TurnTo(listener);
             }
             else yield return new WaitForSeconds(0.6f);
+            if (!string.IsNullOrEmpty(openingLine)) yield return SayLines(heroName, openingLine, false);
             while (node != null)
             {
                 foreach (var l in node.lines) yield return Say(suspectName, l, true);
-                current = node.choices.Where(c => string.IsNullOrEmpty(c.requires) || ClueJournal.Has(c.requires)).ToArray();
+                current = node.choices.Where(c => string.IsNullOrEmpty(c.requires) || ClueJournal.Has(c.requires))
+                    .OrderBy(c => c.slot).ToArray();
                 if (current.Length == 0) break;
                 picked = null; choiceLeft = choiceTime; phase = Phase.Choosing;
                 SetCam(camOnSuspect);
@@ -120,14 +134,38 @@ namespace CarXCase.Precinct
                 bool timedOut = choiceLeft <= 0;
                 if (!timedOut) yield return new WaitForSeconds(.24f);
                 HeroFace.SetEmotion(picked.stress >= 15 ? -0.9f : picked.stress <= -10 ? 0.6f : picked.probability < 0 ? -0.4f : 0.15f);
-                Apply(timedOut ? picked.probability - 5 : picked.probability, picked.stress + (timedOut ? 5 : 0));
-                yield return Say(heroName, timedOut ? "…" : picked.heroLine, false);
-                if (!string.IsNullOrEmpty(picked.reply)) yield return Say(suspectName, picked.reply, true);
-                if (stress >= 100) { shutdown = true; break; }
+                Apply(timedOut && !useTrust ? picked.probability - 5 : picked.probability, picked.stress + (timedOut ? 5 : 0));
+                yield return SayLines(heroName, timedOut ? "…" : picked.heroLine, false);
+                if (!string.IsNullOrEmpty(picked.reply)) yield return SayLines(suspectName, picked.reply, true);
+                if (useTrust ? interruptAtFailureThreshold && probability <= failureThreshold : stress >= 100)
+                {
+                    shutdown = true;
+                    break;
+                }
                 node = picked.next == "END" ? null : nodes.FirstOrDefault(n => n.id == picked.next);
             }
             success = !shutdown && probability >= successThreshold;
+            if (useTrust)
+            {
+                if (success) yield return SayLines(suspectName, successText, true);
+                else if (listener && listener.TryGetComponent<OfficerController>(out var detective))
+                {
+                    bool failed = probability <= failureThreshold;
+                    yield return SayLines(suspectName, failed ? shutdownText : partialReply, true);
+                    if (failed && barServiceRoute)
+                    {
+                        phase = Phase.Arrival;
+                        SetCam(barServiceRoute.DepartureShot);
+                        yield return barServiceRoute.DmitryLeaves();
+                    }
+                    else ClueJournal.AddConclusion(followUpFlag);
+                    ClueJournal.AddConclusion(completedFlag);
+                    ResumeExploration(detective, failed ? failureThought : followUpThought);
+                    yield break;
+                }
+            }
             if (success && !string.IsNullOrEmpty(grantId)) { ClueJournal.Collect(grantId, grantTitle, grantText); ClueJournal.AddConclusion(grantId); }
+            if (useTrust && success) ClueJournal.AddConclusion(completedFlag);
             if (success && revealHarborCode)
                 ClueJournal.Collect(HarborGate.CodeNote, "Код ворот пирса", "Дмитрий назвал код ворот: " + HarborGate.AccessCode + ".");
             if (!success && barServiceRoute && listener && listener.TryGetComponent<OfficerController>(out var player))
@@ -136,16 +174,17 @@ namespace CarXCase.Precinct
                 phase = Phase.Arrival;
                 SetCam(barServiceRoute.DepartureShot);
                 yield return barServiceRoute.DmitryLeaves();
-                ResumeExploration(player);
+                ResumeExploration(player, "Надо проверить, что он оставил у кассы.");
                 yield break;
             }
             phase = Phase.Outcome;
             travelAt = Time.unscaledTime + autoTravelDelay;
             SetCam(camWide ? camWide : camOnSuspect);
             SetSuspectTalking(false);
+            if (useTrust && success) BeginTravel();
         }
 
-        void ResumeExploration(OfficerController player)
+        void ResumeExploration(OfficerController player, string thought)
         {
             phase = Phase.Idle;
             if (cam)
@@ -161,7 +200,7 @@ namespace CarXCase.Precinct
             if (player.hud)
             {
                 player.hud.enabled = true;
-                player.hud.ShowInspectionComment("Надо проверить, что он оставил у кассы.");
+                if (!string.IsNullOrEmpty(thought)) player.hud.ShowInspectionComment(thought);
             }
             player.enabled = true;
             player.LockInput(false);
@@ -169,10 +208,16 @@ namespace CarXCase.Precinct
 
         void Apply(int dProb, int dStress)
         {
-            probability = Mathf.Clamp(probability + dProb, 0, 99);
+            probability = Mathf.Clamp(probability + dProb, 0, useTrust ? 100 : 99);
             stress = Mathf.Clamp(stress + dStress, 0, 100);
             if (suspect) suspect.stress = stress;
             lastDelta = dProb; deltaTime = Time.time;
+        }
+
+        IEnumerator SayLines(string who, string text, bool isSuspect)
+        {
+            foreach (var part in (text ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                yield return Say(who, part.Trim(), isSuspect);
         }
 
         IEnumerator Say(string who, string text, bool isSuspect)
@@ -204,6 +249,7 @@ namespace CarXCase.Precinct
         void Update()
         {
             if (phase == Phase.Idle) return;
+            displayedTrust = Mathf.MoveTowards(displayedTrust, probability, Time.deltaTime * 85f);
             if (cam && camTarget)
             {   // slow push-in on the current shot + gentle handheld drift, blended between shots
                 float push = Mathf.Min(Time.time - camSince, 8f) * 0.012f;
@@ -217,12 +263,13 @@ namespace CarXCase.Precinct
             }
             else if (phase == Phase.Choosing && picked == null && kb != null)
             {
-                int slot = -1;
-                if (kb.wKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame) slot = 0;
-                if (kb.aKey.wasPressedThisFrame || kb.leftArrowKey.wasPressedThisFrame) slot = 1;
-                if (kb.dKey.wasPressedThisFrame || kb.rightArrowKey.wasPressedThisFrame) slot = 2;
-                if (kb.sKey.wasPressedThisFrame || kb.downArrowKey.wasPressedThisFrame) slot = 3;
-                if (slot >= 0) picked = current.FirstOrDefault(c => c.slot == slot) ?? picked;
+                for (int i = 0; i < Mathf.Min(current.Length, 4); i++)
+                {
+                    if (!kb[(Key)((int)Key.Digit1 + i)].wasPressedThisFrame &&
+                        !kb[(Key)((int)Key.Numpad1 + i)].wasPressedThisFrame) continue;
+                    picked = current[i];
+                    break;
+                }
             }
             else if (phase == Phase.Outcome)
             {
@@ -271,23 +318,30 @@ namespace CarXCase.Precinct
         void OnGUI()
         {
             if (phase == Phase.Idle) return;
-            if (sub == null)
+            if (useTrust && success && phase == Phase.Outcome && leave >= 0f)
             {
-                sub = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.UpperCenter, wordWrap = true }; sub.normal.textColor = Color.white;
-                spk = new GUIStyle(sub) { fontStyle = FontStyle.Bold }; spk.normal.textColor = new Color(.55f, .85f, 1f);
-                label = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft, wordWrap = true, fontStyle = FontStyle.Bold }; label.normal.textColor = Color.white;
+                Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, Mathf.Clamp01(leave)));
+                return;
+            }
+            if (big == null)
+            {
+                displayFont = Resources.Load<Font>("EvidenceLettering/FiraSansExtraCondensed-Bold");
                 big = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
                 small = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; small.normal.textColor = new Color(.8f, .8f, .8f);
-                keyStyle = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             }
             float k = Mathf.Clamp(Screen.height / 720f, .7f, 2f), W = Screen.width, H = Screen.height;
-            sub.fontSize = Mathf.RoundToInt(20 * k); spk.fontSize = Mathf.RoundToInt(15 * k); label.fontSize = Mathf.RoundToInt(16 * k);
-            big.fontSize = Mathf.RoundToInt(30 * k); small.fontSize = Mathf.RoundToInt(14 * k); keyStyle.fontSize = Mathf.RoundToInt(15 * k);
+            big.fontSize = Mathf.RoundToInt(30 * k); small.fontSize = Mathf.RoundToInt(14 * k);
 
             // letterbox
             Fill(new Rect(0, 0, W, H * .06f), Color.black); Fill(new Rect(0, H * .94f, W, H * .06f), Color.black);
 
-            if (phase == Phase.Choosing || (phase == Phase.Talking && Time.time - deltaTime < 2.5f))
+            bool recentChange = Time.time - deltaTime < 2.5f;
+            bool showDelta = recentChange && lastDelta != 0;
+            if (useTrust && (phase == Phase.Choosing || (phase == Phase.Talking && showDelta)))
+            {
+                DrawTrust(k, H);
+            }
+            else if (!useTrust && (phase == Phase.Choosing || (phase == Phase.Talking && recentChange)))
             {
                 // probability + stress (top-left, Detroit style)
                 var panel = new Rect(18 * k, H * .07f, 250 * k, 104 * k);
@@ -296,7 +350,7 @@ namespace CarXCase.Precinct
                 GUI.Label(new Rect(panel.x + 12 * k, panel.y + 6 * k, panel.width, 20 * k), "ВЕРОЯТНОСТЬ УСПЕХА", small);
                 big.alignment = TextAnchor.MiddleLeft; big.normal.textColor = Color.white;
                 GUI.Label(new Rect(panel.x + 12 * k, panel.y + 24 * k, 120 * k, 36 * k), probability + "%", big);
-                if (Time.time - deltaTime < 2.5f && lastDelta != 0)
+                if (showDelta)
                 {
                     var arrow = new GUIStyle(big); arrow.normal.textColor = lastDelta > 0 ? new Color(.4f, 1f, .5f) : new Color(1f, .35f, .3f);
                     arrow.fontSize = Mathf.RoundToInt(22 * k);
@@ -317,9 +371,9 @@ namespace CarXCase.Precinct
 
             if (phase == Phase.Choosing)
             {
-                float width = Mathf.Min(265f * k, W * .43f);
-                float margin = Mathf.Min(24f * k, W * .04f);
-                float row = Mathf.Min(44f * k, H * .092f);
+                float width = Mathf.Min(282f * k, W * .43f);
+                float margin = Mathf.Min(29f * k, W * .04f);
+                float row = Mathf.Min(47f * k, H * .092f);
                 Vector3 face = cam && suspect
                     ? cam.WorldToViewportPoint(suspect.transform.position + Vector3.up * 1.55f)
                     : new Vector3(.5f, .5f, 1f);
@@ -329,32 +383,25 @@ namespace CarXCase.Precinct
                     Mathf.Min(W * .45f - width, face.x * W - margin - width);
                 x = Mathf.Clamp(x, margin, W - width - margin);
                 float top = Mathf.Clamp((1f - face.y) * H - row * .45f,
-                    H * .33f, H * .90f - row * current.Length - 9f * k);
+                    H * .29f, H * .76f - row * current.Length);
                 float progress = Mathf.Clamp01(choiceLeft / Mathf.Max(choiceTime, .01f));
-                Color accent = progress < .25f ? new Color(1f, .62f, .37f) : new Color(.56f, .83f, .92f);
                 for (int i = 0; i < current.Length; i++)
                 {
                     Choice c = current[i];
-                    var r = new Rect(x, top + i * row, width, row - 3f * k);
+                    float rowWidth = choiceRows.Measure(c.label, k, width);
+                    var r = new Rect(onRight ? x + width - rowWidth : x, top + i * row, rowWidth, row - 6f * k);
                     bool hover = picked == null && r.Contains(Event.current.mousePosition);
-                    bool selected = picked == c;
-                    Color ink = !string.IsNullOrEmpty(c.requires) ? new Color(.95f,.80f,.52f) : accent;
-                    Fill(r, selected ? ink : hover ? new Color(.12f,.21f,.24f,.92f) : new Color(.035f,.055f,.065f,.82f));
-                    Fill(new Rect(x, r.y, 2f*k, r.height), ink);
-                    var keyRect = new Rect(x + 7*k, r.y, 30*k, r.height);
-                    keyStyle.normal.textColor = selected ? Color.black : ink;
-                    GUI.Label(keyRect, ChoiceKeys[Mathf.Clamp(c.slot, 0, 3)], keyStyle);
-                    label.normal.textColor = selected ? Color.black : Color.white;
-                    GUI.Label(new Rect(x + 44*k, r.y, width - 48*k, r.height), c.label, label);
+                    choiceRows.Draw(r, c.label, i + 1, k, picked == c || hover);
                     if (hover && Event.current.type == EventType.MouseDown && Event.current.button == 0)
                     {
                         picked = c;
                         Event.current.Use();
                     }
                 }
-                var timer = new Rect(x, top + current.Length * row, width, 3f*k);
-                Fill(timer, new Color(.08f,.10f,.11f,.8f));
-                Fill(new Rect(timer.x, timer.y, width * progress, timer.height), accent);
+                float timerWidth = Mathf.Min(width, 108f * k);
+                var timer = new Rect(onRight ? x + width - timerWidth : x, top + current.Length * row + 2f * k, timerWidth, 2f * k);
+                Fill(timer, new Color(.07f, .06f, .04f, .88f));
+                Fill(new Rect(timer.x, timer.y, timer.width * progress, timer.height), DialogueGold);
             }
 
             if (phase == Phase.Outcome)
@@ -396,6 +443,53 @@ namespace CarXCase.Precinct
                 GUILayout.EndArea();
                 if (leave >= 0) Fill(new Rect(0, 0, W, H), new Color(0, 0, 0, Mathf.Clamp01(leave)));
             }
+        }
+
+        void DrawTrust(float scale, float screenHeight)
+        {
+            if (trustLabel == null)
+            {
+                trustLabel = new GUIStyle(GameTypography.Label)
+                {
+                    alignment = TextAnchor.MiddleLeft,
+                    padding = new RectOffset(),
+                    wordWrap = false,
+                    normal = { textColor = DialogueCream }
+                };
+                if (displayFont) trustLabel.font = displayFont;
+                trustValue = new GUIStyle(trustLabel)
+                {
+                    normal = { textColor = DialogueGold }
+                };
+            }
+
+            trustLabel.fontSize = Mathf.RoundToInt(18f * scale);
+            trustValue.fontSize = Mathf.RoundToInt(42f * scale);
+            float left = 26f * scale;
+            float top = screenHeight * .09f;
+            var valueRect = new Rect(left, top, 110f * scale, 50f * scale);
+            string value = Mathf.RoundToInt(displayedTrust).ToString();
+            float numberWidth = trustValue.CalcSize(new GUIContent(value)).x;
+            var percentRect = new Rect(left + numberWidth + 3f * scale, top + 10f * scale, 20f * scale, 30f * scale);
+            const string caption = "УРОВЕНЬ ДОВЕРИЯ";
+            float captionWidth = trustLabel.CalcSize(new GUIContent(caption)).x + 2f * scale;
+            var labelRect = new Rect(valueRect.xMax + 2f * scale, top + 10f * scale, captionWidth, 26f * scale);
+            DrawWithShadow(valueRect, value, trustValue);
+            DrawWithShadow(percentRect, "%", trustLabel);
+            DrawWithShadow(labelRect, caption, trustLabel);
+
+            var track = new Rect(left, valueRect.yMax + 3f * scale, 132f * scale, Mathf.Max(2f, 2f * scale));
+            Fill(track, new Color(.04f, .03f, .02f, .82f));
+            Fill(new Rect(track.x, track.y, track.width * Mathf.Clamp01(displayedTrust / 100f), track.height), DialogueGold);
+        }
+
+        static void DrawWithShadow(Rect rect, string text, GUIStyle style)
+        {
+            var ink = style.normal.textColor;
+            style.normal.textColor = new Color(.06f, .04f, .025f, .95f);
+            GUI.Label(new Rect(rect.x + 1f, rect.y + 2f, rect.width, rect.height), text, style);
+            style.normal.textColor = ink;
+            GUI.Label(rect, text, style);
         }
 
         static void Fill(Rect r, Color c) { var o = GUI.color; GUI.color = c; GUI.DrawTexture(r, Texture2D.whiteTexture); GUI.color = o; }

@@ -9,7 +9,7 @@ public static class GameTypography
     {
         get
         {
-            if (!face) face = Resources.Load<Font>("EvidenceLettering/LiberationSerif-Regular");
+            if (!face) face = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             return face;
         }
     }

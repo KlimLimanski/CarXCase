@@ -46,7 +46,7 @@ namespace CarXCase.Editor
             if (string.IsNullOrEmpty(output)) throw new Exception("Set isolated save directory.");
             File.Copy(Path.Combine(output, "verified-save.json"), SaveSystem.FilePath, true);
             var saved=SaveSystem.Load();saved.skipPrecinctIntro=true;SaveSystem.Write(saved);
-            EditorSceneManager.OpenScene("Assets/_Project/Scenes/MainMenu.unity");
+            EditorSceneManager.OpenScene("Assets/_Project/Scenes/00_MainMenu.unity");
             SessionState.SetBool("CarX.InvestigationResume", true);
             SessionState.SetBool(Armed, true);
             EditorApplication.ExecuteMenuItem("Window/General/Game");
@@ -94,7 +94,7 @@ namespace CarXCase.Editor
                 else if (stage == 11)
                 {
                     if (!Object.FindAnyObjectByType<SimpleUIHUD>().isActiveAndEnabled) return;
-                    Check(ClueJournal.Count == 4 && ClueJournal.Has(FatherCase.Bar) && ClueJournal.Has(FatherCase.Port), "fresh process Continue restores real discoveries and conclusions");
+                    Check(ClueJournal.Count == 4 && ClueJournal.Has(FatherCase.Bar) && ClueJournal.Has(FatherCase.Pawnshop), "fresh process Continue restores real discoveries and conclusions");
                     Check(desk.Session.State.pins.Count == 3 && desk.Session.State.threads.Count == 2, "fresh process restores board layout and both red threads");
                     var keyboard = Keyboard.current ?? InputSystem.AddDevice<Keyboard>();
                     InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.J));
@@ -112,11 +112,8 @@ namespace CarXCase.Editor
                 else if (stage == 13)
                 {
                     desk.Close();
-                    var keyboard = Keyboard.current;
-                    InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Tab)); InputSystem.Update();
-                    Check(Object.FindAnyObjectByType<SimpleUIHUD>().HandleJournalInput(Camera.main.transform, true), "Tab opens board through Input System");
-                    InputSystem.QueueStateEvent(keyboard, new KeyboardState()); InputSystem.Update();
-                    Check(desk.View == DeskView.Board, "Tab selects integrated cork board");
+                    Object.FindAnyObjectByType<CarXCase.Precinct.DeductionBoard>().Interact(Object.FindAnyObjectByType<SimpleUIHUD>());
+                    Check(desk.View == DeskView.Board, "Interacting with the precinct board opens the case");
                     desk.Session.State.zoom=1;desk.Session.State.pan=Vector2.zero;
                     stage = 14; next = EditorApplication.timeSinceStartup + 3;
                 }
@@ -182,30 +179,30 @@ namespace CarXCase.Editor
                     var save = SaveSystem.Load();
                     Check(save.clues.Length == 4 && save.conclusions.Contains(FatherCase.Bar) && save.investigation.pins.Count == 4, "unified save contains discoveries, game flags and board layout before scene transition");
                     ClueJournal.SkipPrecinctIntro = true;
-                    SceneManager.LoadScene("02_Precinct"); stage = 3; next = EditorApplication.timeSinceStartup + 3;
+                    SceneManager.LoadScene("04_Precinct"); stage = 3; next = EditorApplication.timeSinceStartup + 3;
                 }
                 else if (stage == 3)
                 {
                     var board = Object.FindAnyObjectByType<DeductionBoard>();
-                    Check(board && !board.DecisionReady, "travel still requires both authored conclusions");
+                    Check(board && board.DecisionReady, "the previously matched bar evidence unlocks its route");
                     board.Interact(Object.FindAnyObjectByType<SimpleUIHUD>());
                     Check(desk.View == DeskView.Board, "world board interaction opens integrated board");
-                    Check(desk.Session.Tie(FatherCase.Valuables, FatherCase.Messages) == Match.Discovered, "actual port deduction unlocks");
-                    Check(board.DecisionReady && ClueJournal.Has(FatherCase.Port), "existing route decision unlocks after authored requirements");
+                    Check(desk.Session.Tie(FatherCase.Valuables, FatherCase.Messages) == Match.Discovered, "actual pawnshop deduction unlocks");
+                    Check(board.DecisionReady && ClueJournal.Has(FatherCase.Pawnshop), "existing route decision unlocks after authored requirements");
                     desk.Session.Untie(FatherCase.Bar);
                     Check(ClueJournal.Has(FatherCase.Bar) && desk.Session.Get(FatherCase.Bar) != null, "removing thread retains discovered hint and story flag");
                     Check(desk.Session.Tie(FatherCase.Matches, FatherCase.Messages) == Match.Linked, "restoring thread does not rediscover hint");
                     desk.Session.Return(FatherCase.Door);
                     Check(ClueJournal.Has(FatherCase.Door) && desk.Session.Get(FatherCase.Door) != null && desk.Session.Pinned(FatherCase.Door) == null, "returning page preserves original clue");
                     board.OpenDecision();
-                    Check(!InvestigationIntegration.IsOpen && !Object.FindAnyObjectByType<OfficerController>().enabled, "existing travel screen takes over input safely");
+                    Check(!InvestigationIntegration.IsOpen && Object.FindAnyObjectByType<OfficerController>().InputLocked, "route selection locks input during the step away");
                     // Exercise the existing scene-transition restore path, with serialized JSON as the only source.
                     SaveSystem.PendingLoad = SaveSystem.Load();
-                    SceneManager.LoadScene("02_Precinct"); stage = 4; next = EditorApplication.timeSinceStartup + 3;
+                    SceneManager.LoadScene("04_Precinct"); stage = 4; next = EditorApplication.timeSinceStartup + 3;
                 }
                 else if (stage == 4)
                 {
-                    Check(ClueJournal.Count == 4 && ClueJournal.Has(FatherCase.Bar) && ClueJournal.Has(FatherCase.Port), "Continue restores true game clues and both progression flags");
+                    Check(ClueJournal.Count == 4 && ClueJournal.Has(FatherCase.Bar) && ClueJournal.Has(FatherCase.Pawnshop), "Continue restores true game clues and both progression flags");
                     Check(desk.Session.State.pins.Count == 3 && desk.Session.State.threads.Count == 2 && desk.Session.State.insights.Count == 2, "Continue restores pins, threads and hints");
                     Check(desk.Session.Get(FatherCase.Matches).note == "Проверить рассказ Дмитрия" && desk.Session.Get(FatherCase.Matches).studied, "Continue restores player annotation and studied status");
                     Check(Mathf.Approximately(desk.Session.State.zoom, 1.35f) && desk.Session.State.pan == new Vector2(-34,29), "Continue restores board zoom and pan");

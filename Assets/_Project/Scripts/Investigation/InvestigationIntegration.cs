@@ -50,6 +50,7 @@ namespace CarXCase.Investigation
             desk.Initialize(catalog, state: state, persist: _ => GameSession.SaveCurrent());
             desk.BoardActionAvailable = () => board && board.DecisionReady;
             desk.BoardAction = () => { if (board) board.OpenDecision(); };
+            desk.WorldBoardDismissed = () => { if (board) board.OpenDecision(); };
         }
         void SceneChanged(Scene oldScene, Scene nextScene) => desk.Close();
         void ClearState() => Initialize(null);

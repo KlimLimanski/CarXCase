@@ -127,13 +127,16 @@ public static class HarborSceneBuilder
         gateLogic.follow = gateLogic.player.cameraTransform.GetComponent<ThirdPersonCamera>();
 
         CreateInspect(root.transform, "Inspect first freight container", new Vector3(-5.82f, 1.18f, 7.90f),
+            "clue_harbor_seal", "Целая пломба",
             "Пломба цела. Похоже, этот контейнер давно не открывали.");
         CreateInspect(root.transform, "Inspect blue freight container", new Vector3(-5.42f, 1.18f, 22.70f),
+            "clue_harbor_empty_container", "Пустой контейнер",
             "Пусто. Дальше по дороге виден склад.");
         var marker = Create("Warehouse scene transition", root.transform, new Vector3(0f, 1.10f, 46.83f));
         marker.rotation = Quaternion.Euler(0f, 0f, 0f);
         CreateInspect(marker, "Inspect warehouse doors", Vector3.zero,
-            "Пирс 3. Это и есть склад.");
+            "clue_harbor_warehouse", "Двери ангара №4",
+            "Третий пирс. Вот и старый ангар. Проверю двери.");
         EditorSceneManager.MarkSceneDirty(scene);
     }
 
@@ -506,15 +509,16 @@ public static class HarborSceneBuilder
         node.gameObject.AddComponent<HarborRainImpacts>().characterVisual = characterVisual;
     }
 
-    static void CreateInspect(Transform parent, string name, Vector3 point, string subtitle)
+    static void CreateInspect(Transform parent, string name, Vector3 point, string id, string title, string subtitle)
     {
         var node = Create(name, parent, point).gameObject;
         var trigger = node.AddComponent<BoxCollider>();
         trigger.size = new Vector3(.72f, 1.05f, .45f);
         trigger.isTrigger = true;
-        var inspect = node.AddComponent<SceneExit>();
-        inspect.requiredClues = 0;
-        inspect.blockedComment = subtitle;
-        inspect.actionText = "Осмотреть";
+        var clue = node.AddComponent<ClueObject>();
+        clue.clueId = id;
+        clue.clueTitle = title;
+        clue.clueDescription = clue.inspectionComment = subtitle;
+        clue.isSuspiciousForBrothers = false;
     }
 }

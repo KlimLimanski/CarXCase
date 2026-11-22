@@ -18,6 +18,8 @@ namespace CarXCase.Apartment
         [SerializeField] float walkInDistance = 1.7f;
         bool entered, doorOpened, doorClosed;
         ApartmentInteractable hinge;
+        Transform upperArm, forearm, hand;
+        float reachWeight;
 
         const string DoorNoteId = "note_door_unlocked";
 
@@ -60,6 +62,7 @@ namespace CarXCase.Apartment
             controller.enabled = controllerEnabled;
             if (officer.cameraTransform) officer.cameraTransform.position += shift;
             EnableInterior();
+            if (lightSwitch) lightSwitch.SwitchOnAtEntry(false);
         }
 
         public void Interact(SimpleUIHUD hud)
@@ -175,8 +178,60 @@ namespace CarXCase.Apartment
             // 5) The door shuts once he clears the opening, then control returns.
             if (!journalHintPoint || !hinge) EnableInterior();
             yield return new WaitForSecondsRealtime(.6f);
+            if (lightSwitch)
+            {
+                var plate = lightSwitch.transform;
+                Vector3 facing = Vector3.ProjectOnPlane(-plate.forward, Vector3.up).normalized;
+                yield return WalkTo(plate.position - facing * .47f - Vector3.Cross(Vector3.up, facing) * .16f, 2.4f);
+                officer.FaceTowards(plate.position);
+                if (view) view.BeginFocus(plate.position);
+                foreach (var bone in officer.GetComponentsInChildren<Transform>())
+                {
+                    if (bone.name == "R_UpperArm") upperArm = bone;
+                    else if (bone.name == "R_LowerArm") forearm = bone;
+                    else if (bone.name == "R_Hand") hand = bone;
+                }
+                yield return Reach(0f, 1f, .38f);
+                lightSwitch.enabled = true;
+                lightSwitch.SwitchOnAtEntry(true);
+                yield return Reach(1f, 0f, .30f);
+                officer.ClearFaceTarget();
+            }
             if (view) view.EndFocus(stop + into * 2f + Vector3.up * 1.4f);
             officer.LockInput(false);
+        }
+
+        IEnumerator Reach(float from, float to, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                reachWeight = Mathf.SmoothStep(from, to, elapsed / duration);
+                yield return null;
+            }
+        }
+
+        void LateUpdate()
+        {
+            if (reachWeight <= 0f || !upperArm || !forearm || !hand) return;
+            Vector3 shoulder = upperArm.position;
+            Vector3 target = lightSwitch.transform.position + lightSwitch.transform.forward * .055f;
+            Vector3 toward = (target - shoulder).normalized;
+            float upper = Vector3.Distance(shoulder, forearm.position);
+            float lower = Vector3.Distance(forearm.position, hand.position);
+            float distance = Mathf.Clamp(Vector3.Distance(shoulder, target), Mathf.Abs(upper - lower) + .001f, upper + lower - .001f);
+            float along = (upper * upper + distance * distance - lower * lower) / (2f * distance);
+            var bend = Vector3.ProjectOnPlane(officer.transform.right * .65f + Vector3.down, toward).normalized;
+            Vector3 elbow = shoulder + toward * along + bend * Mathf.Sqrt(Mathf.Max(0f, upper * upper - along * along));
+            TurnBone(upperArm, forearm, elbow);
+            TurnBone(forearm, hand, shoulder + toward * distance);
+        }
+
+        void TurnBone(Transform bone, Transform tip, Vector3 target)
+        {
+            var turn = Quaternion.FromToRotation(tip.position - bone.position, target - bone.position);
+            bone.rotation = Quaternion.Slerp(Quaternion.identity, turn, reachWeight) * bone.rotation;
         }
 
         IEnumerator WalkTo(Vector3 point, float timeout)

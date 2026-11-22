@@ -8,7 +8,8 @@ namespace CarXCase.Apartment
         public const string Messages = "clue_answering_machine";
         public const string Record = "clue_record";
         public const string Bar = "concl_dmitry_bar";
-        public const string Port = "concl_father_port";
+        // This identifier is also stored in existing checkpoints.
+        public const string Pawnshop = "concl_father_port";
         public const string Guest = "concl_guest";
 
         public static readonly string[] RequiredClues = { Door, Valuables, Matches, Messages };

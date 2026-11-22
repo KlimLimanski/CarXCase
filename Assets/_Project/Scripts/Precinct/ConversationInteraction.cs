@@ -1,3 +1,4 @@
+using System;
 using DetectiveGame.Core;
 using UnityEngine;
 
@@ -8,9 +9,13 @@ namespace CarXCase.Precinct
     {
         public Interrogation conversation;
         public string characterName = "Дмитрий";
+        [Tooltip("Inspect any one of these objects before the conversation becomes available.")]
+        public string[] introductionClues = Array.Empty<string>();
         bool started;
 
-        public bool CanInteract => isActiveAndEnabled && conversation && !started;
+        public bool ReadyToTalk => introductionClues is not { Length: > 0 } || Array.Exists(introductionClues, ClueJournal.Has);
+        public bool CanInteract => isActiveAndEnabled && conversation && !started && ReadyToTalk &&
+            (string.IsNullOrEmpty(conversation.completedFlag) || !ClueJournal.Has(conversation.completedFlag));
         public string InteractPrompt => "E  Поговорить · " + characterName;
 
         public void Interact(SimpleUIHUD hud)

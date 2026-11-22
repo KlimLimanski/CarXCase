@@ -68,7 +68,12 @@ namespace CarXCase.Precinct
             coordinates.gameObject.SetActive(true);
         }
 
-        void RefreshExit() => harborExit.enabled = unlocked && ClueJournal.Has(coordinates.clueId);
+        void RefreshExit()
+        {
+            // New routes let the exit itself check every valid source of the port lead.
+            if (harborExit.alternateClueIds == null || harborExit.alternateClueIds.Length == 0)
+                harborExit.enabled = unlocked && ClueJournal.Has(coordinates.clueId);
+        }
 
         public void Interact(SimpleUIHUD hud)
         {
