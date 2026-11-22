@@ -62,6 +62,9 @@ namespace NoirMenu
                 SaveSystem.PendingLoad = null;
             }
             Restoring = false;
+            if (scene.name == "02_Bar") ClueJournal.AddConclusion("route_visited_bar");
+            if (scene.name == "03_Pawnshop" && ClueJournal.Has("route_visited_bar"))
+                ClueJournal.AddConclusion(HangarFinale.LateRoute);
             CarXCase.Investigation.InvestigationIntegration.Synchronize();
             WriteCheckpoint(scene.name);
         }

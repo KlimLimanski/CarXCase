@@ -94,6 +94,7 @@ namespace DetectiveGame.Core
         private static GUIStyle objectiveStyle;
         private string objectiveScene;
         private DeductionBoard precinctBoard;
+        private HangarFinale harborFinale;
         private bool destinationAnnounced;
         private float locationNoticeUntil;
 
@@ -121,6 +122,8 @@ namespace DetectiveGame.Core
                 apartmentExit = FindAnyObjectByType<CarXCase.Precinct.SceneExit>();
             if (objectiveScene == "04_Precinct")
                 precinctBoard = FindAnyObjectByType<DeductionBoard>();
+            if (objectiveScene == "05_BrightonHarbor")
+                harborFinale = FindAnyObjectByType<HangarFinale>();
             destinationAnnounced = DestinationAvailable();
         }
 
@@ -138,7 +141,7 @@ namespace DetectiveGame.Core
                 case "03_Pawnshop": return "Поговорите с Сёмой";
                 case "04_Precinct": return "Изучите доску расследования";
                 case "05_BrightonHarbor":
-                    return ClueJournal.Has("harbor_gate_open") ? "Осмотрите склад" : "Откройте ворота порта";
+                    return ClueJournal.Has("harbor_gate_open") ? (harborFinale ? harborFinale.Objective : "Осмотрите склад") : "Откройте ворота порта";
                 default: return null;
             }
         }
