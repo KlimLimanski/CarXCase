@@ -22,6 +22,7 @@ public sealed class LocationAudio : MonoBehaviour
     AudioLowPassFilter rainFilter;
     readonly List<Bounds> rainWindows = new();
     bool driving, outdoors;
+    HangarFinale harborFinale;
     OfficerController player;
     CharacterController body;
     ApartmentAnsweringMachine machine;
@@ -57,6 +58,7 @@ public sealed class LocationAudio : MonoBehaviour
         SceneScore.StartFor(audio, tracks);
         audio.driving = scene.name == "00_BrightonDrive_Models";
         audio.outdoors = harbor;
+        if (harbor) audio.harborFinale = FindAnyObjectByType<HangarFinale>();
         var rainObject = new GameObject("Rain ambience");
         rainObject.transform.SetParent(go.transform, false);
         audio.weather = rainObject.AddComponent<AudioSource>();
@@ -64,11 +66,11 @@ public sealed class LocationAudio : MonoBehaviour
         audio.weather.loop = true;
         audio.weather.volume = 0;
         audio.weather.clip = Clip("Effects", audio.driving ? "Drive rain" : "Rain And Thunder Storm");
-        if (!harbor)
         {
             audio.rainFilter = rainObject.AddComponent<AudioLowPassFilter>();
             audio.rainFilter.lowpassResonanceQ = 1f;
             audio.rainFilter.cutoffFrequency = audio.driving ? 3600f : 1550f;
+            audio.rainFilter.enabled = !harbor;
         }
         if (!harbor && !audio.driving)
         {
@@ -121,6 +123,11 @@ public sealed class LocationAudio : MonoBehaviour
     {
         effects.volume = GameSettings.SfxGain;
         float rainLevel = outdoors ? .78f : .22f;
+        if (outdoors && harborFinale)
+        {
+            rainFilter.enabled = harborFinale.UnderRoof;
+            if (harborFinale.UnderRoof) rainLevel = .18f;
+        }
         if (!outdoors && !driving)
         {
             var ear = player && player.cameraTransform ? player.cameraTransform : transform;

@@ -19,7 +19,7 @@ namespace CarXCase.UI
                     wordWrap = true,
                     padding = new RectOffset()
                 };
-                var font = Resources.Load<Font>("EvidenceLettering/FiraSansExtraCondensed-Bold");
+                var font = GameTypography.Face;
                 if (font) label.font = font;
                 numeral = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter, wordWrap = false };
             }

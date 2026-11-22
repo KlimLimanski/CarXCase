@@ -359,7 +359,7 @@ namespace CarXCase.Precinct
             }
             if (big == null)
             {
-                displayFont = Resources.Load<Font>("EvidenceLettering/FiraSansExtraCondensed-Bold");
+                displayFont = GameTypography.Face;
                 big = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
                 small = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; small.normal.textColor = new Color(.8f, .8f, .8f);
             }

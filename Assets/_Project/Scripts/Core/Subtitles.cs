@@ -13,7 +13,7 @@ namespace CarXCase.UI
             if (string.IsNullOrEmpty(line)) return;
             if (text == null)
             {
-                text = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.UpperCenter, wordWrap = true, fontStyle = FontStyle.Normal, richText = false };
+                text = new GUIStyle(GUI.skin.label) { font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"), alignment = TextAnchor.UpperCenter, wordWrap = true, fontStyle = FontStyle.Normal, richText = false };
                 text.normal.textColor = new Color(0.95f, 0.95f, 0.93f, 1f);
                 shadow = new GUIStyle(text);
                 shadow.normal.textColor = new Color(0f, 0f, 0f, 0.55f);
