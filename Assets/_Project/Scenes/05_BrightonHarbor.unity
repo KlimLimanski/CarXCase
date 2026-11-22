@@ -27498,6 +27498,7 @@ GameObject:
   - component: {fileID: 1069560349}
   - component: {fileID: 1069560351}
   - component: {fileID: 1069560350}
+  - component: {fileID: 1069560352}
   m_Layer: 0
   m_Name: Diagonal harbor rain
   m_TagString: Untagged
@@ -27514,12 +27515,25 @@ Transform:
   m_GameObject: {fileID: 1069560348}
   serializedVersion: 2
   m_LocalRotation: {x: 0.64744604, y: 0.050955113, z: -0.05966077, w: 0.75806195}
-  m_LocalPosition: {x: 1, y: 11.2, z: 23}
+  m_LocalPosition: {x: -12, y: 62, z: 18}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1748380754}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1069560352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069560348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed0fc8a7b98847f2886fe2054a98bdda, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::CarXCase.Harbor.HarborRainImpacts
+  characterVisual: {fileID: 974133562}
 --- !u!199 &1069560350
 ParticleSystemRenderer:
   serializedVersion: 7
@@ -27647,8 +27661,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 3
       minMaxState: 3
-      scalar: 0.95
-      minScalar: 0.62
+      scalar: 5
+      minScalar: 4.9
       maxCurve:
         serializedVersion: 2
         m_Curve: []
@@ -27847,7 +27861,7 @@ ParticleSystem:
         m_RotationOrder: 4
     randomizeRotationDirection: 0
     gravitySource: 0
-    maxNumParticles: 3800
+    maxNumParticles: 52000
     customEmitterVelocity: {x: 0, y: 0, z: 0}
     size3D: 0
     rotation3D: 0
@@ -27879,7 +27893,7 @@ ParticleSystem:
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 0}
     m_Rotation: {x: 0, y: 0, z: 0}
-    m_Scale: {x: 31, y: 68, z: 0.35}
+    m_Scale: {x: 84, y: 80, z: 0.35}
     placementMode: 0
     m_MeshMaterialIndex: 0
     m_MeshNormalOffset: 0
@@ -27969,7 +27983,7 @@ ParticleSystem:
     rateOverTime:
       serializedVersion: 3
       minMaxState: 0
-      scalar: 3100
+      scalar: 9600
       minScalar: 10
       maxCurve:
         serializedVersion: 2

@@ -97,8 +97,8 @@ public static class HarborSceneBuilder
 
         var lighting = Create("Lighting and weather", root.transform, Vector3.zero);
         SetLighting(lighting, data.lights);
-        CreateRain(lighting);
         var player = CreatePlayer();
+        CreateRain(lighting, player.transform.Find("Character_Visual"));
         var views = Create("Reference views", root.transform, Vector3.zero);
         foreach (var shot in data.shots)
         {
@@ -463,25 +463,26 @@ public static class HarborSceneBuilder
         volume.sharedProfile = profile;
     }
 
-    static void CreateRain(Transform root)
+    static void CreateRain(Transform root, Transform characterVisual)
     {
-        var node = Create("Diagonal harbor rain", root, new Vector3(1f, 11.2f, 23f));
+        // Cover the elevated quay and offshore arrival cameras, including the top of each shot.
+        var node = Create("Diagonal harbor rain", root, new Vector3(-12f, 62f, 18f));
         node.rotation = Quaternion.Euler(81f, 0f, -9f);
         var rain = node.gameObject.AddComponent<ParticleSystem>();
         var main = rain.main;
         main.loop = true;
         main.prewarm = true;
-        main.startLifetime = new ParticleSystem.MinMaxCurve(.62f, .95f);
+        main.startLifetime = new ParticleSystem.MinMaxCurve(4.9f, 5f);
         main.startSpeed = new ParticleSystem.MinMaxCurve(15f, 20f);
         main.startSize = new ParticleSystem.MinMaxCurve(.009f, .017f);
         main.startColor = new Color(.58f, .67f, .79f, .26f);
-        main.maxParticles = 3800;
+        main.maxParticles = 52000;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
         var emission = rain.emission;
-        emission.rateOverTime = 3100;
+        emission.rateOverTime = 9600;
         var shape = rain.shape;
         shape.shapeType = ParticleSystemShapeType.Box;
-        shape.scale = new Vector3(31f, 68f, .35f);
+        shape.scale = new Vector3(84f, 80f, .35f);
         var renderer = node.GetComponent<ParticleSystemRenderer>();
         renderer.renderMode = ParticleSystemRenderMode.Stretch;
         renderer.lengthScale = 5.8f;
@@ -502,6 +503,7 @@ public static class HarborSceneBuilder
             AssetDatabase.CreateAsset(material, path);
         }
         renderer.sharedMaterial = material;
+        node.gameObject.AddComponent<HarborRainImpacts>().characterVisual = characterVisual;
     }
 
     static void CreateInspect(Transform parent, string name, Vector3 point, string subtitle)
