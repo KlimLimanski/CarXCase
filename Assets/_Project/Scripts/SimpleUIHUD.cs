@@ -102,7 +102,8 @@ namespace DetectiveGame.Core
                     if (PortLead.HasAny(PortLead.Bar)) return "Отправляйтесь в Шипсхед-Бей";
                     if (ClueJournal.Has(BarServiceRoute.DepartureFlag)) return "Осмотрите кассу за стойкой";
                     if (ClueJournal.Has(PortLead.AskWitness)) return "Поговорите с девушкой в конце стойки";
-                    if (barConversation && !barConversation.ReadyToTalk) return "Осмотрите зал бара";
+                    if (barConversation && !barConversation.ReadyToTalk)
+                        return "Осмотрите зал бара";
                     return "Поговорите с Дмитрием";
                 case "03_Pawnshop":
                     if (PortLead.HasAny(PortLead.Pawnshop)) return "Отправляйтесь в Шипсхед-Бей";

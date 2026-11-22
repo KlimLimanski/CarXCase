@@ -26,7 +26,16 @@ namespace CarXCase.Precinct
             [Tooltip("Clue or conclusion id needed to see this answer (empty = always).")] public string requires;
             [TextArea] public string reply;
         }
-        [Serializable] public class Node { public string id; [TextArea] public string[] lines; public Choice[] choices; }
+        [Serializable]
+        public class Node
+        {
+            public string id;
+            [TextArea] public string[] lines;
+            public Choice[] choices;
+            [Tooltip("Optional camera glance during the first line of this node.")]
+            public Transform glanceTarget;
+            [Min(0)] public float glanceStart;
+        }
 
         [Header("Cast")]
         public string suspectName = "ПОДОЗРЕВАЕМЫЙ";
@@ -80,6 +89,8 @@ namespace CarXCase.Precinct
         static readonly Color DialogueCream = new Color(.99f, .95f, .82f);
         readonly CamSmoother smoother = new CamSmoother { blendTime = .6f, follow = .25f };
         Transform camTarget; float camSince;
+        Transform glanceTarget;
+        float glanceWeight;
         bool liveConversation;
         BarDmitryPerformance barPerformance;
         Vector3 explorationCameraPosition;
@@ -119,7 +130,8 @@ namespace CarXCase.Precinct
             if (!string.IsNullOrEmpty(openingLine)) yield return SayLines(heroName, openingLine, false);
             while (node != null)
             {
-                foreach (var l in node.lines) yield return Say(suspectName, l, true);
+                for (int i = 0; i < node.lines.Length; i++)
+                    yield return Say(suspectName, node.lines[i], true, i == 0 ? node.glanceTarget : null, node.glanceStart);
                 current = node.choices.Where(c => string.IsNullOrEmpty(c.requires) || ClueJournal.Has(c.requires))
                     .OrderBy(c => c.slot).ToArray();
                 if (current.Length == 0) break;
@@ -220,7 +232,7 @@ namespace CarXCase.Precinct
                 yield return Say(who, part.Trim(), isSuspect);
         }
 
-        IEnumerator Say(string who, string text, bool isSuspect)
+        IEnumerator Say(string who, string text, bool isSuspect, Transform glance = null, float glanceStart = 0f)
         {
             phase = Phase.Talking; speaker = who; line = text; skip = false;
             lineLeft = Mathf.Clamp(text.Length * 0.055f, 2.2f, 7.5f);
@@ -228,7 +240,23 @@ namespace CarXCase.Precinct
             SetSuspectTalking(isSuspect);
             HeroFace.SetTalking(!isSuspect && text != "…");
             float minShow = 0.3f;
-            while (lineLeft > 0 && !(skip && minShow <= 0)) { lineLeft -= Time.deltaTime; minShow -= Time.deltaTime; yield return null; }
+            float duration = lineLeft;
+            glanceTarget = glance;
+            while (lineLeft > 0 && !(skip && minShow <= 0))
+            {
+                if (glanceTarget)
+                {
+                    float t = duration - lineLeft - glanceStart;
+                    float turn = Mathf.SmoothStep(0f, 1f, t / .65f);
+                    float back = Mathf.SmoothStep(0f, 1f, (t - 1.4f) / .7f);
+                    glanceWeight = turn * (1f - back);
+                }
+                lineLeft -= Time.deltaTime;
+                minShow -= Time.deltaTime;
+                yield return null;
+            }
+            glanceTarget = null;
+            glanceWeight = 0f;
             SetSuspectTalking(false);
             HeroFace.SetTalking(false);
             line = null;
@@ -254,7 +282,13 @@ namespace CarXCase.Precinct
             {   // slow push-in on the current shot + gentle handheld drift, blended between shots
                 float push = Mathf.Min(Time.time - camSince, 8f) * 0.012f;
                 Vector3 p = camTarget.position + camTarget.forward * push + new Vector3(Mathf.Sin(Time.time * .6f), Mathf.Sin(Time.time * .8f + 1), 0) * .006f;
-                smoother.Apply(cam, p, camTarget.rotation, phase == Phase.Arrival ? 52f : 40f, Time.deltaTime);
+                Quaternion rotation = camTarget.rotation;
+                if (glanceTarget && glanceWeight > 0f)
+                {
+                    Vector3 aim = glanceTarget.position + Vector3.up * .09f - p;
+                    rotation = Quaternion.Slerp(rotation, Quaternion.LookRotation(aim), .9f * glanceWeight);
+                }
+                smoother.Apply(cam, p, rotation, phase == Phase.Arrival ? 52f : 40f, Time.deltaTime);
             }
             var kb = Keyboard.current; var mouse = Mouse.current;
             if (phase == Phase.Talking)

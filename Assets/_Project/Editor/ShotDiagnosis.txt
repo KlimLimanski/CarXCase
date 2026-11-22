@@ -1,4 +1,4 @@
-COMPONENT 01 Entrance UniversalAdditionalCameraData
+COMPONENT Camera_01_Entry UniversalAdditionalCameraData
 m_RenderShadows=True
 m_VolumeTrigger=null
 m_RenderPostProcessing=True
@@ -23,7 +23,7 @@ m_TaaSettings.m_JitterScale=1
 m_TaaSettings.m_MipBias=0
 m_TaaSettings.m_VarianceClampScale=0.9
 m_TaaSettings.m_ContrastAdaptiveSharpening=0
-COMPONENT 02 Elevated Overview UniversalAdditionalCameraData
+COMPONENT Camera_02_Bar UniversalAdditionalCameraData
 m_RenderShadows=True
 m_VolumeTrigger=null
 m_RenderPostProcessing=True
@@ -48,7 +48,7 @@ m_TaaSettings.m_JitterScale=1
 m_TaaSettings.m_MipBias=0
 m_TaaSettings.m_VarianceClampScale=0.9
 m_TaaSettings.m_ContrastAdaptiveSharpening=0
-COMPONENT 03 Harbor Road UniversalAdditionalCameraData
+COMPONENT Camera_03_Reverse UniversalAdditionalCameraData
 m_RenderShadows=True
 m_VolumeTrigger=null
 m_RenderPostProcessing=True
@@ -73,7 +73,7 @@ m_TaaSettings.m_JitterScale=1
 m_TaaSettings.m_MipBias=0
 m_TaaSettings.m_VarianceClampScale=0.9
 m_TaaSettings.m_ContrastAdaptiveSharpening=0
-COMPONENT 04 Warehouse Approach UniversalAdditionalCameraData
+COMPONENT Camera_04_North UniversalAdditionalCameraData
 m_RenderShadows=True
 m_VolumeTrigger=null
 m_RenderPostProcessing=True
@@ -98,7 +98,7 @@ m_TaaSettings.m_JitterScale=1
 m_TaaSettings.m_MipBias=0
 m_TaaSettings.m_VarianceClampScale=0.9
 m_TaaSettings.m_ContrastAdaptiveSharpening=0
-COMPONENT Player Camera UniversalAdditionalCameraData
+COMPONENT Camera_Dialogue_Player UniversalAdditionalCameraData
 m_RenderShadows=True
 m_VolumeTrigger=null
 m_RenderPostProcessing=True
@@ -123,8 +123,108 @@ m_TaaSettings.m_JitterScale=1
 m_TaaSettings.m_MipBias=0
 m_TaaSettings.m_VarianceClampScale=0.9
 m_TaaSettings.m_ContrastAdaptiveSharpening=0
-COMPONENT Player Camera ThirdPersonCamera
-target=Player
+COMPONENT Camera_Dialogue_Bartender UniversalAdditionalCameraData
+m_RenderShadows=True
+m_VolumeTrigger=null
+m_RenderPostProcessing=True
+m_StopNaN=False
+m_Dithering=False
+m_ClearDepth=True
+m_AllowXRRendering=True
+m_AllowHDROutput=True
+m_UseScreenCoordOverride=False
+m_ScreenSizeOverride.x=0
+m_ScreenSizeOverride.y=0
+m_ScreenSizeOverride.z=0
+m_ScreenSizeOverride.w=0
+m_ScreenCoordScaleBias.x=0
+m_ScreenCoordScaleBias.y=0
+m_ScreenCoordScaleBias.z=0
+m_ScreenCoordScaleBias.w=0
+m_RequiresDepthTexture=False
+m_RequiresColorTexture=False
+m_TaaSettings.m_FrameInfluence=0.1
+m_TaaSettings.m_JitterScale=1
+m_TaaSettings.m_MipBias=0
+m_TaaSettings.m_VarianceClampScale=0.9
+m_TaaSettings.m_ContrastAdaptiveSharpening=0
+COMPONENT Camera_Bartender_Profile UniversalAdditionalCameraData
+m_RenderShadows=True
+m_VolumeTrigger=null
+m_RenderPostProcessing=True
+m_StopNaN=False
+m_Dithering=False
+m_ClearDepth=True
+m_AllowXRRendering=True
+m_AllowHDROutput=True
+m_UseScreenCoordOverride=False
+m_ScreenSizeOverride.x=0
+m_ScreenSizeOverride.y=0
+m_ScreenSizeOverride.z=0
+m_ScreenSizeOverride.w=0
+m_ScreenCoordScaleBias.x=0
+m_ScreenCoordScaleBias.y=0
+m_ScreenCoordScaleBias.z=0
+m_ScreenCoordScaleBias.w=0
+m_RequiresDepthTexture=False
+m_RequiresColorTexture=False
+m_TaaSettings.m_FrameInfluence=0.1
+m_TaaSettings.m_JitterScale=1
+m_TaaSettings.m_MipBias=0
+m_TaaSettings.m_VarianceClampScale=0.9
+m_TaaSettings.m_ContrastAdaptiveSharpening=0
+COMPONENT Camera_Guest_Wide UniversalAdditionalCameraData
+m_RenderShadows=True
+m_VolumeTrigger=null
+m_RenderPostProcessing=True
+m_StopNaN=False
+m_Dithering=False
+m_ClearDepth=True
+m_AllowXRRendering=True
+m_AllowHDROutput=True
+m_UseScreenCoordOverride=False
+m_ScreenSizeOverride.x=0
+m_ScreenSizeOverride.y=0
+m_ScreenSizeOverride.z=0
+m_ScreenSizeOverride.w=0
+m_ScreenCoordScaleBias.x=0
+m_ScreenCoordScaleBias.y=0
+m_ScreenCoordScaleBias.z=0
+m_ScreenCoordScaleBias.w=0
+m_RequiresDepthTexture=False
+m_RequiresColorTexture=False
+m_TaaSettings.m_FrameInfluence=0.1
+m_TaaSettings.m_JitterScale=1
+m_TaaSettings.m_MipBias=0
+m_TaaSettings.m_VarianceClampScale=0.9
+m_TaaSettings.m_ContrastAdaptiveSharpening=0
+COMPONENT Main Camera UniversalAdditionalCameraData
+m_RenderShadows=True
+m_VolumeTrigger=null
+m_RenderPostProcessing=True
+m_StopNaN=False
+m_Dithering=False
+m_ClearDepth=True
+m_AllowXRRendering=True
+m_AllowHDROutput=True
+m_UseScreenCoordOverride=False
+m_ScreenSizeOverride.x=0
+m_ScreenSizeOverride.y=0
+m_ScreenSizeOverride.z=0
+m_ScreenSizeOverride.w=0
+m_ScreenCoordScaleBias.x=0
+m_ScreenCoordScaleBias.y=0
+m_ScreenCoordScaleBias.z=0
+m_ScreenCoordScaleBias.w=0
+m_RequiresDepthTexture=False
+m_RequiresColorTexture=False
+m_TaaSettings.m_FrameInfluence=0.1
+m_TaaSettings.m_JitterScale=1
+m_TaaSettings.m_MipBias=0
+m_TaaSettings.m_VarianceClampScale=0.9
+m_TaaSettings.m_ContrastAdaptiveSharpening=0
+COMPONENT Main Camera ThirdPersonCamera
+target=Hero
 offset=(0.00, 1.50, 0.00)
 offset.x=0
 offset.y=1.5

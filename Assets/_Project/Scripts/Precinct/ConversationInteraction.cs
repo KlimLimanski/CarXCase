@@ -9,11 +9,24 @@ namespace CarXCase.Precinct
     {
         public Interrogation conversation;
         public string characterName = "Дмитрий";
-        [Tooltip("Inspect any one of these objects before the conversation becomes available.")]
+        [Tooltip("Objects that count toward unlocking this conversation.")]
         public string[] introductionClues = Array.Empty<string>();
+        [SerializeField, Min(1)] int requiredInspections = 1;
         bool started;
 
-        public bool ReadyToTalk => introductionClues is not { Length: > 0 } || Array.Exists(introductionClues, ClueJournal.Has);
+        public int RequiredInspections => Mathf.Clamp(requiredInspections, 0, introductionClues?.Length ?? 0);
+        public int InspectedCount
+        {
+            get
+            {
+                if (introductionClues == null) return 0;
+                int count = 0;
+                foreach (var entry in ClueJournal.Entries)
+                    if (Array.IndexOf(introductionClues, entry.id) >= 0) count++;
+                return count;
+            }
+        }
+        public bool ReadyToTalk => RequiredInspections == 0 || InspectedCount >= RequiredInspections;
         public bool CanInteract => isActiveAndEnabled && conversation && !started && ReadyToTalk &&
             (string.IsNullOrEmpty(conversation.completedFlag) || !ClueJournal.Has(conversation.completedFlag));
         public string InteractPrompt => "E  Поговорить · " + characterName;
