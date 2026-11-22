@@ -101,7 +101,7 @@ namespace DetectiveGame.Core
         private bool _radialInitialized;
         private float _radialShare = 1f, _radialVelocity;
         private readonly RaycastHit[] _hits = new RaycastHit[16];
-        private bool _shot, _station;
+        private bool _shot, _station, _arrivalShot;
         private float _shotWeight, _shotVelocity, _shotStarted, _shotBaseFov;
         private Vector3 _shotPosition, _shotLook, _shotDrift;
         private Camera _lens;
@@ -152,9 +152,9 @@ namespace DetectiveGame.Core
             bool isQteRunning = QteManager.Instance != null && QteManager.Instance.IsQteActive();
             float dt = Time.deltaTime;
 
-            if (_shot)
+            if (_shot || (_arrivalShot && staged))
             {
-                // The examination shot owns the view; the mouse waits.
+                // The scripted shot owns the view; the mouse waits.
             }
             else if (_focusing)
             {
@@ -258,7 +258,11 @@ namespace DetectiveGame.Core
             Quaternion look = Quaternion.Euler(_renderPitch + _attendPitch * _attend, _renderYaw + _attendYaw * _attend, roll);
             float blendTime = _shot ? shotInTime : shotOutTime;
             _shotWeight = Mathf.SmoothDamp(_shotWeight, _shot ? 1f : 0f, ref _shotVelocity, blendTime * .45f, Mathf.Infinity, Time.unscaledDeltaTime);
-            if (!_shot && _shotWeight < .002f) _shotWeight = 0f;
+            if (!_shot && _shotWeight < .002f)
+            {
+                _shotWeight = 0f;
+                _arrivalShot = false;
+            }
             float shotBlend = Mathf.SmoothStep(0f, 1f, _shotWeight);
             if (shotBlend > 0f)
             {
@@ -279,7 +283,7 @@ namespace DetectiveGame.Core
             {
                 bool clear = Vector3.Dot(position - focus, backward) >= 0.85f;
                 // Examination shots keep Alexey in frame; a station close-up (the board) looks past him, so he steps out of view.
-                bool visible = _station ? shotBlend < .4f && clear : shotBlend > .3f || clear;
+                bool visible = _station ? (_arrivalShot || shotBlend < .4f) && clear : shotBlend > .3f || clear;
                 foreach (var bodyRenderer in _characterRenderers)
                     if (bodyRenderer != null) bodyRenderer.enabled = visible;
             }
@@ -433,6 +437,7 @@ namespace DetectiveGame.Core
         {
             if (!target) return;
             _station = false;
+            _arrivalShot = false;
             if (!_lens) _lens = GetComponent<Camera>();
             if (_lens && _shotBaseFov <= 0f) _shotBaseFov = _lens.fieldOfView;
 
@@ -493,7 +498,16 @@ namespace DetectiveGame.Core
             _shotDrift = Vector3.zero;
             _shotStarted = Time.unscaledTime;
             _station = true;
+            _arrivalShot = false;
             _shot = true;
+        }
+
+        public void BeginArrivalShot(Vector3 position, Vector3 lookAt)
+        {
+            BeginStation(position, lookAt);
+            _arrivalShot = true;
+            _shotWeight = 1f;
+            _shotVelocity = 0f;
         }
 
         public bool InShot => _shot || _shotWeight > .01f;

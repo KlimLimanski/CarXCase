@@ -467,14 +467,17 @@ public static class FatherApartmentScenario
     public static void ConfigurePawnshop(Interrogation talk)
     {
         ConfigureTrust(talk, 45, 30, PortLead.PawnshopFinished, PortLead.CheckSafe);
+        talk.choiceTime = 20f;
+        talk.subtitleDurationMultiplier = 1.5f;
+        talk.minimumSubtitleHold = 1.1f;
         talk.interruptAtFailureThreshold = false;
         talk.suspectName = "БОРИС МАРКОВИЧ";
         talk.openingLine = "";
         talk.successText = "Позавчера они ворвались перед моей сменой. Сказали, Фёдор должен пятнадцать тысяч и уже у них «в гостях».\nСтарший был коренастый, со шрамом на щеке. Он велел гнать машину обратно на причал, пока охрана не сменилась.\nЭто Шипсхед-Бей, Лёша. Портовая мафия держит там старый ангар. Номер четыре.";
-        talk.partialReply = "Куда увезли — не знаю. Но позавчера Фёдору принесли конверт. Он побелел, когда прочёл записку, и спрятал её в сейф. Проверь там.";
+        talk.partialReply = "Куда увезли — не знаю. Но позавчера Фёдору принесли конверт. Он побелел, когда прочёл записку, и спрятал её в сейф за стойкой. Проверь там.";
         talk.shutdownText = "Ничего не знаю и знать не хочу! У меня внуки. Уходи отсюда!";
-        talk.followUpThought = "Нужно найти сейф в глубине ломбарда. Посмотрим, что отец там оставил.";
-        talk.failureThought = "Придётся искать самому. Если остались бумаги по сделке, отец мог спрятать их в сейфе.";
+        talk.followUpThought = "Нужно заглянуть за стойку. Посмотрим, что отец оставил в сейфе.";
+        talk.failureThought = "Придётся искать самому. Если остались бумаги по сделке, отец мог спрятать их в сейфе за стойкой.";
         talk.grantId = PortLead.Boris;
         talk.grantTitle = "Прямая наводка Бориса";
         talk.grantText = "Отец у людей со старых причалов в Шипсхед-Бей. Борис указал на ангар №4 и описал коренастого главаря со шрамом.";
