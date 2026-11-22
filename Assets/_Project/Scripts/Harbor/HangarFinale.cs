@@ -132,7 +132,7 @@ public sealed class HangarFinale : MonoBehaviour
 
     IEnumerator Encounter()
     {
-        Frame(new Vector3(-1.5f,1.57f,3.65f),new Vector3(.42f,1.03f,7.15f));
+        Frame(new Vector3(-1.12f,1.64f,1.62f),new Vector3(.05f,1.53f,8.3f));
         kostya.localRotation = Quaternion.identity;
         yield return Say("На пол! Руки за голову!", 2.1f);
         Quaternion facing = Quaternion.Euler(0,-155,0);
