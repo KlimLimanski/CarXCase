@@ -30,7 +30,10 @@ namespace CarXCase.Precinct
             transform.rotation = end;
         }
 
-        public void SetTalking(bool talking) => face.talking = talking;
+        public void SetTalking(bool talking)
+        {
+            if (face) face.SetSpeech(talking);
+        }
 
         public IEnumerator WalkTo(Vector3 destination)
         {

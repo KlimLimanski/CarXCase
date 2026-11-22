@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CarXCase.Apartment;
+using CarXCase.Precinct;
 using DetectiveGame.Core;
 using NoirMenu;
 using UnityEngine;
@@ -24,7 +25,9 @@ public sealed class LocationAudio : MonoBehaviour
     OfficerController player;
     CharacterController body;
     ApartmentAnsweringMachine machine;
-    public float ScoreLevel => machine && machine.IsPlaying ? .07f : driving || gameObject.scene.name == "04_Precinct" ? .17f : .29f;
+    OfficeTurntable turntable;
+    public float ScoreLevel => (machine && machine.IsPlaying) || (turntable && turntable.IsPlaying) ? .07f :
+        driving || gameObject.scene.name == "04_Precinct" ? .17f : .29f;
     static LocationAudio current;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -47,6 +50,7 @@ public sealed class LocationAudio : MonoBehaviour
         {
             if (!audio.player) audio.player = root.GetComponentInChildren<OfficerController>(true);
             if (!audio.machine) audio.machine = root.GetComponentInChildren<ApartmentAnsweringMachine>(true);
+            if (!audio.turntable) audio.turntable = root.GetComponentInChildren<OfficeTurntable>(true);
         }
         if (audio.player) audio.body = audio.player.GetComponent<CharacterController>();
         bool harbor = scene.name == "05_BrightonHarbor";

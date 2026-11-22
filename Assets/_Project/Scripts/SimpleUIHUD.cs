@@ -58,6 +58,7 @@ namespace DetectiveGame.Core
         private CarXCase.Precinct.SceneExit apartmentExit;
         private string objectiveScene;
         private DeductionBoard precinctBoard;
+        private ConversationInteraction barConversation;
 
         private bool DestinationAvailable()
         {
@@ -81,6 +82,8 @@ namespace DetectiveGame.Core
         {
             objectiveScene = gameObject.scene.name;
             objectivePlayer = FindAnyObjectByType<OfficerController>();
+            if (objectiveScene == "02_Bar")
+                barConversation = FindAnyObjectByType<ConversationInteraction>();
             if (objectiveScene == "01_FatherApartment")
                 apartmentExit = FindAnyObjectByType<CarXCase.Precinct.SceneExit>();
             if (objectiveScene == "04_Precinct")
@@ -98,12 +101,13 @@ namespace DetectiveGame.Core
                 case "02_Bar":
                     if (PortLead.HasAny(PortLead.Bar)) return "Отправляйтесь в Шипсхед-Бей";
                     if (ClueJournal.Has(BarServiceRoute.DepartureFlag)) return "Осмотрите кассу за стойкой";
-                    if (ClueJournal.Has(PortLead.AskWitness)) return "Поговорите с девушкой у окна";
+                    if (ClueJournal.Has(PortLead.AskWitness)) return "Поговорите с девушкой в конце стойки";
+                    if (barConversation && !barConversation.ReadyToTalk) return "Осмотрите зал бара";
                     return "Поговорите с Дмитрием";
                 case "03_Pawnshop":
                     if (PortLead.HasAny(PortLead.Pawnshop)) return "Отправляйтесь в Шипсхед-Бей";
                     return ClueJournal.Has(PortLead.CheckSafe) ? "Найдите сейф в глубине ломбарда" : "Поговорите с Борисом Марковичем";
-                case "04_Precinct": return "Изучите доску расследования";
+                case "04_Precinct": return "Осмотрите кабинет";
                 case "05_BrightonHarbor":
                     return ClueJournal.Has("harbor_gate_open") ? "Осмотрите склад" : "Откройте ворота порта";
                 default: return null;

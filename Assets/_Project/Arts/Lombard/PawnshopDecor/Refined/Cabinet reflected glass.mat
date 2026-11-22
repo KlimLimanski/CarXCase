@@ -30,7 +30,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Haze: 0.01
-    - _Strength: 0.7
+    - _Strength: 0.41
     m_Colors:
     - _Tint: {r: 0.76, g: 0.86, b: 0.91, a: 1}
   m_BuildTextureStacks: []

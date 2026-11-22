@@ -8,6 +8,7 @@ public enum DeskView { Closed, Journal, Board }
     public bool standaloneInput=true;
     public Func<bool> BoardActionAvailable;
     public Action BoardAction;
+    public Action WorldBoardDismissed;
     int openedFrame=-1;bool resetFocus;
     [Tooltip("Контроллеры движения и обзора, которые надо временно отключать")]public Behaviour[] pauseWhileOpen=Array.Empty<Behaviour>();
     public CaseSession Session{get;private set;} public DeskView View{get;private set;}
@@ -39,7 +40,13 @@ public enum DeskView { Closed, Journal, Board }
     public void Notify(string message)=>Tell(message);
     internal void Tell(string message){toast=message;until=Time.unscaledTime+3;}
     internal void TearDone(){var id=tear;if(Session.Detach(id)){OpenBoard();carry=id;}tear="";tearStart=-1;}
-    internal void Back(){if(tear!=""){tear="";tearStart=-1;}else if(inspectEntry!=""||inspectHint!=""){inspectEntry=inspectHint="";}else if(carry!=""||linking!=""){carry=linking="";}else Close();}
+    public void DismissWorldBoard()
+    {
+        if (View != DeskView.Board || !worldSurface) return;
+        Close();
+        WorldBoardDismissed?.Invoke();
+    }
+    internal void Back(){if(tear!=""){tear="";tearStart=-1;}else if(inspectEntry!=""||inspectHint!=""){inspectEntry=inspectHint="";}else if(carry!=""||linking!=""){carry=linking="";}else if(worldSurface)DismissWorldBoard();else Close();}
     void OnGUI(){if(Session==null)return;DeskInk.Init();var original=GUI.matrix;
         var oldColor=GUI.color;var oldContent=GUI.contentColor;var oldBackground=GUI.backgroundColor;var oldEnabled=GUI.enabled;var oldDepth=GUI.depth;
         GUI.color=GUI.contentColor=GUI.backgroundColor=Color.white;GUI.enabled=true;GUI.depth=-100;

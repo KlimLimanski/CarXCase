@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Collections.Generic;
 using Casebook;
 using CarXCase.Investigation;
 using UnityEngine;
@@ -10,7 +11,6 @@ namespace CarXCase.Precinct
     // All positions are relative to the existing cork board in the detective's office.
     public sealed class PrecinctReadingBoard : MonoBehaviour
     {
-        static readonly Vector2 NoteSize = new Vector2(235, 137);
         static readonly Color Ink = new Color(.15f, .125f, .11f);
         readonly Texture2D[] stationery = new Texture2D[3];
         Texture2D pencilStroke;
@@ -27,9 +27,17 @@ namespace CarXCase.Precinct
         string selected;
         string deductionLine;
         float deductionUntil;
-        readonly System.Collections.Generic.Dictionary<string, RectTransform> notes = new();
-        readonly System.Collections.Generic.List<GameObject> yarn = new();
+        readonly Dictionary<string, RectTransform> notes = new();
+        readonly Dictionary<string, RectTransform> routeNotes = new();
+        readonly Dictionary<RectTransform, Vector2> initialPositions = new();
+        readonly Dictionary<RectTransform, Vector2> targetPositions = new();
+        readonly HashSet<string> renderedThreads = new();
+        readonly List<ThreadLink> yarn = new();
 
+        sealed class ThreadLink
+        {
+            internal RectTransform line, from, to;
+        }
 
         void Start()
         {
@@ -111,28 +119,54 @@ namespace CarXCase.Precinct
                 selected = null;
                 deductionLine = null;
             }
-            if (reading && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-                PickNote(desk.Session);
-            if (reading && Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame && board.DecisionReady)
-                board.OpenDecision();
 
-            if (!desk || desk.Session == null) return;
-            var session = desk.Session;
-            if (session == lastSession && lastCount == session.State.found.Count) return;
+            var session = desk ? desk.Session : null;
+            if (session == null) return;
+            bool evidenceChanged = session != lastSession || lastCount != session.State.found.Count;
+            if (evidenceChanged) RebuildEvidence(desk);
+            if (reading && Keyboard.current?.escapeKey.wasPressedThisFrame == true)
+            {
+                desk.DismissWorldBoard();
+                reading = false;
+            }
+            if (reading && Mouse.current?.leftButton.wasPressedThisFrame == true)
+                PickNote(session);
+            if (evidenceChanged || !renderedThreads.SetEquals(session.State.threads))
+            {
+                renderedThreads.Clear();
+                renderedThreads.UnionWith(session.State.threads);
+                RefreshRoutes(session);
+                RebuildThreads(session);
+            }
+
+            float slide = 1f - Mathf.Exp(-Time.unscaledDeltaTime * 8f);
+            foreach (var pair in targetPositions)
+            {
+                var card = pair.Key;
+                card.anchoredPosition = Vector2.Lerp(card.anchoredPosition, pair.Value, slide);
+                if (card.TryGetComponent<CanvasGroup>(out var ink)) ink.alpha = Mathf.MoveTowards(ink.alpha, 1f, Time.unscaledDeltaTime * 3.6f);
+            }
+            foreach (var thread in yarn) PositionThread(thread);
+            lastSession = session;
+            lastCount = session.State.found.Count;
+        }
+
+        void RebuildEvidence(CasebookController desk)
+        {
             selected = null;
             notes.Clear();
+            routeNotes.Clear();
             yarn.Clear();
+            initialPositions.Clear();
+            targetPositions.Clear();
             foreach (Transform child in sheetLayer)
             {
                 child.gameObject.SetActive(false);
                 Destroy(child.gameObject);
             }
-            var entries = session.State.found.Select(record => desk.caseFile.Find(record.id))
+            var entries = desk.Session.State.found.Select(record => desk.caseFile.Find(record.id))
                 .Where(entry => entry != null && entry.section == Section.Evidence).ToList();
             for (int i = 0; i < entries.Count; i++) DrawNote(entries[i], i, entries.Count);
-            DrawThreads(session);
-            lastSession = session;
-            lastCount = session.State.found.Count;
         }
 
         void PickNote(CaseSession session)
@@ -164,7 +198,6 @@ namespace CarXCase.Precinct
                     deductionLine = rule.hint;
                     deductionUntil = Time.unscaledTime + Mathf.Clamp(rule.hint.Length * .045f, 3.6f, 7f);
                 }
-                DrawThreads(session);
                 return;
             }
         }
@@ -177,25 +210,115 @@ namespace CarXCase.Precinct
                 note.rect.yMax - note.rect.height * 11f / 304f, 0)));
         }
 
-        void DrawThreads(CaseSession session)
+        void RefreshRoutes(CaseSession session)
         {
-            foreach (var line in yarn) Destroy(line);
+            var options = board.options ?? System.Array.Empty<DeductionBoard.Option>();
+            var authored = options.Where(o => o != null).Select(o => session.File.deductions.Find(d => d.id == o.requiresConclusion))
+                .Where(d => d != null).ToArray();
+            var open = new HashSet<string>(options.Where(DeductionBoard.Unlocked).Select(o => o.requiresConclusion));
+            foreach (var id in routeNotes.Keys.Where(id => !open.Contains(id)).ToArray())
+            {
+                var card = routeNotes[id];
+                targetPositions.Remove(card);
+                card.gameObject.SetActive(false);
+                Destroy(card.gameObject);
+                routeNotes.Remove(id);
+            }
+            for (int i = 0; i < options.Length; i++)
+            {
+                var option = options[i];
+                if (option == null || !open.Contains(option.requiresConclusion) || routeNotes.ContainsKey(option.requiresConclusion)) continue;
+                Vector2 pos = new Vector2((i + 1f) * 1200f / (options.Length + 1f), 535f);
+                routeNotes.Add(option.requiresConclusion, DrawRouteCard(option.label, pos, i));
+            }
+
+            if (routeNotes.Count == 0)
+            {
+                foreach (var pair in initialPositions) targetPositions[pair.Key] = pair.Value;
+                return;
+            }
+
+            // The shared clue goes between the two branches, with unrelated notes left on the sides.
+            var main = authored.SelectMany(d => new[] { d.first, d.second }).Distinct().Where(notes.ContainsKey).ToList();
+            if (authored.Length == 2)
+            {
+                var left = new[] { authored[0].first, authored[0].second };
+                var right = new[] { authored[1].first, authored[1].second };
+                main = left.Except(right).Concat(left.Intersect(right)).Concat(right.Except(left)).Where(notes.ContainsKey).ToList();
+            }
+            for (int i = 0; i < main.Count; i++)
+                targetPositions[notes[main[i]]] = new Vector2((i + 1f) * 1200f / (main.Count + 1f), -149f);
+
+            var extras = notes.Where(pair => !main.Contains(pair.Key)).Select(pair => pair.Value).ToList();
+            for (int i = 0; i < extras.Count; i++)
+            {
+                float x = i % 2 == 0 ? 158f : 1042f;
+                float y = 335f + 144f * (i / 2);
+                targetPositions[extras[i]] = new Vector2(x, -y);
+            }
+        }
+
+        RectTransform DrawRouteCard(string title, Vector2 position, int index)
+        {
+            var note = Node(sheetLayer, "Маршрут · " + title, position + Vector2.up * 30f, new Vector2(288f, 144f));
+            note.pivot = new Vector2(.5f, .5f);
+            note.localRotation = Quaternion.Euler(0, 0, index % 2 == 0 ? 2.5f : -2f);
+            var paper = note.gameObject.AddComponent<RawImage>();
+            paper.texture = stationery[0];
+            paper.color = new Color(1f, .92f, .78f);
+            paper.raycastTarget = false;
+            var group = note.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.blocksRaycasts = false;
+            var label = TextLine(note, title, new Vector2(18f, 41f), new Vector2(252f, 58f), 35, Ink);
+            label.alignment = TextAnchor.MiddleCenter;
+            label.fontStyle = FontStyle.Bold;
+            var stroke = Node(note, "Подчёркивание", new Vector2(48f, 106f), new Vector2(192f, 5f)).gameObject.AddComponent<RawImage>();
+            stroke.texture = pencilStroke;
+            stroke.raycastTarget = false;
+            targetPositions[note] = new Vector2(position.x, -position.y);
+            return note;
+        }
+
+        void RebuildThreads(CaseSession session)
+        {
+            foreach (var thread in yarn)
+            {
+                thread.line.gameObject.SetActive(false);
+                Destroy(thread.line.gameObject);
+            }
             yarn.Clear();
             foreach (string id in session.State.threads)
             {
                 var rule = session.File.deductions.Find(d => d.id == id);
                 if (rule == null || !notes.TryGetValue(rule.first, out var first) ||
                     !notes.TryGetValue(rule.second, out var second)) continue;
-                Vector2 a = PinPosition(first), b = PinPosition(second);
-                var line = Node(sheetLayer, "Красная нить", Vector2.zero, new Vector2((b-a).magnitude, 3));
-                line.pivot = new Vector2(0, .5f);
-                line.localPosition = a;
-                line.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(b.y-a.y, b.x-a.x) * Mathf.Rad2Deg);
-                var image = line.gameObject.AddComponent<Image>();
-                image.color = new Color(.55f,.045f,.035f);
-                image.raycastTarget = false;
-                yarn.Add(line.gameObject);
+                AddThread(first, second);
+                if (routeNotes.TryGetValue(id, out var route))
+                {
+                    AddThread(first, route);
+                    AddThread(second, route);
+                }
             }
+        }
+
+        void AddThread(RectTransform from, RectTransform to)
+        {
+            var line = Node(sheetLayer, "Красная нить", Vector2.zero, new Vector2(0f, 3f));
+            line.pivot = new Vector2(0f, .5f);
+            var image = line.gameObject.AddComponent<Image>();
+            image.color = new Color(.55f, .045f, .035f);
+            image.raycastTarget = false;
+            yarn.Add(new ThreadLink { line = line, from = from, to = to });
+        }
+
+        void PositionThread(ThreadLink thread)
+        {
+            Vector2 from = PinPosition(thread.from);
+            Vector2 delta = PinPosition(thread.to) - from;
+            thread.line.localPosition = from;
+            thread.line.sizeDelta = new Vector2(delta.magnitude, 3f);
+            thread.line.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
         }
 
         void DrawNote(Entry entry, int index, int count)
@@ -217,6 +340,7 @@ namespace CarXCase.Precinct
             note.pivot = new Vector2(.5f, .5f);
             note.anchoredPosition += Offsets[index % Offsets.Length] * scale;
             note.localScale = Vector3.one * scale;
+            initialPositions[note] = note.anchoredPosition;
             note.localRotation = Quaternion.Euler(0, 0, tilts[index % tilts.Length]);
 
             var paper = note.gameObject.AddComponent<RawImage>();
@@ -385,7 +509,7 @@ namespace CarXCase.Precinct
             float scale = Mathf.Clamp(Screen.height / 900f, .75f, 2f);
             controlsStyle.fontSize = Mathf.RoundToInt(15 * scale);
             if (Time.unscaledTime < deductionUntil) CarXCase.UI.Subtitles.Draw(deductionLine, .76f);
-            string controls = board.DecisionReady ? "Esc — отойти     F — куда отправиться" : "Esc — отойти";
+            string controls = board.DecisionReady ? "Esc — отойти и выбрать маршрут" : "Esc — отойти";
             GUI.Label(new Rect(0, Screen.height - 69 * scale, Screen.width, 24 * scale), hint, controlsStyle);
             GUI.Label(new Rect(0, Screen.height - 38 * scale, Screen.width, 24 * scale), controls, controlsStyle);
         }

@@ -195,7 +195,7 @@ namespace CarXCase.Editor
                     desk.Session.Return(FatherCase.Door);
                     Check(ClueJournal.Has(FatherCase.Door) && desk.Session.Get(FatherCase.Door) != null && desk.Session.Pinned(FatherCase.Door) == null, "returning page preserves original clue");
                     board.OpenDecision();
-                    Check(!InvestigationIntegration.IsOpen && !Object.FindAnyObjectByType<OfficerController>().enabled, "existing travel screen takes over input safely");
+                    Check(!InvestigationIntegration.IsOpen && Object.FindAnyObjectByType<OfficerController>().InputLocked, "route selection locks input during the step away");
                     // Exercise the existing scene-transition restore path, with serialized JSON as the only source.
                     SaveSystem.PendingLoad = SaveSystem.Load();
                     SceneManager.LoadScene("04_Precinct"); stage = 4; next = EditorApplication.timeSinceStartup + 3;

@@ -52,13 +52,37 @@ namespace CarXCase.Hero
         // speech generator
         float sylTimer, sylTarget, sylLeftInWord; float accent, accentVel;
         Vector3 headOff, headOffVel; float gesture, gestureVel, gestureTarget, gestureTimer;
+        int spokenPhrases;
 
-        void Awake()
+        public void SetSpeech(bool speaking)
+        {
+            if (speaking && !talking && ++spokenPhrases % 2 == 1)
+            {
+                gestureTarget = .68f;
+                gestureTimer = 1.35f;
+                accent = .7f;
+            }
+            talking = speaking;
+        }
+
+        void Awake() => BindRig();
+
+        void BindRig()
         {
             root = transform;
-            Transform F(string n) { foreach (var t in GetComponentsInChildren<Transform>(true)) if (t.name == n) return t; return null; }
+            var hierarchy = GetComponentsInChildren<Transform>(true);
+            Transform F(string n) { foreach (var t in hierarchy) if (t.name == n) return t; return null; }
             jaw = F("Jaw"); browL = F("Brow_L"); browR = F("Brow_R"); head = F("Head"); neck = F("Neck"); chest = F("UpperChest");
             rArm = F("R_UpperArm"); rFore = F("R_LowerArm");
+            var rig = GetComponentInChildren<Animator>(true);
+            if (rig && rig.isHuman && rig.avatar && rig.avatar.isValid)
+            {
+                head ??= rig.GetBoneTransform(HumanBodyBones.Head);
+                neck ??= rig.GetBoneTransform(HumanBodyBones.Neck);
+                chest ??= rig.GetBoneTransform(HumanBodyBones.UpperChest) ?? rig.GetBoneTransform(HumanBodyBones.Chest);
+                rArm ??= rig.GetBoneTransform(HumanBodyBones.RightUpperArm);
+                rFore ??= rig.GetBoneTransform(HumanBodyBones.RightLowerArm);
+            }
             if (jaw) jawRest = jaw.localRotation;
             if (mouthMesh && mouthMesh.sharedMesh)
                 mouthShapeIndex = mouthMesh.sharedMesh.GetBlendShapeIndex(mouthShape);
@@ -88,6 +112,7 @@ namespace CarXCase.Hero
 
         void LateUpdate()
         {
+            if (lHead == null) BindRig();
             float dt = Time.deltaTime, t = Time.time + seed, k = intensity;
             lHead.Begin(); lNeck.Begin(); lChest.Begin(); lArm.Begin(); lFore.Begin();
             talkBlend = Mathf.MoveTowards(talkBlend, talking ? 1 : 0, dt * 3);

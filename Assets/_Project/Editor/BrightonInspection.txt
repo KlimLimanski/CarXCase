@@ -1,8 +1,5 @@
-SCENE Assets/_Project/Scenes/03_Pawnshop.unity
-NODE Main Camera pos=(1.34, 1.50, -5.85) local=(1.34, 1.50, -5.85) rot=(0.00, 344.84, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Building_1_2_Exterior pos=(-24.00, 0.00, -9.40) local=(-24.00, 0.00, -9.40) rot=(0.00, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Building_1_10_Exterior pos=(-136.40, 0.00, -9.40) local=(-136.40, 0.00, -9.40) rot=(0.00, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Building_1_16_Exterior pos=(-216.80, 0.00, -9.40) local=(-216.80, 0.00, -9.40) rot=(0.00, 90.00, 0.00) scale=(1.00, 1.00, 1.00)
+SCENE Assets/_Project/Scenes/00_MainMenu.unity
+NODE Main Camera pos=(0.00, 0.00, 0.00) local=(0.00, 0.00, 0.00) rot=(0.00, 0.00, 0.00) scale=(1.00, 1.00, 1.00)
 ASSET Assets/_Project/Arts/Heroes/Animations/Source/Running.fbx imported=True
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/03_Fulton.glb imported=True
  MESH 03_Fulton_Geometry bounds=Center: (-0.30, 9.85, -4.86), Extents: (5.70, 9.85, 6.14) mat=Opaque_Window_Atlas:Shader Graphs/glTF-pbrMetallicRoughness,Hardware_Midnight:Shader Graphs/glTF-pbrMetallicRoughness,Warm_Limestone:Shader Graphs/glTF-pbrMetallicRoughness,Weathered_AC:Shader Graphs/glTF-pbrMetallicRoughness,Deep_Shadow:Shader Graphs/glTF-pbrMetallicRoughness,Painted_Iron:Shader Graphs/glTF-pbrMetallicRoughness,Aged_Brass:Shader Graphs/glTF-pbrMetallicRoughness,Fulton_Umber:Shader Graphs/glTF-pbrMetallicRoughness,Simple_Party_Walls:Shader Graphs/glTF-pbrMetallicRoughness,Flat_Roof:Shader Graphs/glTF-pbrMetallicRoughness,Sign_Ivory:Shader Graphs/glTF-pbrMetallicRoughness
@@ -38,6 +35,53 @@ ASSET Assets/_Project/Arts/Precint/Generated/Wall_Clock.fbx imported=True
  MESH Wall_Clock bounds=Center: (0.00, 0.00, 0.01), Extents: (0.17, 0.17, 0.03) mat=Black:Universal Render Pipeline/Lit,Paper:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Car/car2.glb imported=True
  MESH car2 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.48, 0.14, 0.19) mat=Material_0:Shader Graphs/glTF-pbrMetallicRoughness
+ASSET Assets/_Project/Arts/Precinct/OfficeListening/Office turntable.fbx imported=True
+ MESH Arm rest bounds=Center: (-0.16, 0.13, 0.03), Extents: (0.01, 0.01, 0.01) mat=Graphite rubber:Universal Render Pipeline/Lit
+ MESH Control strip bounds=Center: (0.00, 0.12, 0.15), Extents: (0.22, 0.01, 0.02) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Damped foot bounds=Center: (0.18, 0.01, 0.13), Extents: (0.03, 0.01, 0.03) mat=Graphite rubber:Universal Render Pipeline/Lit
+ MESH Damped foot.001 bounds=Center: (0.18, 0.01, -0.13), Extents: (0.03, 0.01, 0.03) mat=Graphite rubber:Universal Render Pipeline/Lit
+ MESH Damped foot.002 bounds=Center: (-0.18, 0.01, 0.13), Extents: (0.03, 0.01, 0.03) mat=Graphite rubber:Universal Render Pipeline/Lit
+ MESH Damped foot.003 bounds=Center: (-0.18, 0.01, -0.13), Extents: (0.03, 0.01, 0.03) mat=Graphite rubber:Universal Render Pipeline/Lit
+ MESH Engraved speed plate bounds=Center: (-0.12, 0.13, 0.15), Extents: (0.04, 0.00, 0.01) mat=Dark brushed bronze:Universal Render Pipeline/Lit
+ MESH Metal top panel bounds=Center: (0.00, 0.12, 0.00), Extents: (0.23, 0.01, 0.18) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Paint index bounds=Center: (-0.12, 0.13, 0.15), Extents: (0.00, 0.00, 0.01) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Paint index.001 bounds=Center: (-0.14, 0.13, 0.15), Extents: (0.00, 0.00, 0.01) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Paint index.002 bounds=Center: (-0.16, 0.13, 0.15), Extents: (0.00, 0.00, 0.01) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Panel screw bounds=Center: (0.20, 0.12, 0.11), Extents: (0.00, 0.00, 0.00) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Panel screw.001 bounds=Center: (0.20, 0.12, -0.15), Extents: (0.00, 0.00, 0.00) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Panel screw.002 bounds=Center: (-0.20, 0.12, 0.11), Extents: (0.00, 0.00, 0.00) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Panel screw.003 bounds=Center: (-0.20, 0.12, -0.15), Extents: (0.00, 0.00, 0.00) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Groove bounds=Center: (0.06, 0.15, -0.03), Extents: (0.06, 0.00, 0.06) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Groove.001 bounds=Center: (0.06, 0.15, -0.03), Extents: (0.07, 0.00, 0.07) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Groove.002 bounds=Center: (0.06, 0.15, -0.03), Extents: (0.07, 0.00, 0.07) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Groove.003 bounds=Center: (0.06, 0.15, -0.03), Extents: (0.09, 0.00, 0.09) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Groove.004 bounds=Center: (0.06, 0.15, -0.03), Extents: (0.10, 0.00, 0.10) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Groove.005 bounds=Center: (0.06, 0.15, -0.03), Extents: (0.11, 0.00, 0.11) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Groove.006 bounds=Center: (0.06, 0.15, -0.03), Extents: (0.12, 0.00, 0.12) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Groove.007 bounds=Center: (0.06, 0.15, -0.03), Extents: (0.13, 0.00, 0.13) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Groove.008 bounds=Center: (0.06, 0.15, -0.03), Extents: (0.14, 0.00, 0.14) mat=Vinyl groove edges:Universal Render Pipeline/Lit
+ MESH Label type line bounds=Center: (0.06, 0.15, -0.02), Extents: (0.02, 0.00, 0.00) mat=Old cream paper:Universal Render Pipeline/Lit
+ MESH Label type line.001 bounds=Center: (0.06, 0.15, -0.01), Extents: (0.01, 0.00, 0.00) mat=Old cream paper:Universal Render Pipeline/Lit
+ MESH Label type line.002 bounds=Center: (0.06, 0.15, 0.00), Extents: (0.01, 0.00, 0.00) mat=Old cream paper:Universal Render Pipeline/Lit
+ MESH Long play record bounds=Center: (0.06, 0.15, -0.03), Extents: (0.14, 0.00, 0.14) mat=Pressed black vinyl:Universal Render Pipeline/Lit
+ MESH Machined platter bounds=Center: (0.06, 0.13, -0.03), Extents: (0.15, 0.01, 0.15) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Pressed label bounds=Center: (0.06, 0.15, -0.03), Extents: (0.05, 0.00, 0.05) mat=Slate paper label:Universal Render Pipeline/Lit
+ MESH Printed circle bounds=Center: (0.06, 0.15, -0.03), Extents: (0.04, 0.00, 0.04) mat=Old cream paper:Universal Render Pipeline/Lit
+ MESH Rubber platter mat bounds=Center: (0.06, 0.14, -0.03), Extents: (0.14, 0.00, 0.14) mat=Graphite rubber:Universal Render Pipeline/Lit
+ MESH Steel spindle bounds=Center: (0.06, 0.15, -0.03), Extents: (0.00, 0.01, 0.00) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Strobe ring bounds=Center: (0.06, 0.13, -0.03), Extents: (0.15, 0.00, 0.15) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Strobe ring.001 bounds=Center: (0.06, 0.13, -0.03), Extents: (0.15, 0.00, 0.15) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Strobe ring.002 bounds=Center: (0.06, 0.14, -0.03), Extents: (0.15, 0.00, 0.15) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Power lamp bounds=Center: (0.15, 0.13, 0.15), Extents: (0.00, 0.00, 0.00) mat=Dark brushed bronze:Universal Render Pipeline/Lit
+ MESH Power rocker bounds=Center: (0.19, 0.14, 0.15), Extents: (0.02, 0.01, 0.01) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Speed selector bounds=Center: (-0.19, 0.14, 0.15), Extents: (0.02, 0.01, 0.02) mat=Graphite rubber:Universal Render Pipeline/Lit
+ MESH Tonearm bearing bounds=Center: (-0.15, 0.13, -0.12), Extents: (0.03, 0.01, 0.03) mat=Dark brushed bronze:Universal Render Pipeline/Lit
+ MESH Cartridge bounds=Center: (-0.13, 0.15, 0.11), Extents: (0.01, 0.00, 0.01) mat=Dark brushed bronze:Universal Render Pipeline/Lit
+ MESH Counterweight bounds=Center: (-0.15, 0.16, -0.14), Extents: (0.01, 0.01, 0.01) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Headshell bounds=Center: (-0.13, 0.15, 0.10), Extents: (0.01, 0.00, 0.02) mat=Black anodized steel:Universal Render Pipeline/Lit
+ MESH Offset tube bounds=Center: (-0.14, 0.16, 0.07), Extents: (0.01, 0.01, 0.03) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Tonearm tube bounds=Center: (-0.15, 0.16, -0.04), Extents: (0.00, 0.00, 0.08) mat=Brushed nickel:Universal Render Pipeline/Lit
+ MESH Walnut chassis bounds=Center: (0.00, 0.06, 0.00), Extents: (0.24, 0.05, 0.19) mat=Oxidized walnut:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Precint/chair for visitors.fbx imported=True
  MESH chair for visitors bounds=Center: (0.00, 0.00, 0.00), Extents: (0.33, 0.48, 0.39) mat=Material_0:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Car/ReferenceInterior/Sedan_1999_Reference_Interior.blend imported=True
@@ -3438,6 +3482,47 @@ ASSET Assets/_Project/Arts/Apartaments/Evidence/Clue_Circled_Newspaper.fbx impor
  MESH Red_Hook_Deck bounds=Center: (0.05, 0.01, -0.02), Extents: (0.07, 0.00, 0.00) mat=Clue_Ink:Universal Render Pipeline/Lit
  MESH Top_Newspaper_Page bounds=Center: (0.00, 0.01, 0.00), Extents: (0.15, 0.00, 0.14) mat=Clue_Paper:Universal Render Pipeline/Lit
  MESH Typeset_Columns bounds=Center: (0.00, 0.01, 0.07), Extents: (0.13, 0.00, 0.06) mat=Clue_Ink:Universal Render Pipeline/Lit
+ASSET Assets/_Project/Arts/Lombard/PawnshopDecor/Refined/Anchor stereo deck.fbx imported=True
+ MESH Arm bearing bounds=Center: (-0.16, 0.07, -0.11), Extents: (0.02, 0.01, 0.02) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Cabinet bounds=Center: (0.00, 0.04, 0.00), Extents: (0.22, 0.02, 0.17) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Deck plate bounds=Center: (0.00, 0.06, 0.00), Extents: (0.21, 0.01, 0.16) mat=Hairline aluminum.001:Universal Render Pipeline/Lit
+ MESH Pitch fader bounds=Center: (-0.16, 0.07, 0.11), Extents: (0.01, 0.00, 0.01) mat=Grain vinyl wrap.001:Universal Render Pipeline/Lit
+ MESH Pitch fader guide bounds=Center: (-0.17, 0.07, 0.11), Extents: (0.03, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Pitch scale bounds=Center: (-0.13, 0.07, 0.13), Extents: (0.00, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Pitch scale.001 bounds=Center: (-0.14, 0.07, 0.13), Extents: (0.00, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Pitch scale.002 bounds=Center: (-0.15, 0.07, 0.13), Extents: (0.00, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Pitch scale.003 bounds=Center: (-0.15, 0.07, 0.13), Extents: (0.00, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Pitch scale.004 bounds=Center: (-0.16, 0.07, 0.13), Extents: (0.00, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Pitch scale.005 bounds=Center: (-0.17, 0.07, 0.13), Extents: (0.00, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Pitch scale.006 bounds=Center: (-0.17, 0.07, 0.13), Extents: (0.00, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Pitch scale.007 bounds=Center: (-0.18, 0.07, 0.13), Extents: (0.00, 0.00, 0.00) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Deck mat bounds=Center: (0.04, 0.08, -0.02), Extents: (0.13, 0.00, 0.13) mat=Pressed vinyl.001:Universal Render Pipeline/Lit
+ MESH Groove bounds=Center: (0.04, 0.08, -0.02), Extents: (0.07, 0.00, 0.07) mat=Groove edge.001:Universal Render Pipeline/Lit
+ MESH Groove.001 bounds=Center: (0.04, 0.08, -0.02), Extents: (0.08, 0.00, 0.08) mat=Groove edge.001:Universal Render Pipeline/Lit
+ MESH Groove.002 bounds=Center: (0.04, 0.08, -0.02), Extents: (0.09, 0.00, 0.09) mat=Groove edge.001:Universal Render Pipeline/Lit
+ MESH Groove.003 bounds=Center: (0.04, 0.08, -0.02), Extents: (0.10, 0.00, 0.10) mat=Groove edge.001:Universal Render Pipeline/Lit
+ MESH Groove.004 bounds=Center: (0.04, 0.08, -0.02), Extents: (0.11, 0.00, 0.11) mat=Groove edge.001:Universal Render Pipeline/Lit
+ MESH Groove.005 bounds=Center: (0.04, 0.08, -0.02), Extents: (0.12, 0.00, 0.12) mat=Groove edge.001:Universal Render Pipeline/Lit
+ MESH Groove.006 bounds=Center: (0.04, 0.08, -0.02), Extents: (0.12, 0.00, 0.12) mat=Groove edge.001:Universal Render Pipeline/Lit
+ MESH Groove.007 bounds=Center: (0.04, 0.08, -0.02), Extents: (0.13, 0.00, 0.13) mat=Groove edge.001:Universal Render Pipeline/Lit
+ MESH Label imprint bounds=Center: (0.04, 0.09, -0.01), Extents: (0.02, 0.00, 0.00) mat=Aged honey Bakelite.001:Universal Render Pipeline/Lit
+ MESH Label rule bounds=Center: (0.04, 0.09, -0.02), Extents: (0.04, 0.00, 0.04) mat=Aged honey Bakelite.001:Universal Render Pipeline/Lit
+ MESH Paper label bounds=Center: (0.04, 0.08, -0.02), Extents: (0.05, 0.00, 0.05) mat=Muted blue center label:Universal Render Pipeline/Lit
+ MESH Platter bounds=Center: (0.04, 0.07, -0.02), Extents: (0.14, 0.01, 0.14) mat=Hairline aluminum.001:Universal Render Pipeline/Lit
+ MESH Record bounds=Center: (0.04, 0.08, -0.02), Extents: (0.13, 0.00, 0.13) mat=Pressed vinyl.001:Universal Render Pipeline/Lit
+ MESH Spindle bounds=Center: (0.04, 0.09, -0.02), Extents: (0.00, 0.01, 0.00) mat=Hairline aluminum.001:Universal Render Pipeline/Lit
+ MESH Power lamp bounds=Center: (0.10, 0.07, 0.12), Extents: (0.00, 0.00, 0.00) mat=Muted blue center label:Universal Render Pipeline/Lit
+ MESH Power rocker bounds=Center: (0.15, 0.07, 0.12), Extents: (0.01, 0.00, 0.01) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Recessed black front bounds=Center: (0.00, 0.03, 0.15), Extents: (0.19, 0.02, 0.02) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Rubber foot bounds=Center: (0.18, 0.01, 0.13), Extents: (0.02, 0.01, 0.02) mat=Pressed vinyl.001:Universal Render Pipeline/Lit
+ MESH Rubber foot.001 bounds=Center: (0.18, 0.01, -0.13), Extents: (0.02, 0.01, 0.02) mat=Pressed vinyl.001:Universal Render Pipeline/Lit
+ MESH Rubber foot.002 bounds=Center: (-0.18, 0.01, 0.13), Extents: (0.02, 0.01, 0.02) mat=Pressed vinyl.001:Universal Render Pipeline/Lit
+ MESH Rubber foot.003 bounds=Center: (-0.18, 0.01, -0.13), Extents: (0.02, 0.01, 0.02) mat=Pressed vinyl.001:Universal Render Pipeline/Lit
+ MESH Side trim bounds=Center: (0.20, 0.07, 0.00), Extents: (0.01, 0.01, 0.16) mat=Grain vinyl wrap.001:Universal Render Pipeline/Lit
+ MESH Side trim.001 bounds=Center: (-0.20, 0.07, 0.00), Extents: (0.01, 0.01, 0.16) mat=Grain vinyl wrap.001:Universal Render Pipeline/Lit
+ MESH Arm tube bounds=Center: (-0.16, 0.09, -0.02), Extents: (0.00, 0.00, 0.11) mat=Hairline aluminum.001:Universal Render Pipeline/Lit
+ MESH Cartridge bounds=Center: (-0.15, 0.09, 0.09), Extents: (0.01, 0.00, 0.01) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
+ MESH Counterweight bounds=Center: (-0.16, 0.09, -0.14), Extents: (0.01, 0.01, 0.01) mat=Powder-coated graphite.001:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/PrecinctDecor/box1.fbx imported=True
  MESH box1 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.47, 0.30, 0.33) mat=Material_0:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Apartaments/StoryProps/Entry_Light_Switch.glb imported=True
@@ -7200,6 +7285,40 @@ ASSET Assets/_Project/Arts/Heroes/police npc/police npc1.blend imported=True
  MESH police npc1 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.25, 0.48, 0.08) mat=Material_0:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Precint/computer tower.fbx imported=True
  MESH computer tower bounds=Center: (0.00, 0.00, 0.00), Extents: (0.19, 0.48, 0.42) mat=Material_0:Universal Render Pipeline/Lit
+ASSET Assets/_Project/Arts/Bar/CounterProps/Bar ledger.fbx imported=True
+ MESH Center fold bounds=Center: (0.00, 0.03, 0.00), Extents: (0.00, 0.00, 0.12) mat=Burgundy book cloth:Universal Render Pipeline/Lit
+ MESH Cloth binding bounds=Center: (0.00, 0.01, 0.00), Extents: (0.11, 0.01, 0.13) mat=Burgundy book cloth:Universal Render Pipeline/Lit
+ MESH Handwritten entry bounds=Center: (0.07, 0.03, -0.07), Extents: (0.01, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Handwritten entry.001 bounds=Center: (0.07, 0.03, -0.05), Extents: (0.01, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Handwritten entry.002 bounds=Center: (0.07, 0.03, -0.03), Extents: (0.01, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Handwritten entry.003 bounds=Center: (0.07, 0.03, -0.02), Extents: (0.01, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Handwritten entry.004 bounds=Center: (-0.03, 0.03, -0.07), Extents: (0.01, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Handwritten entry.005 bounds=Center: (-0.03, 0.03, -0.05), Extents: (0.01, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Handwritten entry.006 bounds=Center: (-0.03, 0.03, -0.03), Extents: (0.01, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Handwritten entry.007 bounds=Center: (-0.03, 0.03, -0.02), Extents: (0.01, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Open page block bounds=Center: (0.05, 0.02, 0.00), Extents: (0.05, 0.01, 0.12) mat=Old cream paper:Universal Render Pipeline/Lit
+ MESH Open page block.001 bounds=Center: (-0.05, 0.02, 0.00), Extents: (0.05, 0.01, 0.12) mat=Old cream paper:Universal Render Pipeline/Lit
+ MESH Red bookmark bounds=Center: (-0.03, 0.02, 0.13), Extents: (0.01, 0.00, 0.02) mat=Burgundy book cloth:Universal Render Pipeline/Lit
+ MESH Ruled entry bounds=Center: (0.05, 0.03, 0.08), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.001 bounds=Center: (0.05, 0.03, 0.07), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.002 bounds=Center: (0.05, 0.03, 0.05), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.003 bounds=Center: (0.05, 0.03, 0.03), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.004 bounds=Center: (0.05, 0.03, 0.01), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.005 bounds=Center: (0.05, 0.03, -0.01), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.006 bounds=Center: (0.05, 0.03, -0.02), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.007 bounds=Center: (0.05, 0.03, -0.04), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.008 bounds=Center: (0.05, 0.03, -0.06), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.009 bounds=Center: (0.05, 0.03, -0.08), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.010 bounds=Center: (-0.05, 0.03, 0.08), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.011 bounds=Center: (-0.05, 0.03, 0.07), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.012 bounds=Center: (-0.05, 0.03, 0.05), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.013 bounds=Center: (-0.05, 0.03, 0.03), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.014 bounds=Center: (-0.05, 0.03, 0.01), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.015 bounds=Center: (-0.05, 0.03, -0.01), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.016 bounds=Center: (-0.05, 0.03, -0.02), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.017 bounds=Center: (-0.05, 0.03, -0.04), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.018 bounds=Center: (-0.05, 0.03, -0.06), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
+ MESH Ruled entry.019 bounds=Center: (-0.05, 0.03, -0.08), Extents: (0.04, 0.00, 0.00) mat=Faded black printing:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Heroes/police npc/Rigged/police_npc5_Rigged.fbx imported=True
  MESH police_npc5 bounds=Center: (0.00, -0.03, -0.01), Extents: (0.44, 0.51, 0.12) mat=Material_0.005:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/PrecinctDecor/police badge.fbx imported=True
@@ -7315,6 +7434,54 @@ ASSET Assets/_Project/Arts/Heroes/police npc/police npc2.blend imported=True
  MESH police npc2 bounds=Center: (0.00, 0.00, 0.00), Extents: (0.30, 0.48, 0.09) mat=Material_0:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Precint/Generated/Coffee_Mug.fbx imported=True
  MESH Coffee_Mug bounds=Center: (-0.01, 0.05, 0.00), Extents: (0.05, 0.05, 0.04) mat=Ceramic:Universal Render Pipeline/Lit,Coffee:Universal Render Pipeline/Lit
+ASSET Assets/_Project/Arts/Bar/CounterProps/Sterlyad compact 45.fbx imported=True
+ MESH Arm bearing bounds=Center: (-0.12, 0.10, -0.09), Extents: (0.02, 0.01, 0.02) mat=Dull brass:Universal Render Pipeline/Lit
+ MESH Cabinet bounds=Center: (0.00, 0.05, 0.00), Extents: (0.16, 0.04, 0.14) mat=Oxblood lacquer:Universal Render Pipeline/Lit
+ MESH Deck plate bounds=Center: (0.00, 0.09, 0.00), Extents: (0.16, 0.01, 0.13) mat=Aged honey Bakelite:Universal Render Pipeline/Lit
+ MESH Front trim bounds=Center: (0.00, 0.02, 0.14), Extents: (0.15, 0.01, 0.01) mat=Dull brass:Universal Render Pipeline/Lit
+ MESH Deck mat bounds=Center: (0.04, 0.11, -0.02), Extents: (0.10, 0.00, 0.10) mat=Pressed vinyl:Universal Render Pipeline/Lit
+ MESH Groove bounds=Center: (0.04, 0.11, -0.02), Extents: (0.05, 0.00, 0.05) mat=Groove edge:Universal Render Pipeline/Lit
+ MESH Groove.001 bounds=Center: (0.04, 0.11, -0.02), Extents: (0.06, 0.00, 0.06) mat=Groove edge:Universal Render Pipeline/Lit
+ MESH Groove.002 bounds=Center: (0.04, 0.11, -0.02), Extents: (0.07, 0.00, 0.07) mat=Groove edge:Universal Render Pipeline/Lit
+ MESH Groove.003 bounds=Center: (0.04, 0.11, -0.02), Extents: (0.07, 0.00, 0.07) mat=Groove edge:Universal Render Pipeline/Lit
+ MESH Groove.004 bounds=Center: (0.04, 0.11, -0.02), Extents: (0.08, 0.00, 0.08) mat=Groove edge:Universal Render Pipeline/Lit
+ MESH Groove.005 bounds=Center: (0.04, 0.11, -0.02), Extents: (0.09, 0.00, 0.09) mat=Groove edge:Universal Render Pipeline/Lit
+ MESH Groove.006 bounds=Center: (0.04, 0.11, -0.02), Extents: (0.10, 0.00, 0.10) mat=Groove edge:Universal Render Pipeline/Lit
+ MESH Groove.007 bounds=Center: (0.04, 0.11, -0.02), Extents: (0.10, 0.00, 0.10) mat=Groove edge:Universal Render Pipeline/Lit
+ MESH Label imprint bounds=Center: (0.04, 0.11, -0.01), Extents: (0.02, 0.00, 0.00) mat=Aged honey Bakelite:Universal Render Pipeline/Lit
+ MESH Label rule bounds=Center: (0.04, 0.11, -0.02), Extents: (0.03, 0.00, 0.03) mat=Aged honey Bakelite:Universal Render Pipeline/Lit
+ MESH Paper label bounds=Center: (0.04, 0.11, -0.02), Extents: (0.04, 0.00, 0.04) mat=Ochre center label:Universal Render Pipeline/Lit
+ MESH Platter bounds=Center: (0.04, 0.10, -0.02), Extents: (0.11, 0.01, 0.11) mat=Dull brass:Universal Render Pipeline/Lit
+ MESH Record bounds=Center: (0.04, 0.11, -0.02), Extents: (0.10, 0.00, 0.10) mat=Pressed vinyl:Universal Render Pipeline/Lit
+ MESH Spindle bounds=Center: (0.04, 0.12, -0.02), Extents: (0.00, 0.01, 0.00) mat=Hairline aluminum:Universal Render Pipeline/Lit
+ MESH Power lamp bounds=Center: (0.07, 0.10, 0.10), Extents: (0.00, 0.00, 0.00) mat=Ochre center label:Universal Render Pipeline/Lit
+ MESH Power rocker bounds=Center: (0.11, 0.10, 0.10), Extents: (0.01, 0.00, 0.01) mat=Powder-coated graphite:Universal Render Pipeline/Lit
+ MESH Rubber foot bounds=Center: (0.12, 0.01, 0.10), Extents: (0.02, 0.01, 0.02) mat=Pressed vinyl:Universal Render Pipeline/Lit
+ MESH Rubber foot.001 bounds=Center: (0.12, 0.01, -0.10), Extents: (0.02, 0.01, 0.02) mat=Pressed vinyl:Universal Render Pipeline/Lit
+ MESH Rubber foot.002 bounds=Center: (-0.12, 0.01, 0.10), Extents: (0.02, 0.01, 0.02) mat=Pressed vinyl:Universal Render Pipeline/Lit
+ MESH Rubber foot.003 bounds=Center: (-0.12, 0.01, -0.10), Extents: (0.02, 0.01, 0.02) mat=Pressed vinyl:Universal Render Pipeline/Lit
+ MESH Speaker slit bounds=Center: (0.13, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.001 bounds=Center: (0.12, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.002 bounds=Center: (0.10, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.003 bounds=Center: (0.09, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.004 bounds=Center: (0.07, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.005 bounds=Center: (0.06, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.006 bounds=Center: (0.05, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.007 bounds=Center: (0.03, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.008 bounds=Center: (0.02, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.009 bounds=Center: (0.00, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.010 bounds=Center: (-0.01, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.011 bounds=Center: (-0.03, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.012 bounds=Center: (-0.04, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.013 bounds=Center: (-0.05, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.014 bounds=Center: (-0.07, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.015 bounds=Center: (-0.08, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.016 bounds=Center: (-0.10, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.017 bounds=Center: (-0.11, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Speaker slit.018 bounds=Center: (-0.12, 0.04, 0.14), Extents: (0.00, 0.01, 0.00) mat=Grain vinyl wrap:Universal Render Pipeline/Lit
+ MESH Arm tube bounds=Center: (-0.12, 0.12, -0.02), Extents: (0.00, 0.00, 0.09) mat=Hairline aluminum:Universal Render Pipeline/Lit
+ MESH Cartridge bounds=Center: (-0.11, 0.11, 0.07), Extents: (0.01, 0.00, 0.01) mat=Aged honey Bakelite:Universal Render Pipeline/Lit
+ MESH Counterweight bounds=Center: (-0.12, 0.12, -0.12), Extents: (0.01, 0.01, 0.01) mat=Powder-coated graphite:Universal Render Pipeline/Lit
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/01_Hudson.glb imported=True
  MESH 01_Hudson_Geometry bounds=Center: (-0.30, 8.30, -4.56), Extents: (5.10, 8.30, 5.84) mat=Opaque_Window_Atlas:Shader Graphs/glTF-pbrMetallicRoughness,Market_Bottle_Green:Shader Graphs/glTF-pbrMetallicRoughness,Warm_Limestone:Shader Graphs/glTF-pbrMetallicRoughness,Weathered_AC:Shader Graphs/glTF-pbrMetallicRoughness,Deep_Shadow:Shader Graphs/glTF-pbrMetallicRoughness,Painted_Iron:Shader Graphs/glTF-pbrMetallicRoughness,Aged_Brass:Shader Graphs/glTF-pbrMetallicRoughness,Hudson_Red:Shader Graphs/glTF-pbrMetallicRoughness,Simple_Party_Walls:Shader Graphs/glTF-pbrMetallicRoughness,Flat_Roof:Shader Graphs/glTF-pbrMetallicRoughness,Canvas_Cream:Shader Graphs/glTF-pbrMetallicRoughness,Sign_Ivory:Shader Graphs/glTF-pbrMetallicRoughness
 ASSET Assets/_Project/Arts/Precint/Generated/Paper_Stack.fbx imported=True
