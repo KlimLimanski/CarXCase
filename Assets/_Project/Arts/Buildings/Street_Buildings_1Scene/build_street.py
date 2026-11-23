@@ -354,14 +354,17 @@ def build_house(index,spec):
                 continue
             side_open.append((u,base+1.39,1.0,1.78))
             window(side,u,base+1.39,1.0,1.78,accent,40+index+j+k,ac=(j+k+index)%6==0)
-    wall_with_openings(side,0,d,h,side_open,brick)
+    # Butt the Union side wall against the back of its street facade.
+    side_start = .28 if name == "05_Union" else 0
+    wall_with_openings(side,side_start,d,h,side_open,brick)
     # Back and left party wall are each one quad. Roof is one flat cap.
     shell.face([(-w/2,d,0),(-w/2,d,h),(w/2,d,h),(w/2,d,0)],BACK)
     shell.face([(-w/2,0,0),(-w/2,0,h),(-w/2,d,h),(-w/2,d,0)],BACK)
     shell.face([(-w/2,0,h), (w/2,0,h),(w/2,d,h),(-w/2,d,h)],ROOF)
     # Only the visible parapets are modeled.
     front.box((0,.13,h+.26),(w,.26,.48),brick)
-    side.box((d/2,.13,h+.26),(d,.26,.48),brick)
+    parapet_start = .26 if name == "05_Union" else 0
+    side.box(((d+parapet_start)/2,.13,h+.26),(d-parapet_start,.26,.48),brick)
     front.box((0,-.02,h+.51),(w,.38,.08),STONE,False)
     side.box((d/2,-.02,h+.51),(d,.38,.08),STONE,False)
     for x in (-w/2+.43,w/2-.43):
@@ -405,6 +408,15 @@ def build_house(index,spec):
     for j in range(5):
         trim.box((w/2-.68,-.25,.82+j*.045),(.25,.02,.012),DARK,False)
     for batch in (front,side,shell,iron,trim):
+        if name == "05_Union" and STONE in batch.mats:
+            # Give the limestone a small reveal at the two ends of the facade.
+            for face, material in zip(batch.faces, batch.mi):
+                if batch.mats[material] != STONE:
+                    continue
+                for i in face:
+                    x, y, z = batch.verts[i]
+                    if abs(abs(x) - w/2) < .00001 and -.8 < y <= .21:
+                        batch.verts[i] = (x + math.copysign(.008, x), y, z)
         batch.finish(root)
     return root,collection
 

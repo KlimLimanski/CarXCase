@@ -30,6 +30,7 @@ namespace NoirMenu
             target.Create();
 
             player.playOnAwake = false;
+            player.timeUpdateMode = VideoTimeUpdateMode.UnscaledGameTime;
             player.isLooping = true;
             player.skipOnDrop = true;
             player.waitForFirstFrame = true;

@@ -45,9 +45,9 @@ namespace CarXCase.Precinct
                 float elapsed = 0f;
                 while (elapsed < .55f)
                 {
-                    elapsed += Time.unscaledDeltaTime;
+                    elapsed += Time.deltaTime;
                     door.localRotation = Quaternion.Slerp(closed, OpenRotation, Mathf.SmoothStep(0, 1, elapsed / .55f));
-                    yield return null;
+                    yield return NoirMenu.GameSession.NextStoryFrame;
                 }
             }
             Reveal();

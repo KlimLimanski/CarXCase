@@ -61,7 +61,7 @@ public sealed class HangarDoor : MonoBehaviour, IInteractable
         }
 
         if (finale && !leadsInside) finale.Leave();
-        yield return new WaitForSecondsRealtime(.16f);
+        yield return new WaitForSeconds(.16f);
         yield return Fade(0f, .65f);
         player.LockInput(false);
         crossing = null;
@@ -72,8 +72,8 @@ public sealed class HangarDoor : MonoBehaviour, IInteractable
     {
         while (opacity != target)
         {
-            opacity = Mathf.MoveTowards(opacity, target, Time.unscaledDeltaTime / duration);
-            yield return null;
+            opacity = Mathf.MoveTowards(opacity, target, Time.deltaTime / duration);
+            yield return NoirMenu.GameSession.NextStoryFrame;
         }
     }
 
@@ -87,6 +87,7 @@ public sealed class HangarDoor : MonoBehaviour, IInteractable
 
     void OnGUI()
     {
+        if (NoirMenu.GameSession.Paused) return;
         if (opacity <= 0) return;
         int depth = GUI.depth;
         Color color = GUI.color;

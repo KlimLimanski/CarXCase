@@ -20268,6 +20268,8 @@ GameObject:
   - component: {fileID: 433843840}
   - component: {fileID: 433843842}
   - component: {fileID: 433843841}
+  - component: {fileID: 433843843}
+  - component: {fileID: 433843844}
   m_Layer: 0
   m_Name: Photograph
   m_TagString: Untagged
@@ -20285,11 +20287,46 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.084, z: -0.012}
-  m_LocalScale: {x: 0.164, y: 0.119, z: 1}
+  m_LocalScale: {x: 0.164, y: 0.1312, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1607369863}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &433843843
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 433843839}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.28, y: 1.28, z: 0.045}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &433843844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 433843839}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c8145302b044fadbfd01f374facd043, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::CarXCase.Precinct.FramedPhotograph
+  photograph: {fileID: 2800000, guid: f0daf67c1b914f46b00dac73af28332e, type: 3}
+  player: {fileID: 1994775050}
 --- !u!23 &433843841
 MeshRenderer:
   m_ObjectHideFlags: 0

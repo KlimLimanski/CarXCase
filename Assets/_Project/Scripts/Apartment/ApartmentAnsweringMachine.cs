@@ -27,7 +27,8 @@ namespace CarXCase.Apartment
 
         void Update()
         {
-            bool pulse = IsPlaying || Mathf.PingPong(Time.unscaledTime * 1.8f, 1) > .5f;
+            if (NoirMenu.GameSession.Paused) return;
+            bool pulse = IsPlaying || Mathf.PingPong(Time.time * 1.8f, 1) > .5f;
             if (pulse != lit) SetIndicator(pulse);
         }
 
@@ -74,7 +75,7 @@ namespace CarXCase.Apartment
         static IEnumerator Line(SimpleUIHUD hud, string line, float seconds, string speaker = null)
         {
             hud.ShowInspectionComment(line, seconds, speaker);
-            yield return new WaitForSecondsRealtime(seconds);
+            yield return new WaitForSeconds(seconds);
         }
 
         void OnDisable()

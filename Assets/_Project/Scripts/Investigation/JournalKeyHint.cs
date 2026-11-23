@@ -33,7 +33,7 @@ namespace CarXCase.Investigation
             if (!waitForSceneCue)
             {
                 started = true;
-                showFrom = Time.unscaledTime + startDelay;
+                showFrom = Time.time + startDelay;
                 bannerUntil = showFrom + bannerTime;
                 bannerBlend = 1f;
             }
@@ -41,12 +41,13 @@ namespace CarXCase.Investigation
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (Event.current.type != EventType.Repaint) return;
             if (!hud) hud = FindAnyObjectByType<SimpleUIHUD>();
             var state = InvestigationIntegration.State;
             if (!hud || !hud.isActiveAndEnabled || state == null) return;
 
-            float now = Time.unscaledTime;
+            float now = Time.time;
             int found = state.found.Count;
             if (knownCount >= 0 && found > knownCount)
             {
@@ -70,7 +71,7 @@ namespace CarXCase.Investigation
             if (animationFrame != Time.frameCount)
             {
                 animationFrame = Time.frameCount;
-                float step = Time.unscaledDeltaTime * 3f;
+                float step = Time.deltaTime * 3f;
                 bannerBlend = Mathf.MoveTowards(bannerBlend, banner ? 1f : 0f, step);
                 visibility = Mathf.MoveTowards(visibility, hidden ? 0f : 1f, step);
             }

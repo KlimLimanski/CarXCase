@@ -75,6 +75,7 @@ namespace CarXCase.Intro
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (loading || loadError != null) return;
 
             if (Application.isEditor && Keyboard.current != null && (Keyboard.current.escapeKey.wasPressedThisFrame ||
@@ -263,6 +264,7 @@ namespace CarXCase.Intro
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (subtitleStyle == null)
             {
                 subtitleStyle = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };

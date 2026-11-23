@@ -46,6 +46,7 @@ namespace CarXCase.Harbor
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!presenting) return;
             elapsed += Time.deltaTime;
             if (!returning)
@@ -122,6 +123,7 @@ namespace CarXCase.Harbor
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!presenting || black <= 0f || Event.current.type != EventType.Repaint) return;
             var color = GUI.color;
             GUI.color = new Color(0f, 0f, 0f, black);

@@ -58,6 +58,7 @@ namespace CarXCase.Weather
 
         void LateUpdate()
         {
+            if (NoirMenu.GameSession.Paused) return;
             float t = Clock;
             if (car)
             {

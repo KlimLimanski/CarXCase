@@ -127,7 +127,7 @@ namespace CarXCase.Interaction
         {
             if (owner == null || !instance || !instance.glyphs.TryGetValue(owner, out var g)) return;
             if (success) g.pulse = 1f; else g.fail = 1f;
-            g.holdUntil = Time.unscaledTime + .55f;
+            g.holdUntil = Time.time + .55f;
         }
 
         /// A stable point to hang a key on: IGlyphAnchor, a GlyphAnchor child, or the visible bounds.
@@ -193,9 +193,10 @@ namespace CarXCase.Interaction
 
         void LateUpdate()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (instance != this) return;
             var cam = Camera.main;
-            float t = Time.unscaledTime, dt = Time.unscaledDeltaTime;
+            float t = Time.time, dt = Time.deltaTime;
             visible = 0;
             bool worldKeyWanted = false;
             foreach (var g in glyphs.Values)

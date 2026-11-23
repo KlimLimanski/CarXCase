@@ -20,6 +20,7 @@ namespace NoirMenu
         {
             instance = this;
             source = GetComponent<AudioSource>();
+            source.ignoreListenerPause = true;
             source.playOnAwake = false;
             source.loop = false;
             source.spatialBlend = 0f;

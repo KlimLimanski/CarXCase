@@ -54,7 +54,7 @@ namespace CarXCase.Apartment
             Quaternion rotation = Quaternion.LookRotation(aim - eye);
             yield return MoveCamera(eye, rotation, 43f, .85f);
             if (hud) hud.ShowInspectionComment("Выгляжу уставшим…", 2.9f);
-            yield return new WaitForSecondsRealtime(2.9f);
+            yield return new WaitForSeconds(2.9f);
             yield return MoveCamera(originalPosition, originalRotation, originalFov, .68f);
             Restore();
         }
@@ -64,14 +64,14 @@ namespace CarXCase.Apartment
             var startPosition = lens.transform.position;
             var startRotation = lens.transform.rotation;
             float startFov = lens.fieldOfView;
-            float started = Time.unscaledTime;
-            while (Time.unscaledTime < started + duration)
+            float started = Time.time;
+            while (Time.time < started + duration)
             {
-                float blend = Mathf.SmoothStep(0, 1, (Time.unscaledTime - started) / duration);
+                float blend = Mathf.SmoothStep(0, 1, (Time.time - started) / duration);
                 lens.transform.SetPositionAndRotation(Vector3.Lerp(startPosition, position, blend),
                     Quaternion.Slerp(startRotation, rotation, blend));
                 lens.fieldOfView = Mathf.Lerp(startFov, fov, blend);
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             }
             lens.transform.SetPositionAndRotation(position, rotation);
             lens.fieldOfView = fov;

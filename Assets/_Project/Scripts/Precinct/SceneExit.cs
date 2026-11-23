@@ -106,6 +106,7 @@ namespace CarXCase.Precinct
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!choosing || Keyboard.current == null) return;
             var keys = Keyboard.current;
             if (keys.escapeKey.wasPressedThisFrame) CancelChoice();
@@ -141,12 +142,13 @@ namespace CarXCase.Precinct
             leaving = true;
             var player = FindAnyObjectByType<OfficerController>();
             if (player) player.enabled = false;
-            while (fade < 1) { fade = Mathf.MoveTowards(fade, 1, Time.unscaledDeltaTime / Mathf.Max(.01f, fadeTime)); yield return null; }
+            while (fade < 1) { fade = Mathf.MoveTowards(fade, 1, Time.deltaTime / Mathf.Max(.01f, fadeTime)); yield return NoirMenu.GameSession.NextStoryFrame; }
             SceneManager.LoadSceneAsync(scene, LoadSceneMode.Single);
         }
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (choosing)
             {
                 float width = Mathf.Min(440f, Screen.width * .8f);

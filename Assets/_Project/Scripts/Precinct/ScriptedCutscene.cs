@@ -57,6 +57,7 @@ namespace CarXCase.Precinct
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (Finished) return;
             fade = Mathf.MoveTowards(fade, 0, Time.deltaTime / 1.2f);
             var kb = Keyboard.current;
@@ -130,6 +131,7 @@ namespace CarXCase.Precinct
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (Finished) return;
             if (sub == null)
             {

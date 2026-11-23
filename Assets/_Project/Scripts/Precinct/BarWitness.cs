@@ -72,15 +72,16 @@ namespace CarXCase.Precinct
         {
             line = text;
             skip = false;
-            float earliest = Time.unscaledTime + .3f;
-            float end = Time.unscaledTime + Mathf.Clamp(text.Length * .05f, 2.3f, 7f);
-            while (Time.unscaledTime < end && !(skip && Time.unscaledTime > earliest))
-                yield return null;
+            float earliest = Time.time + .3f;
+            float end = Time.time + Mathf.Clamp(text.Length * .05f, 2.3f, 7f);
+            while (Time.time < end && !(skip && Time.time > earliest))
+                yield return NoirMenu.GameSession.NextStoryFrame;
             line = null;
         }
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             var keys = Keyboard.current;
             if (!active || keys == null) return;
             if (choosing)
@@ -93,6 +94,7 @@ namespace CarXCase.Precinct
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!active) return;
             if (!choosing) { Subtitles.Draw(line); return; }
             choiceStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft, fontSize = 20 };
