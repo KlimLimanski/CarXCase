@@ -60,10 +60,16 @@ namespace CarXCase.UI
             (Pawn + "раунд2/Обвинить Бориса", "Отец влип, а вы тут сидите целый"),
             (Pawn + "исходы разговора/успех", "Позавчера они ворвались перед моей сменой"),
             // Precinct
-            (Precinct + "разговор с Маркусом", "Лёш? Ты же недавно смену сдал"),
             (Precinct + "выводы у доски улик/Бар Дмитрия", "Спички из «Стерляди», и в записи назвали Дмитрия"),
             (Precinct + "выводы у доски улик/Ломбард отца", "Часы и телевизор оставили"),
             (Precinct + "выводы у доски улик/Отец мог знать гостя", "Замок цел. Возможно, отец впустил"),
+        };
+
+        /// One recording voicing several moments: (clip, line start, from, to) as fractions of the clip.
+        /// Only Marcus' question is used: the answers in the recording do not match the choices, so they stay silent.
+        static readonly (string clip, string line, float from, float to)[] Parts =
+        {
+            (Precinct + "разговор с Маркусом", "Лёш? Ты же недавно смену сдал", 0f, .33f),
         };
 
         /// Clue title → Alexey's comment when he looks at it.
@@ -88,15 +94,24 @@ namespace CarXCase.UI
         static string lastSubtitle;
         static AudioSource source;
 
-        public static AudioClip ForText(string line)
+        public static AudioClip ForText(string line) => Find(line, out _, out _);
+
+        /// The recording for a line and the part of it (fractions) that belongs to this line.
+        static AudioClip Find(string line, out float from, out float to)
         {
+            from = 0f; to = 1f;
             string text = Normalize(StripSpeaker(line));
             if (text.Length == 0) return null;
             string best = null; int bestLength = 0;
             foreach (var (clip, start) in Lines)
             {
                 string key = Normalize(start);
-                if (key.Length > bestLength && text.StartsWith(key)) { best = clip; bestLength = key.Length; }
+                if (key.Length > bestLength && text.StartsWith(key)) { best = clip; bestLength = key.Length; from = 0f; to = 1f; }
+            }
+            foreach (var (clip, start, a, b) in Parts)
+            {
+                string key = Normalize(start);
+                if (key.Length > bestLength && text.StartsWith(key)) { best = clip; bestLength = key.Length; from = a; to = b; }
             }
             return Load(best);
         }
@@ -112,8 +127,8 @@ namespace CarXCase.UI
         /// Length of the recording for this line, 0 when it has none.
         public static float Length(string line)
         {
-            var clip = ForText(line);
-            return clip ? clip.length : 0f;
+            var clip = Find(line, out float from, out float to);
+            return clip ? clip.length * (to - from) : 0f;
         }
 
         /// How long to hold each of a run of subtitles so they follow the recordings: a recording that starts
@@ -150,7 +165,7 @@ namespace CarXCase.UI
             if (string.IsNullOrEmpty(line) || line == lastSubtitle) return;
             lastSubtitle = line;
             if (handled.Remove(line)) return;
-            var clip = ForText(line);
+            var clip = Find(line, out float from, out float to);
             if (!clip) return;
             if (!source)
             {
@@ -163,7 +178,9 @@ namespace CarXCase.UI
             source.Stop();
             source.clip = clip;
             source.volume = NoirMenu.GameSettings.SfxGain;
+            source.time = clip.length * from;
             source.Play();
+            source.SetScheduledEndTime(AudioSettings.dspTime + clip.length * (to - from));
         }
 
         static AudioClip Load(string path)

@@ -133,7 +133,9 @@ namespace CarXCase.Apartment
                 "Замок и косяк целы, следов взлома нет, но дверь в квартиру отца не заперта.",
                 "Взламывать не пришлось. Отец ушёл в спешке или сам открыл тому, кого знал.");
             if (hud) hud.ShowJournalHint();
-            yield return new WaitForSeconds(5.2f);
+            // Let the recorded line finish before he turns to the door and calls his father.
+            yield return new WaitForSeconds(Mathf.Max(5.2f,
+                CarXCase.UI.VoiceOver.Length("Замок цел, следов взлома нет. И не заперто — либо он ушёл в спешке, либо открыл сам.") + .4f));
 
             // 3) He turns to the doorway; the shot follows the door as it swings inwards.
             LocationAudio.Effect("Door Knock Wood", .42f);
