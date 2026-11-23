@@ -65,9 +65,8 @@ public sealed partial class HangarFinale
         else if (outcome == Silence) yield return Surrender();
         else yield return LastMistake();
         pulse.Stop();
-        yield return Animate(.7f, t => endingFade = t);
         ClueJournal.AddConclusion(outcome);
-        ShowReport();
+        yield return FadeOutEnding();
     }
 
     void RestoreOutcome()
@@ -92,16 +91,21 @@ public sealed partial class HangarFinale
         yield return Line("Алексей", "Костя, последняя возможность. Руки вверх.");
         yield return Line("Костя", "Прощай, братишка.");
         stage = Stage.Aftermath;
-        yield return Animate(.24f, staging.Reach);
-        props.ArmKostya(true, player.transform);
+        yield return Animate(staging.DrawDuration * .9f, t =>
+        {
+            staging.Draw(t, player.transform);
+            if (t >= HangarStaging.RevealMoment) props.ArmKostya(true, player.transform);
+        });
+        endingFade = 1f;
         LocationAudio.Effect("Hangar shot", .62f);
         yield return new WaitForSeconds(.13f);
         LocationAudio.Effect("Hangar shot", .5f);
-        // Knees give, then he goes over backwards; the gun slips out of his hand.
-        yield return Animate(1.25f, props.Collapse);
-        LocationAudio.Effect("Body fall", .75f);
-        LocationAudio.Effect("Police siren", .2f);
+        props.Collapse(1f);
+        props.Apply();
+        props.ShowBlood(true);
         Frame(new Vector3(-.8f,.7f,5.2f),new Vector3(1.1f,1.4f,7.1f));
+        yield return RevealAfterDeath(.62f, .75f);
+        LocationAudio.Effect("Police siren", .2f);
         yield return Line("Алексей", "Ты... всё-таки...");
         yield return Line("Костя", "Лёш? Эй. Слышишь меня?");
         yield return Line("Алексей", "Я хотел... тебя вернуть...");
@@ -125,9 +129,12 @@ public sealed partial class HangarFinale
         yield return Line("Фёдор Павлович", "Я хотел, чтобы ты человеком вырос...");
         yield return Line("Костя", "ЧЕЛОВЕКОМ?!");
         stage = Stage.Aftermath;
-        yield return Animate(.3f, staging.Reach);
-        props.ArmKostya(true, rescue.transform, .85f);
         kostya.LookAt(new Vector3(rescue.transform.position.x,kostya.position.y,rescue.transform.position.z));
+        yield return Animate(staging.DrawDuration * .9f, t =>
+        {
+            staging.Draw(t, rescue.transform, .85f);
+            if (t >= HangarStaging.RevealMoment) props.ArmKostya(true, rescue.transform, .85f);
+        });
         Frame(new Vector3(-1.16f,1.14f,5.84f),new Vector3(-.08f,.90f,7.07f));
         props.Aim(1f, kostya);
         yield return Line("Алексей", "Костя! Убери оружие!");
@@ -140,8 +147,16 @@ public sealed partial class HangarFinale
         yield return Line("Костя", "Для кого лучше?!");
         LocationAudio.Effect("Hangar shot",.6f);
         pulse.Stop();
+        // The shot cuts to black. When the picture comes back the father is already hit: his head, still
+        // raised towards his son, slowly goes down.
+        endingFade = 1f;
+        caption = null;
         rescue.SetActive(false);
         late.SetActive(true);
+        staging.FatherDeath(1f);
+        if (directing) Cut(Cover.CloseFather, 2);
+        else Frame(new Vector3(-1.16f,1.14f,5.84f),new Vector3(-.08f,.90f,7.07f));
+        yield return RevealAfterDeath(.75f);
         yield return Line("Алексей", "НЕТ!");
         yield return Line("Костя", "Я...");
         yield return Line("Алексей", "Ты убил его.");

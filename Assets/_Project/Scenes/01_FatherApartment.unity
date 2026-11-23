@@ -8385,6 +8385,7 @@ GameObject:
   m_Component:
   - component: {fileID: 220237614}
   - component: {fileID: 220237615}
+  - component: {fileID: 220237616}
   m_Layer: 0
   m_Name: Intact strike plate
   m_TagString: Untagged
@@ -8400,15 +8401,28 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 220237613}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.187, y: -0.066, z: 0.173}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0.009872786, y: 0.7070378, z: 0.7070379, w: -0.009872783}
+  m_LocalPosition: {x: -0.8989955, y: -0.0014147483, z: 0.933913}
+  m_LocalScale: {x: 0.8695652, y: 0.8695653, z: 0.8695653}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2052703258}
   - {fileID: 1579677316}
-  m_Father: {fileID: 2016863010}
+  m_Father: {fileID: 1379398943}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &220237616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220237613}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e5dcce367ca839409e24d81156a1203, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DetectiveGame.Core.ClueAimTarget
+  clue: {fileID: 2016863011}
 --- !u!65 &220237615
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -33852,7 +33866,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &823382911
 Transform:
   m_ObjectHideFlags: 0
@@ -35256,7 +35270,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &858150961
 Transform:
   m_ObjectHideFlags: 0
@@ -57867,6 +57881,7 @@ Transform:
   - {fileID: 631322987}
   - {fileID: 1497853845}
   - {fileID: 549385500}
+  - {fileID: 220237614}
   m_Father: {fileID: 787279088}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1379398944
@@ -85934,7 +85949,6 @@ Transform:
   m_Children:
   - {fileID: 149377857}
   - {fileID: 699373768}
-  - {fileID: 220237614}
   - {fileID: 599711339}
   m_Father: {fileID: 1557009710}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

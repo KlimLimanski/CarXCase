@@ -6,7 +6,9 @@ using UnityEngine;
 /// line between the brothers, so screen direction never flips.
 public sealed partial class HangarFinale
 {
-    enum Cover { Walk, Wide, OverAlexey, OverKostya, CloseKostya, CloseAlexey, CloseFather, Authored, Choice, Decision }
+    enum Cover { Walk, Wide, OverAlexey, OverKostya, CloseKostya, CloseAlexey, CloseFather, Authored, Choice, Decision, Ending }
+
+    const float EndingShotSeconds = 3.5f;
 
     bool directing;
     Cover cover;
@@ -14,6 +16,8 @@ public sealed partial class HangarFinale
     int holdLines, cuts;
     bool kostyaAlternate, alexeyAlternate;
     Vector3 authoredEye, authoredLook;
+    Vector3 endingEye, endingLook, endingTravel;
+    float endingRoll, endingZoom;
 
     Vector3 camPos, camLook, camPosVelocity, camLookVelocity;
     Vector3 headA, headK, headF, velA, velK, velF;
@@ -55,6 +59,24 @@ public sealed partial class HangarFinale
         coverStart = Time.time;
         holdLines = hold;
         cuts++;
+    }
+
+    void BeginEndingShot()
+    {
+        if (!directing || !view) return;
+
+        endingEye = camPos;
+        endingLook = camLook;
+        endingRoll = roll;
+        endingZoom = zoom;
+        Vector3 forward = Flat(endingLook - endingEye, view.transform.forward);
+        Vector3 side = Vector3.Cross(Vector3.up, forward);
+        if (Room(endingEye, side) < Room(endingEye, -side)) side = -side;
+
+        Vector3 travel = side * .52f - forward * .38f + Vector3.up * .18f;
+        endingTravel = travel.normalized * Mathf.Min(travel.magnitude, Mathf.Max(0f, Room(endingEye, travel.normalized) - .12f));
+        Cut(Cover.Ending);
+        snapCamera = false;
     }
 
     /// Called as every line starts. Picks the coverage for the speaker.
@@ -219,6 +241,15 @@ public sealed partial class HangarFinale
                 look = Vector3.Lerp(headK, headK - up * .42f, reach * .55f);
                 fov = Mathf.Lerp(.86f, .66f, tension);
                 tilt = Mathf.Lerp(0f, 5.5f, tension) * lineSide;
+                break;
+            }
+            case Cover.Ending:
+            {
+                float move = Smooth(0f, EndingShotSeconds, t);
+                eye = endingEye + endingTravel * move;
+                look = endingLook;
+                tilt = Mathf.Lerp(endingRoll, 0f, move);
+                fov = endingZoom * Mathf.Lerp(1f, 1.06f, move);
                 break;
             }
             default: // Authored: a hand-placed angle from the scene, held with a slow push-in.

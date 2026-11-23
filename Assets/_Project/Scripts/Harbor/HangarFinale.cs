@@ -11,6 +11,13 @@ public sealed partial class HangarFinale : MonoBehaviour
     public Transform kostya;
     HangarStaging staging;
     HangarProps props;
+    AudioSource recordAudio;
+    AudioLowPassFilter recordFilter;
+    OfficerController recordListener;
+    float recordShelter, recordLevel;
+    bool fadingToCredits;
+    public float RecordScoreDuck { get; private set; }
+    public float EndingAmbience => fadingToCredits ? 1f - endingFade : 1f;
     public Light pendant, backlight;
     public AudioSource pulse;
     public ParticleSystemRenderer yardRain;
@@ -19,6 +26,8 @@ public sealed partial class HangarFinale : MonoBehaviour
     const string Shot = "hangar_shot", Arrest = "hangar_arrest";
     const string Overheard = "hangar_guards_departed";
     const float DecisionSeconds = 4f;
+    /// How far the draw gets while the player is deciding (the gun is just clearing the coat).
+    const float HoldDraw = .56f;
 
     enum Stage { Outside, Listening, Conversation, Approach, DialogueChoice, Decision, Missed, Aftermath, Report }
     Stage stage;
@@ -43,7 +52,8 @@ public sealed partial class HangarFinale : MonoBehaviour
     static SkinnedMeshRenderer SpeechFace(Transform root, string model)
     {
         var face = root.Find("Hangar " + model).GetComponentInChildren<SkinnedMeshRenderer>(true);
-        face.sharedMesh = Resources.Load<Mesh>("HangarSpeech" + model);
+        var smooth = Resources.Load<Mesh>("HangarSmooth" + model);
+        face.sharedMesh = smooth ? smooth : Resources.Load<Mesh>("HangarSpeech" + model);
         face.sharedMaterials = new[] { face.sharedMaterial, Resources.Load<Material>(model == "Kostya" ? "KostyaMouthInterior" : "HangarMouthInterior") };
         return face;
     }
@@ -53,13 +63,65 @@ public sealed partial class HangarFinale : MonoBehaviour
         staging = GetComponent<HangarStaging>();
         kostyaFace = SpeechFace(kostya, "Kostya");
         fatherFace = SpeechFace(rescue.transform, "Rescue");
+        var lateMesh = Resources.Load<Mesh>("HangarSmoothLate");
+        var lateModel = late.transform.Find("Hangar Late");
+        var lateFace = lateModel ? lateModel.GetComponentInChildren<SkinnedMeshRenderer>(true) : null;
+        if (lateFace && lateMesh) lateFace.sharedMesh = lateMesh;
         staging.Initialize(rescue.transform, kostya);
+        staging.InitializeLate(late.transform);
         props = gameObject.AddComponent<HangarProps>();
         props.Setup(staging, kostya, rescue.transform);
+        SetupRecordAudio();
+        if (pulse) pulse.spatialBlend = 0f;   // The heartbeat is Alexey's, independent of shot size.
         confrontationFacing = Quaternion.Euler(0, -155f, 0);
         confrontationMark = staging.KostyaMark;
         SetBranch(ClueJournal.Has(LateRoute));
         if (Finished) RestoreOutcome();
+    }
+
+    void SetupRecordAudio()
+    {
+        var deck = GetComponentInChildren<CarXCase.Apartment.RecordSpin>();
+        var record = Resources.Load<AudioClip>("LocationAudio/Music/Hangar record");
+        if (!deck || !record) return;
+
+        recordAudio = deck.gameObject.AddComponent<AudioSource>();
+        recordAudio.clip = record;
+        recordAudio.loop = true;
+        // Mix from Alexey's position so dialogue coverage never moves the listener.
+        recordAudio.spatialBlend = 0f;
+        recordAudio.volume = 0f;
+        recordFilter = deck.gameObject.AddComponent<AudioLowPassFilter>();
+        recordFilter.cutoffFrequency = 1550f;
+        recordFilter.lowpassResonanceQ = 1f;
+        recordListener = FindAnyObjectByType<OfficerController>();
+        recordAudio.Play();
+    }
+
+    void MixRecordAudio()
+    {
+        if (!recordAudio || !recordListener) return;
+
+        Transform listener = recordListener.transform;
+        Vector3 toDeck = Vector3.ProjectOnPlane(recordAudio.transform.position - listener.position, Vector3.up);
+        float distance = toDeck.magnitude;
+        float roomDistance = Smooth(2f, 22f, distance);
+        float yardPresence = Mathf.Lerp(1f, .42f, Smooth(6f, 60f, distance)) * (1f - Smooth(62f, 92f, distance));
+        float blend = 1f - Mathf.Exp(-Time.deltaTime / .45f);
+        recordShelter = Mathf.Lerp(recordShelter, UnderRoof ? 1f : 0f, blend);
+
+        float presence = Mathf.Lerp(.54f * yardPresence, Mathf.Lerp(1f, .62f, roomDistance), recordShelter);
+        float speech = string.IsNullOrEmpty(caption) ? .86f : .36f;
+        float target = stage == Stage.Report || creditsRolling ? 0f : speech * presence * NoirMenu.GameSettings.MusicGain;
+        recordLevel = Mathf.Lerp(recordLevel, target, blend);
+        recordAudio.volume = recordLevel * EndingAmbience;
+
+        float pan = .24f * Vector3.Dot(listener.right, toDeck / Mathf.Max(2f, distance));
+        recordAudio.panStereo = Mathf.Lerp(recordAudio.panStereo, pan, blend);
+        float yardCutoff = Mathf.Lerp(1450f, 2100f, yardPresence);
+        float cutoff = Mathf.Lerp(yardCutoff, Mathf.Lerp(5600f, 2900f, roomDistance), recordShelter);
+        recordFilter.cutoffFrequency = Mathf.Lerp(recordFilter.cutoffFrequency, cutoff, blend);
+        RecordScoreDuck = Mathf.Lerp(.65f * yardPresence, 1f, recordShelter);
     }
 
     public void SetBranch(bool arrivedLate)
@@ -75,6 +137,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     void TakeControl(OfficerController officer)
     {
         player = officer;
+        recordListener = officer;
         props.SetHero(officer);
         view = officer.cameraTransform ? officer.cameraTransform.GetComponent<ThirdPersonCamera>() : null;
         previousLock = Cursor.lockState;
@@ -155,6 +218,8 @@ public sealed partial class HangarFinale : MonoBehaviour
     {
         if (yardRain) yardRain.enabled = true;
         StopAllCoroutines();
+        StopCredits();
+        fadingToCredits = false;
         endingFade = 0;
         props.ResetAll();
         if (kostyaFace) kostyaFace.SetBlendShapeWeight(0, 0);
@@ -263,6 +328,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     {
         if (NoirMenu.GameSession.Paused) return;
         DebugKeys();
+        MixRecordAudio();
         if (stage == Stage.Outside || stage == Stage.Listening || Time.timeScale <= 0) return;
         if (!delayed && !Finished)
         {
@@ -296,9 +362,10 @@ public sealed partial class HangarFinale : MonoBehaviour
         }
         if (stage == Stage.Decision)
         {
-            reach = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((DecisionSeconds - deadline + Time.time) / .48f));
-            staging.Reach(reach);
-            if (reach > .85f && !props.KostyaArmed) props.ArmKostya(true, player.transform);
+            // Under the timer he goes for it: hand under the lapel, grip, and the gun starting to clear the coat.
+            reach = Mathf.Min(HoldDraw, (DecisionSeconds - deadline + Time.time) / staging.DrawDuration);
+            staging.Draw(reach, player.transform);
+            if (reach >= HangarStaging.RevealMoment && !props.KostyaArmed) props.ArmKostya(true, player.transform);
             if (keys != null && (keys.digit1Key.wasPressedThisFrame || keys.numpad1Key.wasPressedThisFrame)) Resolve(true);
             else if (keys != null && (keys.digit2Key.wasPressedThisFrame || keys.numpad2Key.wasPressedThisFrame)) Resolve(false);
             else if (Time.time >= deadline) stage = Stage.Missed;
@@ -321,7 +388,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     {
         stage = Stage.Decision;
         reach = 0f;
-        staging.Reach(0f);
+        staging.Draw(0f, player.transform);
         props.ArmKostya(false);
         props.Aim(1f, kostya);
         deadline = Time.time + DecisionSeconds;
@@ -349,11 +416,22 @@ public sealed partial class HangarFinale : MonoBehaviour
     IEnumerator Aftermath(bool shot)
     {
         Frame(new Vector3(2.85f, 1.47f, 5.32f), new Vector3(1.03f, .92f, 7.20f));
-        if (shot) LocationAudio.Effect("Hangar shot", .55f);
-        props.DropKostyaGun();
-        yield return Animate(staging.FallDuration(shot),
-            t => staging.Subside(shot, t, confrontationMark, confrontationFacing));
-        LocationAudio.Effect("Body fall", shot ? .75f : .4f);
+        if (shot)
+        {
+            endingFade = 1f;
+            LocationAudio.Effect("Hangar shot", .55f);
+            props.DropKostyaGun();
+            staging.Subside(true, 1f, confrontationMark, confrontationFacing);
+            props.ShowBlood(false);
+            yield return RevealAfterDeath(.65f, .75f);
+        }
+        else
+        {
+            props.DropKostyaGun();
+            yield return Animate(staging.FallDuration(false),
+                t => staging.Subside(false, t, confrontationMark, confrontationFacing));
+            LocationAudio.Effect("Body fall", .4f);
+        }
         LocationAudio.Effect("Door movement close", .17f);
         yield return new WaitForSeconds(.20f);
         if (!shot)
@@ -391,7 +469,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         }
         else yield return new WaitForSeconds(1.5f);
         EndPose(shot);
-        ShowReport();
+        yield return FadeOutEnding();
     }
 
     void EndPose(bool shot)
@@ -402,6 +480,25 @@ public sealed partial class HangarFinale : MonoBehaviour
         staging.Father(1f, 1f);
         staging.Bindings(false);
         staging.DropRope(1f);
+    }
+
+    IEnumerator RevealAfterDeath(float hold, float fallGain = 0f)
+    {
+        caption = null;
+        yield return new WaitForSeconds(hold);
+        if (fallGain > 0f) LocationAudio.Effect("Body fall", fallGain);
+        yield return Animate(.65f, t => endingFade = 1f - Mathf.SmoothStep(0, 1, t));
+    }
+
+    IEnumerator FadeOutEnding()
+    {
+        caption = null;
+        BeginEndingShot();
+        yield return new WaitForSeconds(EndingShotSeconds);
+        fadingToCredits = true;
+        yield return Animate(1.25f, t => endingFade = Mathf.SmoothStep(0, 1, t));
+        yield return new WaitForSeconds(2f);
+        yield return RollCredits();
     }
 
     void ShowReport()
@@ -471,9 +568,18 @@ public sealed partial class HangarFinale : MonoBehaviour
 
     void OnGUI()
     {
-        if (endingFade > 0f) Fill(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,endingFade));
-        if (DrawCredits()) return;
+        if (endingFade > 0f || creditsRolling)
+        {
+            int depth = GUI.depth;
+            GUI.depth = -100;
+            if (endingFade > 0f)
+                Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, endingFade));
+            bool drewCredits = DrawCredits();
+            GUI.depth = depth;
+            if (drewCredits) return;
+        }
         if (DebugMenu()) return;
+        if (endingFade >= 1f) return;
         if (NoirMenu.GameSession.Paused) return;
         Subtitles.Draw(caption);
         if (stage != Stage.DialogueChoice && stage != Stage.Decision && stage != Stage.Missed && stage != Stage.Report) return;

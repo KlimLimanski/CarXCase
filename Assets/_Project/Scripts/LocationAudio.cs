@@ -26,8 +26,22 @@ public sealed class LocationAudio : MonoBehaviour
     CharacterController body;
     ApartmentAnsweringMachine machine;
     OfficeTurntable turntable;
-    public float ScoreLevel => (machine && machine.IsPlaying) || (turntable && turntable.IsPlaying) ? .07f :
-        gameObject.scene.name == "04_Precinct" ? .17f : .29f;
+    float harborShelter;
+
+    // Leave room for the bar dialogue in the rain, soundtrack and record mix.
+    public static float BackgroundGain(Scene scene) => scene.name == "02_Bar" ? .28f : 1f;
+
+    public float ScoreLevel
+    {
+        get
+        {
+            if (harborFinale)
+                return .29f * (1f - harborFinale.RecordScoreDuck) * harborFinale.EndingAmbience;
+            float level = (machine && machine.IsPlaying) || (turntable && turntable.IsPlaying) ? .07f :
+                gameObject.scene.name == "04_Precinct" ? .17f : .29f;
+            return level * BackgroundGain(gameObject.scene);
+        }
+    }
     static LocationAudio current;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -69,8 +83,7 @@ public sealed class LocationAudio : MonoBehaviour
         {
             audio.rainFilter = rainObject.AddComponent<AudioLowPassFilter>();
             audio.rainFilter.lowpassResonanceQ = 1f;
-            audio.rainFilter.cutoffFrequency = audio.driving ? 3600f : 1550f;
-            audio.rainFilter.enabled = !harbor;
+            audio.rainFilter.cutoffFrequency = harbor ? 22000f : audio.driving ? 3600f : 1550f;
         }
         if (!harbor && !audio.driving)
         {
@@ -128,8 +141,10 @@ public sealed class LocationAudio : MonoBehaviour
         float rainLevel = outdoors ? .78f : .22f;
         if (outdoors && harborFinale)
         {
-            rainFilter.enabled = harborFinale.UnderRoof;
-            if (harborFinale.UnderRoof) rainLevel = .18f;
+            float blend = 1f - Mathf.Exp(-Time.deltaTime / .55f);
+            harborShelter = Mathf.Lerp(harborShelter, harborFinale.UnderRoof ? 1f : 0f, blend);
+            rainFilter.cutoffFrequency = 22000f * Mathf.Pow(1550f / 22000f, harborShelter);
+            rainLevel = Mathf.Lerp(rainLevel, .18f, harborShelter) * harborFinale.EndingAmbience;
         }
         if (!outdoors && !driving)
         {
@@ -141,6 +156,7 @@ public sealed class LocationAudio : MonoBehaviour
             rainLevel = Mathf.Lerp(.18f, .56f, near);
             rainFilter.cutoffFrequency = Mathf.Lerp(1550f, 4400f, near);
         }
+        rainLevel *= BackgroundGain(gameObject.scene);
         Loop(weather, true, machine && machine.IsPlaying ? rainLevel * .45f : rainLevel);
         bool grounded = player && player.isActiveAndEnabled && body && body.enabled && body.isGrounded && Time.timeScale > 0f;
         float speed = grounded ? Vector3.ProjectOnPlane(body.velocity, Vector3.up).magnitude : 0f;

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using CarXCase.Interaction;
+using CarXCase.Hero;
 
 namespace DetectiveGame.Core
 {
@@ -395,6 +396,8 @@ namespace DetectiveGame.Core
         {
             if (!clue || _inBeat) yield break;
             _inBeat = true;
+            inspectionFace = GetComponentInChildren<HeroFace>();
+            if (inspectionFace) inspectionFace.Inspecting = true;
             Vector3 point = InteractionGlyphs.PointOf(clue);
             LockInput(true);
             FaceTowards(point);
@@ -410,7 +413,16 @@ namespace DetectiveGame.Core
             if (view) view.EndShot();
             ClearFaceTarget();
             LockInput(false);
+            EndInspectionSway();
             _inBeat = false;
+        }
+
+        HeroFace inspectionFace;
+
+        void EndInspectionSway()
+        {
+            if (inspectionFace) inspectionFace.Inspecting = false;
+            inspectionFace = null;
         }
 
         ClueObject FindAimedClue()
@@ -451,6 +463,7 @@ namespace DetectiveGame.Core
 
         void OnDisable()
         {
+            EndInspectionSway();
             _planarVelocity = _planarAcceleration = Vector3.zero;
             ClearInteraction();
             if (hud) hud.CloseJournal();

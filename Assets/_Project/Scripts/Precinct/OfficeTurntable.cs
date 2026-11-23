@@ -44,7 +44,7 @@ namespace CarXCase.Precinct
 
         void Update()
         {
-            music.volume = GameSettings.MusicGain * .46f;
+            music.volume = GameSettings.MusicGain * .46f * LocationAudio.BackgroundGain(gameObject.scene);
             if (tonearm)
             {
                 travel = Mathf.MoveTowards(travel, switchedOn ? 1f : 0f, Time.deltaTime * 2.5f);

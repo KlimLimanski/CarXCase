@@ -32,7 +32,8 @@ public static class ApartmentStoryArt
         cylinder.rotation = Quaternion.LookRotation(Vector3.back);
         RemoveChildren(cylinder, "Cylinder_Aim", "Door_Lock_Cylinder");
         var cylinderModel = Model(cylinder, "Door_Lock_Cylinder", Vector3.zero, Quaternion.identity);
-        SetHighlights(keys.GetComponent<ClueObject>(), ring, cylinderModel, keys.Find("Intact strike plate"));
+        var lockPlate = frontDoor.Find("Intact strike plate") ?? keys.Find("Intact strike plate");
+        SetHighlights(keys.GetComponent<ClueObject>(), ring, cylinderModel, lockPlate);
 
         var cabinet = story.Find("Evidence_Valuables_By_Sony_CRT");
         RemoveNamedChild(cabinet, "Pobeda wristwatch");

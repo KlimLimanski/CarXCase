@@ -7,7 +7,35 @@ public sealed class HangarStaging : MonoBehaviour
     [SerializeField] Transform wristCuff;
 
     [SerializeField] AnimationClip seated, conversation, pivot, backwardFall, restraint;
+    [SerializeField] AnimationClip heroAimPose;
+    [SerializeField] TextAsset heroGripData;
+    public AnimationClip HeroAimPose => heroAimPose;
+    public TextAsset HeroGripData => heroGripData;
+    [Tooltip("Kostya reaches under the left lapel and draws (Blender: Source~/Kostya draw.blend).")]
+    [SerializeField] AnimationClip draw;
+    [Tooltip("The father after the shot: head raised, then sinking (Blender: Source~/Fyodor death.blend).")]
+    [SerializeField] AnimationClip fatherDeath;
+    Actor lateRig;
+    public float DeathDuration => fatherDeath ? fatherDeath.length : 2.5f;
+
+    /// The late father model, used when Kostya shoots him in front of Alexey.
+    public void InitializeLate(Transform lateFather)
+    {
+        var model = lateFather ? lateFather.Find("Hangar Late") : null;
+        if (model) lateRig = new Actor(model);
+    }
+
+    /// 0: head still up as the picture comes back from black, 1: slumped, the late model's own pose.
+    public void FatherDeath(float progress)
+    {
+        if (lateRig == null || !fatherDeath) return;
+        lateRig.Sample(fatherDeath, Mathf.Clamp01(progress) * fatherDeath.length, 1f, true);
+    }
     public float TurnDuration => pivot.length;
+    public float DrawDuration => draw ? draw.length : .5f;
+    /// First frame where the prop is clear of the coat.
+    public const float RevealMoment = .51f;
+    public float DrawProgress { get; private set; }
     public float FallDuration(bool shot) => shot ? backwardFall.length : restraint.length;
     float performanceStart;
     Transform kostya, father;
@@ -34,6 +62,11 @@ public sealed class HangarStaging : MonoBehaviour
         fatherRig = new Actor(liveFather.Find("Hangar Rescue"));
         kostyaRig = new Actor(kostya.Find("Hangar Kostya"));
         kostyaMark = kostya.localPosition;
+        {   // arms hang at rest: the hand continues the forearm, the thumb points forward
+            var wrist = kostyaRig.Get("hand.R");
+            handAxis = Quaternion.Inverse(wrist.rotation) * (wrist.position - kostyaRig.Get("forearm.R").position).normalized;
+            thumbAxis = Quaternion.Inverse(wrist.rotation) * Vector3.ProjectOnPlane(kostya.forward, wrist.rotation * handAxis).normalized;
+        }
         foreach (Transform part in liveFather)
             if (part.name == "Rope") bindings.Add(part.gameObject);
         if (looseRope)
@@ -47,6 +80,7 @@ public sealed class HangarStaging : MonoBehaviour
     public void ResetActors()
     {
         performanceStart = Time.time;
+        DrawProgress = 0f;
         kostya.localPosition = kostyaMark;
         kostya.localRotation = Quaternion.identity;
         fatherRig.Reset();
@@ -98,6 +132,57 @@ public sealed class HangarStaging : MonoBehaviour
         kostyaRig.Solve(upper, lower, hand, kostya.TransformPoint(target),
             kostya.TransformDirection(new Vector3(sign * .13f, -.52f, -.95f)), kostya.right * sign);
     }
+
+    /// The cross draw: right hand under the left lapel while the left hand opens the coat, the gun comes out
+    /// and the arm extends. The last part bends the arm so the barrel ends on `target`.
+    public void Draw(float progress, Transform target, float targetHeight = 1.15f)
+    {
+        DrawProgress = progress = Mathf.Clamp01(progress);
+        if (draw) kostyaRig.Sample(draw, progress * draw.length, .32f);
+        else DialoguePose(lastDialogueTime, lastGesture);
+
+        // Keep the body shift from the clip and ease each sleeve along a separate hand path.
+        kostyaRig.RelaxArm("upper_arm.R", "forearm.R", "hand.R");
+        kostyaRig.RelaxArm("upper_arm.L", "forearm.L", "hand.L");
+        float reachCoat = Ease(.02f, .36f, progress);
+        float withdraw = Ease(.37f, .64f, progress);
+        float aim = Ease(.59f, .96f, progress);
+        if (reachCoat <= 0f) return;
+        var shoulder = kostyaRig.Get("upper_arm.R");
+        var elbow = kostyaRig.Get("forearm.R");
+        var wrist = kostyaRig.Get("hand.R");
+        Vector3 goal = target ? target.position + Vector3.up * targetHeight : shoulder.position + kostya.forward;
+        Vector3 dir = (goal - shoulder.position).normalized;
+        float reach = (Vector3.Distance(shoulder.position, elbow.position) + Vector3.Distance(elbow.position, wrist.position)) * .88f;
+        Quaternion restWrist = wrist.rotation;
+        Vector3 handTarget = Vector3.Lerp(wrist.position,
+            kostya.TransformPoint(new Vector3(-.065f, 1.21f, .165f)), reachCoat);
+        handTarget = Vector3.Lerp(handTarget, kostya.TransformPoint(new Vector3(.105f, 1.22f, .32f)), withdraw);
+        handTarget = Vector3.Lerp(handTarget, shoulder.position + dir * reach, aim);
+        var bend = Vector3.Lerp((elbow.position - shoulder.position).normalized,
+            kostya.TransformDirection(new Vector3(.48f, -.84f, -.12f)), reachCoat);
+        kostyaRig.Solve("upper_arm.R", "forearm.R", "hand.R", handTarget, bend);
+
+        float openCoat = Ease(.04f, .27f, progress) * (1f - Ease(.48f, .81f, progress));
+        if (openCoat > 0f)
+        {
+            var left = kostyaRig.Get("hand.L");
+            Vector3 lapel = kostya.TransformPoint(new Vector3(-.185f, 1.26f, .185f));
+            kostyaRig.Solve("upper_arm.L", "forearm.L", "hand.L", Vector3.Lerp(left.position, lapel, openCoat),
+                kostya.TransformDirection(new Vector3(-.5f, -.85f, -.22f)));
+        }
+        var gripBasis = Quaternion.LookRotation(handAxis, thumbAxis);
+        var lifted = Quaternion.LookRotation((goal - wrist.position).normalized, Vector3.up) * Quaternion.Inverse(gripBasis);
+        var tucked = Quaternion.LookRotation(kostya.TransformDirection(new Vector3(.16f, -.78f, .61f)),
+            kostya.TransformDirection(new Vector3(-.16f, .60f, .78f))) * Quaternion.Inverse(gripBasis);
+        wrist.rotation = Quaternion.Slerp(Quaternion.Slerp(restWrist, tucked, reachCoat), lifted, aim);
+        kostyaRig.Offset("head", 0f, Vector3.SignedAngle(kostya.forward, Vector3.ProjectOnPlane(dir, Vector3.up), Vector3.up) * .35f * aim, 0f);
+    }
+
+    Vector3 handAxis = Vector3.down, thumbAxis = Vector3.forward;
+    /// Direction from wrist to fingers and of the thumb, in the hand bone's space (taken from the rest pose).
+    public Vector3 HandAxis => kostyaRig.Get("hand.R").rotation * handAxis;
+    public Vector3 ThumbAxis => kostyaRig.Get("hand.R").rotation * thumbAxis;
 
     public void Reach(float amount)
     {
