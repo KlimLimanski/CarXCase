@@ -26,8 +26,17 @@ public sealed class LocationAudio : MonoBehaviour
     CharacterController body;
     ApartmentAnsweringMachine machine;
     OfficeTurntable turntable;
-    public float ScoreLevel => (machine && machine.IsPlaying) || (turntable && turntable.IsPlaying) ? .07f :
-        gameObject.scene.name == "04_Precinct" ? .17f : .29f;
+    float harborShelter;
+    public float ScoreLevel
+    {
+        get
+        {
+            if (harborFinale)
+                return .29f * (1f - harborFinale.RecordScoreDuck) * harborFinale.EndingAmbience;
+            if ((machine && machine.IsPlaying) || (turntable && turntable.IsPlaying)) return .07f;
+            return gameObject.scene.name == "04_Precinct" ? .17f : .29f;
+        }
+    }
     static LocationAudio current;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -69,8 +78,7 @@ public sealed class LocationAudio : MonoBehaviour
         {
             audio.rainFilter = rainObject.AddComponent<AudioLowPassFilter>();
             audio.rainFilter.lowpassResonanceQ = 1f;
-            audio.rainFilter.cutoffFrequency = audio.driving ? 3600f : 1550f;
-            audio.rainFilter.enabled = !harbor;
+            audio.rainFilter.cutoffFrequency = harbor ? 22000f : audio.driving ? 3600f : 1550f;
         }
         if (!harbor && !audio.driving)
         {
@@ -128,8 +136,10 @@ public sealed class LocationAudio : MonoBehaviour
         float rainLevel = outdoors ? .78f : .22f;
         if (outdoors && harborFinale)
         {
-            rainFilter.enabled = harborFinale.UnderRoof;
-            if (harborFinale.UnderRoof) rainLevel = .18f;
+            float blend = 1f - Mathf.Exp(-Time.deltaTime / .55f);
+            harborShelter = Mathf.Lerp(harborShelter, harborFinale.UnderRoof ? 1f : 0f, blend);
+            rainFilter.cutoffFrequency = 22000f * Mathf.Pow(1550f / 22000f, harborShelter);
+            rainLevel = Mathf.Lerp(rainLevel, .18f, harborShelter) * harborFinale.EndingAmbience;
         }
         if (!outdoors && !driving)
         {

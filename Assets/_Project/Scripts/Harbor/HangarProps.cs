@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using CarXCase.Hero;
 using DetectiveGame.Core;
 using UnityEngine;
@@ -15,6 +16,9 @@ public sealed class HangarProps : MonoBehaviour
     Transform hero, heroVisual;
     Animator heroRig;
     Transform gunAlexey, gunKostya;
+    GameObject bloodPool;
+    Material bloodMaterial;
+    Texture2D bloodTexture;
 
     float aimGoal, aim, aimVelocity;
     Transform aimAt;
@@ -30,6 +34,20 @@ public sealed class HangarProps : MonoBehaviour
     bool visualSaved;
     Vector3 visualPosition;
     Quaternion visualRotation;
+    readonly Transform[] aimBones = new Transform[8];
+    readonly Quaternion[] locomotionArms = new Quaternion[8];
+    SkinnedMeshRenderer gripSkin;
+    Mesh originalGripMesh, gripMesh;
+    int gripShape;
+    bool gripPrepared;
+    // Grip space measured on the retargeted Pistol Aim pose.
+    static readonly Quaternion AimGripRotation = new(.69940f, .27256f, .33313f, .57059f);
+    static readonly Vector3 AimGripOffset = new(.0434f, -.0332f, -.0094f);
+    // The original coat rig weights part of the palm to the sleeve, so fit the socket
+    // at the three visible poses where the right wrist bends most.
+    static readonly Vector3 KostyaGripReveal = new(-.118f, .021f, .075f);
+    static readonly Vector3 KostyaGripWithdrawn = new(-.078f, .034f, .066f);
+    static readonly Vector3 KostyaGripAimed = new(-.053f, .096f, .099f);
 
     float Floor => transform.position.y + .06f;
 
@@ -48,12 +66,68 @@ public sealed class HangarProps : MonoBehaviour
     public void SetHero(OfficerController officer)
     {
         if (!officer || hero == officer.transform) return;
+        ReleaseGrip();
         hero = officer.transform;
         heroRig = officer.GetComponentInChildren<Animator>();
         heroBones.Clear();
         palmsKnown = false;
         heroVisual = hero.Find("Character_Visual");
         if (!heroVisual && heroRig) heroVisual = heroRig.transform;
+        System.Array.Clear(aimBones, 0, aimBones.Length);
+    }
+
+    bool BindAimArms()
+    {
+        if (heroRig && aimBones[1] && aimBones[2] && aimBones[3] && aimBones[5] && aimBones[6] && aimBones[7]) return true;
+        if (!heroRig) heroRig = hero.GetComponentInChildren<Animator>();
+        aimBones[0] = Bone(HumanBodyBones.RightShoulder);
+        aimBones[1] = Bone(HumanBodyBones.RightUpperArm);
+        aimBones[2] = Bone(HumanBodyBones.RightLowerArm);
+        aimBones[3] = Bone(HumanBodyBones.RightHand);
+        aimBones[4] = Bone(HumanBodyBones.LeftShoulder);
+        aimBones[5] = Bone(HumanBodyBones.LeftUpperArm);
+        aimBones[6] = Bone(HumanBodyBones.LeftLowerArm);
+        aimBones[7] = Bone(HumanBodyBones.LeftHand);
+        return heroRig && aimBones[1] && aimBones[2] && aimBones[3] && aimBones[5] && aimBones[6] && aimBones[7];
+    }
+
+    void PrepareGrip()
+    {
+        if (!staging.HeroGripData) return;
+        var data = staging.HeroGripData.bytes;
+        if (data.Length < 8) return;
+        using var stream = new BinaryReader(new MemoryStream(data));
+        int vertexCount = stream.ReadInt32();
+        int count = stream.ReadInt32();
+        if (count < 0 || data.Length != 8L + 16L * count) return;
+
+        foreach (var skin in hero.GetComponentsInChildren<SkinnedMeshRenderer>())
+        {
+            if (!skin.sharedMesh || skin.sharedMesh.vertexCount != vertexCount) continue;
+            var offsets = new Vector3[vertexCount];
+            for (int i = 0; i < count; i++)
+            {
+                int vertex = stream.ReadInt32();
+                if (vertex < 0 || vertex >= vertexCount) return;
+                offsets[vertex] = new Vector3(stream.ReadSingle(), stream.ReadSingle(), stream.ReadSingle());
+            }
+            gripSkin = skin;
+            originalGripMesh = skin.sharedMesh;
+            gripMesh = Instantiate(originalGripMesh);
+            gripShape = gripMesh.blendShapeCount;
+            gripMesh.AddBlendShapeFrame("Hangar pistol grip", 100f, offsets, null, null);
+            gripSkin.sharedMesh = gripMesh;
+            return;
+        }
+    }
+
+    void ReleaseGrip()
+    {
+        if (gripSkin && gripSkin.sharedMesh == gripMesh) gripSkin.sharedMesh = originalGripMesh;
+        if (gripMesh) Destroy(gripMesh);
+        gripSkin = null;
+        gripMesh = null;
+        gripPrepared = false;
     }
 
     /// Alexey's gun: 0 holstered, .5 low ready (muzzle at the floor in front of the target), 1 aimed at the chest.
@@ -92,10 +166,13 @@ public sealed class HangarProps : MonoBehaviour
     public void ResetAll()
     {
         aimGoal = aim = aimVelocity = 0f;
+        if (bloodPool) Destroy(bloodPool);
+        bloodPool = null;
         kostyaArmed = false;
         falling.Clear();
         grounded.Clear();
         if (gunAlexey) gunAlexey.gameObject.SetActive(false);
+        if (gripSkin) gripSkin.SetBlendShapeWeight(gripShape, 0);
         if (gunKostya) gunKostya.gameObject.SetActive(false);
         collapse = -1f;
         if (visualSaved && heroVisual) heroVisual.SetLocalPositionAndRotation(visualPosition, visualRotation);
@@ -104,6 +181,47 @@ public sealed class HangarProps : MonoBehaviour
     }
 
     void OnDisable() => ResetAll();
+    void OnDestroy()
+    {
+        ReleaseGrip();
+        if (bloodMaterial) Destroy(bloodMaterial);
+        if (bloodTexture) Destroy(bloodTexture);
+    }
+
+    public void ShowBlood(bool alexey)
+    {
+        if (bloodPool) return;
+        var chest = alexey ? Bone(HumanBodyBones.Chest) : staging.KostyaBone("chest");
+        if (!chest) return;
+        if (!bloodMaterial)
+        {
+            var shader = Shader.Find("Sprites/Default");
+            if (!shader) return;
+            const int size = 64;
+            bloodTexture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            bloodTexture.wrapMode = TextureWrapMode.Clamp;
+            var pixels = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                var p = new Vector2(x, y) / (size - 1) * 2f - Vector2.one;
+                float edge = p.magnitude + (Mathf.PerlinNoise(x * .105f, y * .105f) - .5f) * .18f;
+                pixels[y * size + x] = new Color(.19f, .022f, .023f, .86f * (1f - Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.65f, .96f, edge))));
+            }
+            bloodTexture.SetPixels(pixels);
+            bloodTexture.Apply(false, true);
+            bloodMaterial = new Material(shader) { mainTexture = bloodTexture };
+        }
+        bloodPool = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        bloodPool.name = "Small blood pool";
+        bloodPool.transform.SetParent(transform, false);
+        bloodPool.transform.SetPositionAndRotation(new Vector3(chest.position.x, Floor + .008f, chest.position.z), Quaternion.Euler(90f, 16f, 0f));
+        bloodPool.transform.localScale = new Vector3(.65f, .44f, 1f);
+        Destroy(bloodPool.GetComponent<Collider>());
+        var renderer = bloodPool.GetComponent<MeshRenderer>();
+        renderer.sharedMaterial = bloodMaterial;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+    }
 
     // ---------- per frame ----------
 
@@ -154,7 +272,13 @@ public sealed class HangarProps : MonoBehaviour
     {
         bool show = aim > .03f && aimAt && hero && collapse < 0f && !grounded.Contains(gunAlexey);
         if (gunAlexey && !IsFalling(gunAlexey)) gunAlexey.gameObject.SetActive(show);
+        if (gripSkin && !show) gripSkin.SetBlendShapeWeight(gripShape, 0);
         if (!show) return;
+        if (staging.HeroAimPose && BindAimArms())
+        {
+            ApplyAimPose();
+            return;
+        }
         Transform chest = Bone(HumanBodyBones.UpperChest) ?? Bone(HumanBodyBones.Chest);
         Transform shR = Bone(HumanBodyBones.RightUpperArm), elR = Bone(HumanBodyBones.RightLowerArm), hR = Bone(HumanBodyBones.RightHand);
         Transform shL = Bone(HumanBodyBones.LeftUpperArm), elL = Bone(HumanBodyBones.LeftLowerArm), hL = Bone(HumanBodyBones.LeftHand);
@@ -187,6 +311,56 @@ public sealed class HangarProps : MonoBehaviour
         gunAlexey.SetPositionAndRotation(hR.position + dir * .055f - right * .022f - gunUp * .01f, Quaternion.LookRotation(dir, gunUp));
     }
 
+    void ApplyAimPose()
+    {
+        if (!gripPrepared)
+        {
+            gripPrepared = true;
+            PrepareGrip();
+        }
+        if (gripSkin) gripSkin.SetBlendShapeWeight(gripShape, Mathf.SmoothStep(0f, 100f, Mathf.InverseLerp(0f, .30f, aim)));
+        float weight = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, .46f, aim));
+        for (int i = 0; i < aimBones.Length; i++)
+            if (aimBones[i]) locomotionArms[i] = aimBones[i].localRotation;
+        staging.HeroAimPose.SampleAnimation(heroRig.gameObject, 0f);
+
+        Transform right = aimBones[3], left = aimBones[7];
+        Quaternion authoredGun = right.rotation * AimGripRotation;
+        Quaternion authoredSupport = left.rotation;
+        for (int i = 0; i < aimBones.Length; i++)
+            if (aimBones[i])
+                aimBones[i].localRotation = Quaternion.Slerp(locomotionArms[i], aimBones[i].localRotation, weight);
+
+        Vector3 up = Vector3.up;
+        Vector3 shoulderCenter = (aimBones[1].position + aimBones[5].position) * .5f;
+        float raised = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.48f, 1f, aim));
+        Vector3 target = aimAt.position + up * Mathf.Lerp(.16f, 1.25f, raised);
+        Vector3 flat = Vector3.ProjectOnPlane(target - shoulderCenter, up);
+        Vector3 forward = flat.sqrMagnitude > .01f
+            ? Vector3.RotateTowards(hero.forward, flat.normalized, 25f * Mathf.Deg2Rad, 0f)
+            : hero.forward;
+        Vector3 across = Vector3.Cross(up, forward).normalized;
+        // Put the grip in front of the sternum and keep both elbows outside the wrists.
+        Vector3 centerGrip = shoulderCenter + forward * Mathf.Lerp(.35f, .52f, raised)
+            + across * .018f - up * Mathf.Lerp(.24f, .10f, raised);
+        Vector3 direction = (target - centerGrip).normalized;
+        Quaternion gunRotation = Quaternion.LookRotation(direction.sqrMagnitude > .01f ? direction : forward, up);
+        Quaternion rightPalm = Quaternion.AngleAxis(-8f, gunRotation * Vector3.forward)
+            * gunRotation * Quaternion.Inverse(AimGripRotation);
+        Vector3 rightWrist = centerGrip - rightPalm * AimGripOffset;
+        HeroArmIK.Solve(aimBones[1], aimBones[2], right, rightWrist,
+            shoulderCenter + across * .43f - up * .27f + forward * .08f, weight);
+        right.rotation = Quaternion.Slerp(right.rotation, rightPalm, weight);
+
+        Vector3 gripPoint = right.position + right.TransformDirection(AimGripOffset);
+        gunAlexey.SetPositionAndRotation(gripPoint, gunRotation);
+        Vector3 supportWrist = gripPoint + gunRotation * new Vector3(-.073f, -.050f, -.036f);
+        HeroArmIK.Solve(aimBones[5], aimBones[6], left, supportWrist,
+            shoulderCenter - across * .43f - up * .27f + forward * .08f, weight);
+        Quaternion supportPalm = gunRotation * Quaternion.Inverse(authoredGun) * authoredSupport;
+        left.rotation = Quaternion.Slerp(left.rotation, supportPalm, weight);
+    }
+
     /// Twists the hand about the barrel line so its palm (a direction in hand space) faces `want`.
     static void RollPalm(Transform hand, Vector3 palmLocal, Vector3 want, Vector3 along, float weight)
     {
@@ -201,13 +375,25 @@ public sealed class HangarProps : MonoBehaviour
         if (!gunKostya || IsFalling(gunKostya) || grounded.Contains(gunKostya)) return;
         gunKostya.gameObject.SetActive(kostyaArmed);
         if (!kostyaArmed) return;
+        // Stay in hand space, with a short correction for the mesh deformation at the cuff.
         var hand = staging.KostyaBone("hand.R");
-        var forearm = staging.KostyaBone("forearm.R");
-        Vector3 axis = (hand.position - forearm.position).normalized;
-        Vector3 grip = hand.position + axis * .065f;
-        Vector3 dir = kostyaTarget ? (kostyaTarget.position + Vector3.up * kostyaTargetHeight - grip).normalized : axis;
-        Vector3 side = Vector3.Cross(Vector3.up, dir);
-        gunKostya.SetPositionAndRotation(grip, Quaternion.LookRotation(dir, Vector3.Cross(dir, side.sqrMagnitude > .0001f ? side.normalized : Vector3.right)));
+        Vector3 barrel = staging.HandAxis;
+        Vector3 thumb = staging.ThumbAxis;
+        float draw = staging.DrawProgress;
+        Vector3 offset = Vector3.Lerp(KostyaGripReveal, KostyaGripWithdrawn,
+            Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.54f, .65f, draw)));
+        offset = Vector3.Lerp(offset, KostyaGripAimed,
+            Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.65f, .78f, draw)));
+        Vector3 grip = hand.position + hand.TransformDirection(offset);
+        Quaternion rotation = Quaternion.LookRotation(barrel, thumb);
+        float settle = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.78f, 1f, draw));
+        if (kostyaTarget && settle > 0f)
+        {
+            Vector3 target = kostyaTarget.position + Vector3.up * kostyaTargetHeight - grip;
+            if (target.sqrMagnitude > .01f)
+                rotation = Quaternion.RotateTowards(rotation, Quaternion.LookRotation(target, Vector3.up), 8f * settle);
+        }
+        gunKostya.SetPositionAndRotation(grip, rotation);
     }
 
     void Drop(Transform item, float scatter)

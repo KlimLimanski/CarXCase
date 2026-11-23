@@ -47,6 +47,7 @@ namespace CarXCase.Hero
         [SerializeField] FaceVisemes visemes;
         [Range(-1, 1)] public float emotion;
         public bool armGestures = true;
+        public bool Inspecting { get; set; }
         [Range(0, 2)] public float intensity = 1;
         [Tooltip("Jaw opening on a full syllable, degrees.")] public float maxJawAngle = 5.5f;
         [Tooltip("Weight (0..1) of the mouth blend shape on a full syllable.")]
@@ -85,7 +86,7 @@ namespace CarXCase.Hero
         // generic speech generator (no text)
         float sylTimer, sylTarget, sylLeftInWord; float accent, accentVel;
         bool accentLatch;
-        Vector3 headOff, headOffVel; float gesture, gestureVel, gestureTarget, gestureTimer;
+        Vector3 headOff, headOffVel; float gesture, gestureVel, gestureTarget, gestureTimer, inspectionSway;
         int spokenPhrases;
 
         public bool IsSpeaking => speech.Active || talking;
@@ -292,11 +293,18 @@ namespace CarXCase.Hero
 
             // ---- right hand: occasional slow beat gesture while talking
             if (!armGestures) { Finish(); return; }
-            gestureTimer -= dt;
-            if (gestureTimer <= 0) { gestureTimer = Random.Range(1.2f, 2.6f); gestureTarget = speaking && Random.value < .55f ? Random.Range(.5f, 1f) : 0; }
-            gesture = Mathf.SmoothDamp(gesture, speaking ? gestureTarget : 0, ref gestureVel, .45f);
-            if (rArm) rArm.rotation = Quaternion.AngleAxis(-10f * gesture * k, root.right) * rArm.rotation;
-            if (rFore) rFore.rotation = Quaternion.AngleAxis((-28f - accent * 6f) * gesture * k, root.right) * rFore.rotation;
+            inspectionSway = Mathf.MoveTowards(inspectionSway, Inspecting ? 1f : 0f, dt * 3);
+            if (!Inspecting)
+            {
+                gestureTimer -= dt;
+                if (gestureTimer <= 0) { gestureTimer = Random.Range(1.2f, 2.6f); gestureTarget = speaking && Random.value < .55f ? Random.Range(.5f, 1f) : 0; }
+            }
+            gesture = Mathf.SmoothDamp(gesture, speaking && !Inspecting ? gestureTarget : 0, ref gestureVel, Inspecting ? .30f : .45f);
+            float sway = Mathf.Sin(t * 1.9f);
+            float upper = Mathf.Lerp(-10f * gesture, sway * 1.2f, inspectionSway);
+            float forearm = Mathf.Lerp((-28f - accent * 6f) * gesture, -4f + sway * 1.6f, inspectionSway);
+            if (rArm) rArm.rotation = Quaternion.AngleAxis(upper * k, root.right) * rArm.rotation;
+            if (rFore) rFore.rotation = Quaternion.AngleAxis(forearm * k, root.right) * rFore.rotation;
             Finish();
         }
 

@@ -19,15 +19,18 @@ public sealed partial class HangarFinale
     };
 
     bool creditsRolling;
+    AudioSource creditsSong;
     float creditsTime, creditsBlack;
     GUIStyle creditRole, creditName;
 
     IEnumerator RollCredits()
     {
         creditsRolling = true;
+        float startingBlack = endingFade;
+        creditsBlack = startingBlack;
         stage = Stage.Aftermath;            // hides the case report panel
         caption = null;
-        var song = gameObject.AddComponent<AudioSource>();
+        var song = creditsSong = gameObject.AddComponent<AudioSource>();
         song.playOnAwake = false;
         song.spatialBlend = 0f;
         song.volume = 0f;
@@ -46,12 +49,25 @@ public sealed partial class HangarFinale
             float swell = Smooth(0f, 3f, creditsTime), fade = 1f - Smooth(CreditsLength - 5f, CreditsLength, creditsTime);
             song.volume = .95f * GameSettings.MusicGain * swell * fade;
             SceneScore.Duck = 1f - Smooth(0f, 2.2f, creditsTime);
-            creditsBlack = Smooth(0f, 1.8f, creditsTime);
+            creditsBlack = Mathf.Lerp(startingBlack, 1f, Smooth(0f, 1.8f, creditsTime));
             yield return null;
         }
         song.Stop();
         Leave();
+        endingFade = 1f;
         SceneManager.LoadSceneAsync("00_MainMenu");
+    }
+
+    void StopCredits()
+    {
+        creditsRolling = false;
+        if (creditsSong)
+        {
+            creditsSong.Stop();
+            Destroy(creditsSong);
+        }
+        creditsSong = null;
+        SceneScore.Duck = 1f;
     }
 
     static float Smooth(float a, float b, float v) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, v));
