@@ -112,8 +112,8 @@ namespace CarXCase.Harbor
         }
 
         public Transform lockDetail;
-        static readonly Key[] Sequence = { Key.A, Key.D, Key.W, Key.Space };
-        static readonly string[] Symbols = { "A", "D", "W", "Space" };
+        static readonly Key[] Sequence = { Key.A, Key.D, Key.W, Key.S, Key.Space, Key.D, Key.S, Key.A, Key.W, Key.Space };
+        static string KeyLabel(Key key) => key == Key.Space ? "Пробел" : key.ToString();
         const float ApproachDuration = .55f;
         float approachStart;
         Vector3 previousCameraPosition;
@@ -151,13 +151,13 @@ namespace CarXCase.Harbor
             timing = false;
         }
 
-        float TimeLeft => Mathf.Clamp01(1f - (Time.unscaledTime - pulseStart) / (2.1f - pulses * .16f));
+        float TimeLeft => Mathf.Clamp01(1f - (Time.unscaledTime - pulseStart) / Mathf.Lerp(1.9f, .85f, (float)pulses / (Sequence.Length - 1)));
 
         void UpdateSequence(Keyboard keyboard)
         {
             if (Time.unscaledTime < pulseStart) return;
             if (lockDetail)
-                InteractionGlyphs.Show(this, lockDetail.position + Vector3.right * .20f, Symbols[pulses], progress: TimeLeft, urgent: true);
+                InteractionGlyphs.Show(this, lockDetail.position + Vector3.right * .20f, KeyLabel(Sequence[pulses]), progress: TimeLeft, urgent: true);
             bool wrongKey = System.Array.Exists(Sequence, key => key != Sequence[pulses] && keyboard[key].wasPressedThisFrame);
             if (wrongKey || keyboard[Sequence[pulses]].wasPressedThisFrame) LocationAudio.Effect("Lock key press", .57f);
             if (TimeLeft <= 0 || wrongKey)
@@ -212,10 +212,7 @@ namespace CarXCase.Harbor
             if (!panel) return;
             if (timing)
             {
-                var area = new Rect(Screen.width * .25f, Screen.height * .81f, Screen.width * .5f, 56f);
-                Paint(area, new Color(.04f,.06f,.07f,.88f));
-                GUI.Label(area, $"   {pulses + 1} / {Sequence.Length}     Нажмите {(pulses == 3 ? "Пробел" : Symbols[pulses])}     ·     Esc — отойти", GameTypography.Label);
-                Paint(new Rect(area.x, area.yMax - 4, area.width * TimeLeft, 4), new Color(.83f,.68f,.43f));
+                DrawTimingPanel();
                 return;
             }
             DrawKeypad();
@@ -272,6 +269,48 @@ namespace CarXCase.Harbor
             Edge(r, hover || accent ? new Color(.82f,.56f,.41f) : Bronze);
             Caption(r,title,size,Ivory);
             return GUI.Button(r, GUIContent.none, GUIStyle.none);
+        }
+
+        void DrawTimingPanel()
+        {
+            PreparePanel();
+            const float width = 460f;
+            const float height = 146f;
+            float scale = Mathf.Min(Screen.width / 620f, Screen.height / 620f, 1.25f);
+            float remaining = TimeLeft;
+            Color accent = Color.Lerp(new Color(.77f,.30f,.23f), new Color(.90f,.70f,.43f),
+                Mathf.SmoothStep(0f, 1f, remaining * 2f));
+
+            var previous = GUI.matrix;
+            GUI.matrix = previous * Matrix4x4.TRS(
+                new Vector3((Screen.width - width * scale) * .5f, Screen.height - (height + 28f) * scale),
+                Quaternion.identity, Vector3.one * scale);
+
+            Paint(new Rect(-3,4,width+6,height+4), new Color(0,0,0,.42f));
+            GUI.DrawTexture(new Rect(0,0,width,height), patina);
+            Edge(new Rect(0,0,width,height), Bronze);
+            Edge(new Rect(5,5,width-10,height-10), new Color(.56f,.44f,.33f,.33f));
+
+            var key = new Rect(19,19,103,88);
+            Paint(key, new Color(.12f,.085f,.061f));
+            Edge(key, accent);
+            Caption(key, KeyLabel(Sequence[pulses]), Sequence[pulses] == Key.Space ? 23 : 40, Ivory);
+
+            Caption(new Rect(134,17,210,28), "ВЗЛОМ ЗАМКА", 21, Ivory);
+            Caption(new Rect(352,17,88,28), $"{pulses + 1} / {Sequence.Length}", 17, Ivory);
+
+            const float trackWidth = 294f;
+            float stride = trackWidth / Sequence.Length;
+            for (int i = 0; i < Sequence.Length; i++)
+                Paint(new Rect(145+i*stride,53,stride-4,5),
+                    i < pulses ? Bronze : i == pulses ? Ivory : new Color(.29f,.24f,.20f));
+
+            Paint(new Rect(145,78,trackWidth,7), new Color(.10f,.075f,.055f));
+            Paint(new Rect(145,78,trackWidth*remaining,7), accent);
+            Caption(new Rect(145,91,trackWidth,24), "Нажмите указанную клавишу", 16, Ivory);
+            Paint(new Rect(19,116,420,1), new Color(.56f,.44f,.33f,.42f));
+            Caption(new Rect(19,119,420,19), "Esc · отойти", 14, Ivory);
+            GUI.matrix = previous;
         }
 
         void DrawKeypad()

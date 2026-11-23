@@ -21,9 +21,9 @@ namespace DetectiveGame.Core
             ShowInspectionComment(line, Mathf.Clamp(2.7f + line.Length * .033f, 3.2f, 7f));
         }
 
-        public void ShowInspectionComment(string line, float duration)
+        public void ShowInspectionComment(string line, float duration, string speaker = "Алексей")
         {
-            _inspectionLine = line;
+            _inspectionLine = CarXCase.UI.Subtitles.WithSpeaker(speaker, line);
             _inspectionUntil = Time.unscaledTime + duration;
         }
 

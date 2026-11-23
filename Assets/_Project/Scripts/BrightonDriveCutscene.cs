@@ -295,7 +295,7 @@ namespace CarXCase.Intro
                 {
                     if (storyTime >= line.start && storyTime < line.end)
                     {
-                        CarXCase.UI.Subtitles.Draw(line.text);
+                        CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(line.speaker, line.text));
                         break;
                     }
                 }

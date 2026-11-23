@@ -404,7 +404,7 @@ namespace CarXCase.Precinct
 
             if (phase == Phase.Talking && !string.IsNullOrEmpty(line))
             {
-                CarXCase.UI.Subtitles.Draw(line);
+                CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(speaker, line));
             }
 
             if (phase == Phase.Choosing)

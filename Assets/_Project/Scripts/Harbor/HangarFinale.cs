@@ -8,8 +8,8 @@ using UnityEngine.SceneManagement;
 public sealed class HangarFinale : MonoBehaviour
 {
     public GameObject rescue, late;
-    public Transform chest, head, kostya;
-    public Transform reachingArm;
+    public Transform kostya;
+    HangarStaging staging;
     public Light pendant, backlight;
     public AudioSource pulse;
     public ParticleSystemRenderer yardRain;
@@ -23,9 +23,12 @@ public sealed class HangarFinale : MonoBehaviour
     Stage stage;
     OfficerController player;
     ThirdPersonCamera view;
-    bool delayed, raised, ownsPlayer, previousCursorVisible;
+    bool delayed, turning, ownsPlayer, previousCursorVisible;
     CursorLockMode previousLock;
-    float pitch = 20, deadline;
+    Quaternion confrontationFacing;
+    Vector3 confrontationMark;
+    float deadline, effort, effortGoal, gesture, concern, reach;
+    bool kostyaSpeaking, fatherReleased;
     string caption;
     GUIStyle title, body, action;
     readonly Color ink = new Color(.065f,.086f,.086f,.96f);
@@ -37,6 +40,10 @@ public sealed class HangarFinale : MonoBehaviour
 
     void Start()
     {
+        staging = GetComponent<HangarStaging>();
+        staging.Initialize(rescue.transform, kostya);
+        confrontationFacing = Quaternion.Euler(0, -155f, 0);
+        confrontationMark = staging.KostyaMark;
         SetBranch(ClueJournal.Has(LateRoute));
         if (Finished) EndPose(ClueJournal.Has(Shot));
     }
@@ -67,7 +74,12 @@ public sealed class HangarFinale : MonoBehaviour
         if (view) { view.EndShot(); view.SetCursorLock(previousLock == CursorLockMode.Locked); }
         Cursor.lockState = previousLock;
         Cursor.visible = previousCursorVisible;
-        if (player) { player.ClearFaceTarget(); player.LockInput(false); }
+        if (player)
+        {
+            player.StopWalking();
+            player.ClearFaceTarget();
+            player.LockInput(false);
+        }
         ownsPlayer = false;
     }
 
@@ -87,10 +99,10 @@ public sealed class HangarFinale : MonoBehaviour
 
     IEnumerator AtDoor()
     {
-        yield return Say("Да кончать его пора, босс! Толку с него, если ломбард пустой?", 4.1f);
-        yield return Say("Я сказал — не трогать его без моей команды.", 3.3f);
-        yield return Say("Груз на пирсе сам себя не примет. Оба через чёрный ход. Я здесь сам разберусь.", 4.7f);
-        yield return Say("Поняли, босс. Через час вернёмся.", 2.7f);
+        yield return Say("Незнакомый голос 1", "Да кончать его пора, босс! Толку с него, если ломбард пустой?", 4.1f);
+        yield return Say("Главарь", "Я сказал — не трогать его без моей команды.", 3.3f);
+        yield return Say("Главарь", "Груз на пирсе сам себя не примет. Оба через чёрный ход. Я здесь сам разберусь.", 4.7f);
+        yield return Say("Незнакомый голос 2", "Поняли, босс. Через час вернёмся.", 2.7f);
         LocationAudio.Effect("Door movement close", .36f);
         yield return new WaitForSeconds(.55f);
         LocationAudio.Effect("Passing car", .21f);
@@ -104,7 +116,12 @@ public sealed class HangarFinale : MonoBehaviour
     {
         TakeControl(officer);
         if (yardRain) yardRain.enabled = false;
-        if (Finished) { ShowReport(); return; }
+        if (Finished)
+        {
+            EndPose(ClueJournal.Has(Shot));
+            ShowReport();
+            return;
+        }
         stage = Stage.Conversation;
         if (!delayed) pulse.Play();
         StartCoroutine(Encounter());
@@ -118,40 +135,54 @@ public sealed class HangarFinale : MonoBehaviour
         if (pulse) pulse.Stop();
         caption = null;
         stage = Stage.Outside;
-        raised = false;
+        turning = false;
+        kostyaSpeaking = false;
+        fatherReleased = false;
+        effort = effortGoal = gesture = concern = reach = 0f;
+    }
+
+    void LateUpdate()
+    {
+        if (stage == Stage.Aftermath && fatherReleased)
+            staging.Father(1f, 1f);
     }
 
     void OnDisable() => Leave();
 
-    IEnumerator Say(string words, float seconds)
+    IEnumerator Say(string speaker, string words, float seconds)
     {
-        caption = words;
+        kostyaSpeaking = speaker == "Костя";
+        caption = Subtitles.WithSpeaker(speaker, words);
         yield return new WaitForSeconds(seconds);
         caption = null;
+        kostyaSpeaking = false;
     }
 
     IEnumerator Encounter()
     {
         Frame(new Vector3(-1.12f,1.64f,1.62f),new Vector3(.05f,1.53f,8.3f));
-        kostya.localRotation = Quaternion.identity;
-        yield return Say("На пол! Руки за голову!", 2.1f);
-        Quaternion facing = Quaternion.Euler(0,-155,0);
-        for (float t = 0; t < 1; t += Time.deltaTime)
-        {
-            kostya.localRotation = Quaternion.Slerp(Quaternion.identity, facing, Mathf.SmoothStep(0,1,t));
-            yield return null;
-        }
-        kostya.localRotation = facing;
+        staging.ResetActors();
+        player.FaceTowards(kostya.position);
+        player.WalkTo(transform.TransformPoint(new Vector3(-.28f, .10f, 3.15f)), .57f);
+        yield return Say("Алексей", "На пол! Руки за голову!", 2.1f);
+        player.StopWalking();
+        turning = true;
+        yield return Animate(staging.TurnDuration, staging.Turn);
+        turning = false;
+        confrontationMark = kostya.localPosition;
         Frame(new Vector3(.14f,1.5f,5.45f),new Vector3(1.08f,1.48f,7.1f));
-        yield return Say("Костя?.. Это ты всё устроил?!", 2.8f);
-        yield return Say("Привет, братишка. Вижу, дослужился до значка.", 3.5f);
-        yield return Say("Ты родного отца на счётчик поставил! Из-за той ссоры десять лет назад?!", 4.1f);
-        yield return Say("Вы вышвырнули меня на улицу без гроша. Я сам себя сделал на этих причалах!", 4.3f);
-        yield return Say("Я хотел, чтобы старик почувствовал, каково это, когда у тебя забирают всё.", 4.2f);
+        yield return Say("Алексей", "Костя?.. Это ты всё устроил?!", 2.8f);
+        yield return Say("Костя", "Привет, братишка. Вижу, дослужился до значка.", 3.5f);
+        yield return Say("Алексей", "Ты родного отца на счётчик поставил! Из-за той ссоры десять лет назад?!", 4.1f);
+        yield return Say("Костя", "Вы вышвырнули меня на улицу без гроша. Я сам себя сделал на этих причалах!", 4.3f);
+        yield return Say("Костя", "Я хотел, чтобы старик почувствовал, каково это, когда у тебя забирают всё.", 4.2f);
         Frame(new Vector3(-.95f,1.22f,5.75f),new Vector3(0,1.04f,7.12f));
-        raised = !delayed;
-        yield return Say(delayed ? "Отец… Нет. Ты его загнал до смерти!" : "Лёша… Не стреляй… Это же Костя… Не бери грех на душу.", 4);
-        yield return Say(delayed ? "Я не хотел… Он сам отключился полчаса назад…" : "Костя, не дёргайся. Руки так, чтобы я их видел.", 3.6f);
+        effortGoal = delayed ? 0f : 1f;
+        if (!delayed) yield return new WaitForSeconds(.50f);
+        yield return Say(delayed ? "Алексей" : "Фёдор Павлович", delayed ? "Отец… Нет. Ты его загнал до смерти!" : "Лёша… Не стреляй… Это же Костя… Не бери грех на душу.", 4);
+        if (delayed) concern = 1f;
+        yield return Say(delayed ? "Костя" : "Алексей", delayed ? "Я не хотел… Он сам отключился полчаса назад…" : "Костя, не дёргайся. Руки так, чтобы я их видел.", 3.6f);
+        concern = .28f;
         Release();
         stage = Stage.Approach;
     }
@@ -161,10 +192,8 @@ public sealed class HangarFinale : MonoBehaviour
         if (stage == Stage.Outside || stage == Stage.Listening || Time.timeScale <= 0) return;
         if (!delayed && !Finished)
         {
-            float breath = Mathf.Sin(Time.time * 2.3f);
-            chest.localScale = new Vector3(1,1 + breath*.012f,1 + breath*.022f);
-            pitch = Mathf.MoveTowards(pitch,raised ? -5 : 20,15*Time.deltaTime);
-            head.localRotation = Quaternion.Euler(pitch,0,0);
+            effort = Mathf.MoveTowards(effort, effortGoal, Time.deltaTime * .90f);
+            staging.Father(Mathf.SmoothStep(0f, 1f, effort), 0f);
         }
         if (stage == Stage.Approach && !player.InputLocked && !(player.hud && player.hud.IsShowingJournal) &&
             Vector3.Distance(player.transform.position,kostya.position) < 2)
@@ -176,11 +205,17 @@ public sealed class HangarFinale : MonoBehaviour
             BeginDecision();
             return;
         }
+        if (!turning && (stage == Stage.Conversation || stage == Stage.Approach))
+        {
+            float gestureTarget = kostyaSpeaking ? .58f + .42f * Mathf.Sin(Time.time * 3f) : 0f;
+            gesture = Mathf.MoveTowards(gesture, gestureTarget, Time.deltaTime * 1.8f);
+            staging.Conversation(gesture, concern);
+        }
         var keys = Keyboard.current;
         if (stage == Stage.Decision)
         {
-            if (reachingArm) reachingArm.localRotation = Quaternion.Slerp(Quaternion.identity,
-                Quaternion.Euler(-52, 15, -24), Mathf.Clamp01((DecisionSeconds - deadline + Time.time) * 3f));
+            reach = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((DecisionSeconds - deadline + Time.time) / .48f));
+            staging.Reach(reach);
             if (keys != null && (keys.digit1Key.wasPressedThisFrame || keys.numpad1Key.wasPressedThisFrame)) Resolve(true);
             else if (keys != null && (keys.digit2Key.wasPressedThisFrame || keys.numpad2Key.wasPressedThisFrame)) Resolve(false);
             else if (Time.time >= deadline) stage = Stage.Missed;
@@ -202,6 +237,8 @@ public sealed class HangarFinale : MonoBehaviour
     void BeginDecision()
     {
         stage = Stage.Decision;
+        reach = 0f;
+        staging.Reach(0f);
         deadline = Time.time + DecisionSeconds;
     }
 
@@ -214,38 +251,65 @@ public sealed class HangarFinale : MonoBehaviour
         StartCoroutine(Aftermath(shot));
     }
 
-    IEnumerator Aftermath(bool shot)
+    static IEnumerator Animate(float duration, System.Action<float> pose)
     {
-        LocationAudio.Effect(shot ? "Hangar shot" : "Door movement close", shot ? .55f : .25f);
-        var start = kostya.localRotation;
-        var target = Quaternion.Euler(shot ? -88 : 86,24,0);
-        var origin = kostya.localPosition;
-        for (float t = 0; t < 1; t += Time.deltaTime / .65f)
+        for (float elapsed = 0; elapsed < duration; elapsed += Time.deltaTime)
         {
-            float u = Mathf.SmoothStep(0,1,t);
-            kostya.localRotation = Quaternion.Slerp(start,target,u);
-            kostya.localPosition = Vector3.Lerp(origin,new Vector3(1.2f,.32f,7.15f),u);
+            pose(elapsed / duration);
             yield return null;
         }
-        EndPose(shot);
-        Frame(new Vector3(-1.45f,1.34f,5.2f),new Vector3(.21f,.87f,7.15f));
-        if (!shot) LocationAudio.Effect("Lock key press",.35f);
+        pose(1f);
+    }
+
+    IEnumerator Aftermath(bool shot)
+    {
+        Frame(new Vector3(2.85f, 1.47f, 5.32f), new Vector3(1.03f, .92f, 7.20f));
+        if (shot) LocationAudio.Effect("Hangar shot", .55f);
+        yield return Animate(staging.FallDuration(shot),
+            t => staging.Subside(shot, t, confrontationMark, confrontationFacing));
+        LocationAudio.Effect("Door movement close", .17f);
+        yield return new WaitForSeconds(.20f);
+        if (!shot)
+        {
+            LocationAudio.Effect("Lock key press", .35f);
+            staging.SetCuff(true);
+            yield return new WaitForSeconds(.44f);
+        }
         if (!delayed)
-            yield return Say(shot ? "Спасибо тебе, сынок… Ты спас мне жизнь." :
-                "Спасибо тебе, сынок… И за то, что меня вытащил, и за то, что душу не замарал.",5);
-        else yield return new WaitForSeconds(2);
+        {
+            Frame(new Vector3(-1.16f, 1.14f, 5.84f), new Vector3(-.08f, .90f, 7.07f));
+            var mark = transform.TransformPoint(new Vector3(-.82f, .10f, 6.68f));
+            if (Vector3.Distance(player.transform.position, mark) < 2.9f)
+            {
+                player.WalkTo(mark, .55f);
+                for (float elapsed = 0; elapsed < 1.55f && player.IsWalking; elapsed += Time.deltaTime)
+                    yield return null;
+                player.StopWalking();
+                player.FaceTowards(rescue.transform.position);
+            }
+            staging.Bindings(false);
+            yield return Animate(.65f, t =>
+            {
+                staging.DropRope(t);
+                staging.Father(1f, Mathf.SmoothStep(0, 1, t));
+            });
+            fatherReleased = true;
+            yield return Say("Фёдор Павлович", shot ? "Спасибо тебе, сынок… Ты спас мне жизнь." :
+                "Спасибо тебе, сынок… И за то, что меня вытащил, и за то, что душу не замарал.", 5f);
+        }
+        else yield return new WaitForSeconds(1.5f);
+        EndPose(shot);
         ShowReport();
     }
 
     void EndPose(bool shot)
     {
-        kostya.localRotation = Quaternion.Euler(shot ? -88 : 86,24,0);
-        kostya.localPosition = new Vector3(1.2f,.32f,7.15f);
-        if (reachingArm) reachingArm.localRotation = Quaternion.Euler(shot ? -18 : 40, 0, shot ? 22 : -12);
+        staging.Subside(shot, 1f, confrontationMark, confrontationFacing);
+        staging.SetCuff(!shot);
         if (delayed) return;
-        head.localRotation = Quaternion.Euler(-5,0,0);
-        foreach (Transform part in rescue.transform)
-            if (part.name == "Rope") part.gameObject.SetActive(false);
+        staging.Father(1f, 1f);
+        staging.Bindings(false);
+        staging.DropRope(1f);
     }
 
     void ShowReport()
@@ -321,4 +385,3 @@ public sealed class HangarFinale : MonoBehaviour
         }
     }
 }
-

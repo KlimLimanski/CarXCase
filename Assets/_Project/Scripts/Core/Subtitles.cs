@@ -2,11 +2,14 @@ using UnityEngine;
 
 namespace CarXCase.UI
 {
-    /// One subtitle style for the whole game: plain white text, no panel, no speaker name.
+    /// One subtitle style for the whole game: plain white text with optional speaker attribution.
     /// A faint 1-2 px shadow keeps it readable on bright frames without looking like a background.
     public static class Subtitles
     {
         static GUIStyle text, shadow;
+
+        public static string WithSpeaker(string speaker, string line) =>
+            string.IsNullOrWhiteSpace(speaker) || string.IsNullOrWhiteSpace(line) ? line : $"{speaker}: {line}";
 
         public static void Draw(string line, float top = 0.79f)
         {

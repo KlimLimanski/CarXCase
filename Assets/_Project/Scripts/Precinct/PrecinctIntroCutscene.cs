@@ -304,7 +304,7 @@ namespace CarXCase.Precinct
                 foreach (var l in dialogue)
                     if (elapsed >= l.start && elapsed < l.end)
                     {
-                        CarXCase.UI.Subtitles.Draw(l.text, .76f);
+                        CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(l.speaker, l.text), .76f);
                         break;
                     }
             float f = Mathf.Max(fadeIn, fadeOut);
