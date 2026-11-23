@@ -38,9 +38,20 @@ public sealed class HangarFinale : MonoBehaviour
     public string Objective => stage == Stage.Approach ? "Подойдите к Косте" :
         stage != Stage.Outside || Finished ? null : NeedsListening ? "Подслушайте разговор у двери ангара" : "Войдите в ангар";
 
+    SkinnedMeshRenderer kostyaFace, fatherFace;
+    static SkinnedMeshRenderer SpeechFace(Transform root, string model)
+    {
+        var face = root.Find("Hangar " + model).GetComponentInChildren<SkinnedMeshRenderer>(true);
+        face.sharedMesh = Resources.Load<Mesh>("HangarSpeech" + model);
+        face.sharedMaterials = new[] { face.sharedMaterial, Resources.Load<Material>("HangarMouthInterior") };
+        return face;
+    }
+
     void Start()
     {
         staging = GetComponent<HangarStaging>();
+        kostyaFace = SpeechFace(kostya, "Kostya");
+        fatherFace = SpeechFace(rescue.transform, "Rescue");
         staging.Initialize(rescue.transform, kostya);
         confrontationFacing = Quaternion.Euler(0, -155f, 0);
         confrontationMark = staging.KostyaMark;
@@ -131,6 +142,8 @@ public sealed class HangarFinale : MonoBehaviour
     {
         if (yardRain) yardRain.enabled = true;
         StopAllCoroutines();
+        if (kostyaFace) kostyaFace.SetBlendShapeWeight(0, 0);
+        if (fatherFace) fatherFace.SetBlendShapeWeight(0, 0);
         Release();
         if (pulse) pulse.Stop();
         caption = null;
@@ -149,11 +162,45 @@ public sealed class HangarFinale : MonoBehaviour
 
     void OnDisable() => Leave();
 
+    static float LetterOpening(string words, int index)
+    {
+        if (index < 0 || index >= words.Length) return 0f;
+        char c = char.ToLowerInvariant(words[index]);
+        if ("ая".IndexOf(c) >= 0) return 98f;
+        if ("оёэе".IndexOf(c) >= 0) return 78f;
+        if ("иыую".IndexOf(c) >= 0) return 54f;
+        if ("мбп".IndexOf(c) >= 0 || !char.IsLetter(c)) return 0f;
+        return 19f;
+    }
+
+    static float SpeechOpening(string words, float elapsed, float duration)
+    {
+        // Blend neighbouring sounds so the jaw starts moving before each vowel.
+        float cursor = elapsed * words.Length / duration - .5f;
+        int i = Mathf.FloorToInt(cursor);
+        float t = cursor - i, u = 1f - t;
+        float opening = (u * u * u * LetterOpening(words, i - 1)
+            + (4f - 6f * t * t + 3f * t * t * t) * LetterOpening(words, i)
+            + (4f - 6f * u * u + 3f * u * u * u) * LetterOpening(words, i + 1)
+            + t * t * t * LetterOpening(words, i + 2)) / 6f;
+        float fade = Mathf.Clamp01(Mathf.Min(elapsed / .12f, (duration - elapsed) / .18f));
+        return opening * Mathf.SmoothStep(0f, 1f, fade);
+    }
+
     IEnumerator Say(string speaker, string words, float seconds)
     {
         kostyaSpeaking = speaker == "Костя";
         caption = Subtitles.WithSpeaker(speaker, words);
-        yield return new WaitForSeconds(seconds);
+        var face = speaker == "Костя" ? kostyaFace : speaker == "Фёдор Павлович" ? fatherFace : null;
+        for (float elapsed = 0; elapsed < seconds; elapsed += Time.deltaTime)
+        {
+            if (face && words.Length > 0)
+            {
+                face.SetBlendShapeWeight(0, SpeechOpening(words, elapsed, seconds));
+            }
+            yield return null;
+        }
+        if (face) face.SetBlendShapeWeight(0, 0);
         caption = null;
         kostyaSpeaking = false;
     }
@@ -207,8 +254,8 @@ public sealed class HangarFinale : MonoBehaviour
         }
         if (!turning && (stage == Stage.Conversation || stage == Stage.Approach))
         {
-            float gestureTarget = kostyaSpeaking ? .58f + .42f * Mathf.Sin(Time.time * 3f) : 0f;
-            gesture = Mathf.MoveTowards(gesture, gestureTarget, Time.deltaTime * 1.8f);
+            float gestureTarget = kostyaSpeaking ? 1f : 0f;
+            gesture = Mathf.MoveTowards(gesture, gestureTarget, Time.deltaTime * .85f);
             staging.Conversation(gesture, concern);
         }
         var keys = Keyboard.current;

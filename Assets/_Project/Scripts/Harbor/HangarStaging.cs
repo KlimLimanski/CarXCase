@@ -62,23 +62,43 @@ public sealed class HangarStaging : MonoBehaviour
 
     public void Conversation(float gesture, float concern)
     {
-        float time = Mathf.Repeat(Time.time - performanceStart, conversation.length);
-        kostyaRig.Sample(conversation, time, Mathf.Lerp(.32f, .93f, gesture));
+        float time = Mathf.Repeat((Time.time - performanceStart) * .68f, conversation.length);
+        DialoguePose(time, gesture);
         kostyaRig.Offset("head", concern * 7f, concern * 13f, 0);
+    }
+
+    float lastGesture, lastDialogueTime;
+
+    void DialoguePose(float time, float gesture)
+    {
+        lastDialogueTime = time;
+        lastGesture = gesture;
+        kostyaRig.Sample(conversation, time, .18f);
+        float phase = time / conversation.length * Mathf.PI * 2f;
+        DialogueArm(".R", 1f, gesture * (.5f - .5f * Mathf.Cos(phase)));
+        DialogueArm(".L", -1f, gesture * (.5f + .5f * Mathf.Cos(phase)) * .52f);
+    }
+
+    void DialogueArm(string side, float sign, float lift)
+    {
+        string upper = "upper_arm" + side, lower = "forearm" + side, hand = "hand" + side;
+        kostyaRig.RelaxArm(upper, lower, hand);
+        Vector3 target = new Vector3(sign * (.304f + .012f * lift),
+            .925f + .18f * lift, .065f + .19f * lift);
+        kostyaRig.Solve(upper, lower, hand, kostya.TransformPoint(target),
+            kostya.TransformDirection(new Vector3(sign * .13f, -.52f, -.95f)), kostya.right * sign);
     }
 
     public void Reach(float amount)
     {
         // Hold the same underlying dialogue frame while the decision timer runs.
-        if (amount <= 0f) reachTime = Mathf.Repeat(Time.time - performanceStart, conversation.length);
-        kostyaRig.Sample(conversation, reachTime, .4f);
+        DialoguePose(lastDialogueTime, lastGesture);
         var target = kostya.TransformPoint(new Vector3(-.045f, 1.31f, .145f));
         var hand = kostyaRig.Get("hand.R");
         kostyaRig.Solve("upper_arm.R", "forearm.R", "hand.R",
             Vector3.Lerp(hand.position, target, amount), kostya.TransformDirection(new Vector3(.9f, -.45f, .23f)));
     }
 
-    float reachTime;
 
     public void Subside(bool shot, float progress, Vector3 start, Quaternion facing)
     {
@@ -163,6 +183,12 @@ public sealed class HangarStaging : MonoBehaviour
         }
 
         public Transform Get(string name) => bones[name];
+        public void RelaxArm(string upper, string lower, string hand)
+        {
+            bones[upper].localRotation = rest[upper];
+            bones[lower].localRotation = rest[lower];
+            bones[hand].localRotation = rest[hand];
+        }
         public Quaternion RestOrientation(string name) => orientations[name];
         public void Reset()
         {
@@ -204,7 +230,7 @@ public sealed class HangarStaging : MonoBehaviour
             bone.localRotation = basis * Quaternion.Euler(pitch, yaw, roll) * Quaternion.Inverse(basis) * bone.localRotation;
         }
 
-        public void Solve(string upperName, string lowerName, string tipName, Vector3 target, Vector3 bend)
+        public void Solve(string upperName, string lowerName, string tipName, Vector3 target, Vector3 bend, Vector3 outward = default)
         {
             Transform upper = bones[upperName], lower = bones[lowerName], tip = bones[tipName];
             float a = Vector3.Distance(upper.position, lower.position);
@@ -214,7 +240,15 @@ public sealed class HangarStaging : MonoBehaviour
             Vector3 direction = delta.normalized;
             float projection = (a * a + distance * distance - b * b) / (2f * distance);
             float height = Mathf.Sqrt(Mathf.Max(0, a * a - projection * projection));
-            var knee = direction * projection + Vector3.ProjectOnPlane(bend, direction).normalized * height;
+            Vector3 radial = Vector3.ProjectOnPlane(bend, direction).normalized * height;
+            Vector3 lateral = Vector3.ProjectOnPlane(outward, direction);
+            if (lateral.sqrMagnitude > .0001f)
+            {
+                float shift = Mathf.Min(height, Vector3.Dot(radial, lateral.normalized) + .02f / lateral.magnitude);
+                Vector3 tangent = Vector3.ProjectOnPlane(radial, lateral.normalized).normalized;
+                radial = lateral.normalized * shift + tangent * Mathf.Sqrt(Mathf.Max(0, height * height - shift * shift));
+            }
+            var knee = direction * projection + radial;
             upper.rotation = Quaternion.FromToRotation(lower.position - upper.position, knee) * upper.rotation;
             lower.rotation = Quaternion.FromToRotation(tip.position - lower.position,
                 upper.position + direction * distance - lower.position) * lower.rotation;
