@@ -26,6 +26,7 @@ public sealed partial class HangarFinale
         ("Опоздал · выбор «Обезвредить»", "arrest", true),
         ("Опоздал · «Последняя ошибка»", "mistake", true),
         ("Опоздал · «Десять лет молчания»", "silence", true),
+        ("Титры", "credits", false),
     };
 
     void DebugKeys()
@@ -75,6 +76,7 @@ public sealed partial class HangarFinale
     {
         debugMenu = false;
         Leave();
+        if (ending == "credits") { stage = Stage.Report; FinishCase(); return; }
         foreach (var id in new[] { Shot, Arrest, Mistake, Sins, Silence }) ClueJournal.Forget(id);
         if (lateArrival) ClueJournal.AddConclusion(LateRoute); else ClueJournal.Forget(LateRoute);
         if (!HangarKey.Found) ClueJournal.Collect(HangarKey.Id, "Ключ от ангара", "Латунный ключ с грузового ящика на причале.");

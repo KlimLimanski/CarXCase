@@ -414,9 +414,8 @@ public sealed partial class HangarFinale : MonoBehaviour
 
     void FinishCase()
     {
-        if (stage != Stage.Report) return;
-        Leave();
-        SceneManager.LoadSceneAsync("00_MainMenu");
+        if (stage != Stage.Report || creditsRolling) return;
+        StartCoroutine(RollCredits());   // credits, then back to the main menu
     }
 
     static void Fill(Rect rect, Color tint)
@@ -436,6 +435,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     void OnGUI()
     {
         if (endingFade > 0f) Fill(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,endingFade));
+        if (DrawCredits()) return;
         if (DebugMenu()) return;
         if (NoirMenu.GameSession.Paused) return;
         Subtitles.Draw(caption);

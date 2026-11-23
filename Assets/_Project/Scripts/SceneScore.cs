@@ -13,8 +13,12 @@ public sealed class SceneScore : MonoBehaviour
     double release = -1;
     float level;
 
+    /// 0..1 multiplier the end credits use to fade the level score out under their song.
+    public static float Duck = 1f;
+
     public static void StartFor(LocationAudio owner, string[] tracks)
     {
+        Duck = 1f;
         var go = new GameObject("Scene soundtrack");
         DontDestroyOnLoad(go);
         var score = go.AddComponent<SceneScore>();
@@ -58,7 +62,7 @@ public sealed class SceneScore : MonoBehaviour
         for (int i = 0; i < voices.Length; i++)
         {
             float edge = Mathf.Clamp01((float)(System.Math.Min(now - starts[i], ends[i] - now) / Crossfade));
-            voices[i].volume = Mathf.Sin(edge * Mathf.PI * .5f) * tail * GameSettings.MusicGain * level;
+            voices[i].volume = Mathf.Sin(edge * Mathf.PI * .5f) * tail * GameSettings.MusicGain * level * Duck;
         }
     }
 }
