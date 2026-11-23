@@ -114,6 +114,18 @@ public sealed class HangarStaging : MonoBehaviour
         }
     }
 
+    public void OfferWrists(float t)
+    {
+        foreach (var side in new[] { ".L", ".R" })
+        {
+            float sign = side == ".R" ? 1 : -1;
+            var target = kostya.TransformPoint(new Vector3(sign * .05f, 1.10f, .31f));
+            var hand = kostyaRig.Get("hand" + side);
+            kostyaRig.Solve("upper_arm" + side, "forearm" + side, "hand" + side,
+                Vector3.Lerp(hand.position, target, t), kostya.TransformDirection(new Vector3(sign, -.5f, -.12f)));
+        }
+    }
+
     void HandsBehind(string side, float lateral, float amount)
     {
         var pelvis = kostyaRig.Get("pelvis");

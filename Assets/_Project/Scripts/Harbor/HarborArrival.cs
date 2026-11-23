@@ -22,6 +22,12 @@ namespace CarXCase.Harbor
         float returnFov, elapsed, black;
         bool presenting, returning, wasLocked, hadHud, hadVisual;
 
+        void Awake()
+        {
+            var equipment = Instantiate(Resources.Load<GameObject>("Harbor dock equipment"));
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(equipment, gameObject.scene);
+        }
+
         void Start()
         {
             follow = GetComponent<ThirdPersonCamera>();

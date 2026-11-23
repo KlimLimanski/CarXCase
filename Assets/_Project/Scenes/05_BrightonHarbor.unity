@@ -3114,6 +3114,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 83890046}
+  - component: {fileID: 8172000000000000002}
   - component: {fileID: 83890049}
   - component: {fileID: 83890048}
   - component: {fileID: 83890047}
@@ -14687,6 +14688,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 324812122}
+  - component: {fileID: 8172000000000000001}
   - component: {fileID: 324812124}
   - component: {fileID: 324812123}
   m_Layer: 0
@@ -33905,6 +33907,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 744710217}
+  - component: {fileID: 8172000000000000003}
   - component: {fileID: 744710220}
   - component: {fileID: 744710219}
   - component: {fileID: 744710218}
@@ -45800,8 +45803,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 967555727}
+  - component: {fileID: 8172000000000000000}
   - component: {fileID: 967555729}
   - component: {fileID: 967555728}
+  - component: {fileID: 967555730}
   m_Layer: 0
   m_Name: Folded sheet cabinet
   m_TagString: Untagged
@@ -45880,6 +45885,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 967555726}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!64 &967555730
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 967555726}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &968236008
 GameObject:
@@ -72274,6 +72301,7 @@ GameObject:
   - component: {fileID: 1526780184}
   - component: {fileID: 1526780186}
   - component: {fileID: 1526780185}
+  - component: {fileID: 1526780187}
   m_Layer: 0
   m_Name: Rainwater downpipe
   m_TagString: Untagged
@@ -72352,6 +72380,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1526780183}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!64 &1526780187
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1526780183}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1530494809
 GameObject:
@@ -97421,3 +97471,103 @@ SceneRoots:
   - {fileID: 360032546}
   - {fileID: 33921464}
   - {fileID: 1981670570}
+
+--- !u!114 &8172000000000000000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 967555726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1e4abc27b2a98e4c9f7b5a1c378cd4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  clueId: harbor_search_electrical_cabinet
+  clueTitle: Шкаф электрика
+  clueDescription: На дверце только рубильник. Ключ тут оставлять опасно.
+  isSuspiciousForBrothers: 0
+  addToJournal: 0
+  journalAttachments: []
+  inspectionComment: На дверце только рубильник. Ключ тут оставлять опасно.
+  journalThought: 
+  cameraShot: 0
+  targetRenderer: {fileID: 967555728}
+  highlightRenderers: []
+  highlightColor: {r: 1, g: 0.85, b: 0.4, a: 1}
+
+--- !u!114 &8172000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 324812121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1e4abc27b2a98e4c9f7b5a1c378cd4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  clueId: harbor_search_freight_plate
+  clueTitle: Табличка на контейнере
+  clueDescription: Тринадцать. Это номер контейнера. К двери ангара он отношения не имеет.
+  isSuspiciousForBrothers: 0
+  addToJournal: 0
+  journalAttachments: []
+  inspectionComment: Тринадцать. Это номер контейнера. К двери ангара он отношения не имеет.
+  journalThought: 
+  cameraShot: 0
+  targetRenderer: {fileID: 324812123}
+  highlightRenderers: []
+  highlightColor: {r: 1, g: 0.85, b: 0.4, a: 1}
+
+--- !u!114 &8172000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 83890045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1e4abc27b2a98e4c9f7b5a1c378cd4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  clueId: harbor_search_sealed_crate
+  clueTitle: Опломбированный ящик
+  clueDescription: Проволока на пломбе целая. Внутрь никто не лазил.
+  isSuspiciousForBrothers: 0
+  addToJournal: 0
+  journalAttachments: []
+  inspectionComment: Проволока на пломбе целая. Внутрь никто не лазил.
+  journalThought: 
+  cameraShot: 0
+  targetRenderer: {fileID: 83890047}
+  highlightRenderers: []
+  highlightColor: {r: 1, g: 0.85, b: 0.4, a: 1}
+
+--- !u!114 &8172000000000000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 744710216}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1e4abc27b2a98e4c9f7b5a1c378cd4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  clueId: harbor_search_loading_crate
+  clueTitle: Ящик у погрузочных ворот
+  clueDescription: На досках отпечатки мокрых перчаток. Стоит проверить и другие ящики на причале.
+  isSuspiciousForBrothers: 0
+  addToJournal: 0
+  journalAttachments: []
+  inspectionComment: На досках отпечатки мокрых перчаток. Стоит проверить и другие ящики на причале.
+  journalThought: 
+  cameraShot: 0
+  targetRenderer: {fileID: 744710218}
+  highlightRenderers: []
+  highlightColor: {r: 1, g: 0.85, b: 0.4, a: 1}
