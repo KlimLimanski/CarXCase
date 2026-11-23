@@ -41,21 +41,29 @@ namespace CarXCase.Intro
         public List<OncomingVehicle> oncomingVehicles = new List<OncomingVehicle>();
 
         [Header("Hero car audio")]
-        [SerializeField, Range(0, 1)] float engineVolume = .36f;
+        [SerializeField, Range(0, 1)] float engineVolume = .65f;
 
-        [Header("Temporary dialogue")]
+        [Header("Recorded dialogue")]
+        [SerializeField] AudioClip dialogueClip;
+        [SerializeField, Min(0)] float dialogueDelay = 4f;
+        [Tooltip("Subtitle times are in seconds from the start of the recording.")]
         public DialogueLine[] dialogue;
+
+        [Header("Interior props")]
+        [SerializeField] Transform hangingCross;
 
         const float PassPeakSeconds = 1.7f;
         const float BlackHold = 2.5f, TitleHold = 2f;
         const float PreludeDuration = BlackHold + 2 * TitleHold;
         const float ExitFadeDuration = 2.5f;
         AudioClip approachClip, passClip;
-        AudioSource music, engine;
+        AudioSource music, engine, dialogueSource;
         AudioLowPassFilter musicFilter;
         float preludeElapsed, elapsed, skipFade, previousZ;
         float musicLevel = .18f, engineLevel;
-        bool loading, skipping;
+        bool loading, skipping, dialogueStarted;
+        DialogueLine currentLine;
+        Quaternion crossRest;
         string loadError;
         Vector3 cameraStart;
         Quaternion cameraRotation;
@@ -77,8 +85,15 @@ namespace CarXCase.Intro
                 initialFov = shotCamera ? shotCamera.fieldOfView : 64f;
             }
             ApplyPose(0);
+            if (hangingCross) crossRest = hangingCross.localRotation;
             previousZ = car != null ? car.position.z : 0;
             StartEngineAudio();
+            if (dialogueClip)
+            {
+                dialogueSource = gameObject.AddComponent<AudioSource>();
+                dialogueSource.playOnAwake = false;
+                dialogueSource.clip = dialogueClip;
+            }
             approachClip = Resources.Load<AudioClip>("LocationAudio/Effects/Approaching traffic");
             passClip = Resources.Load<AudioClip>("LocationAudio/Effects/Passing car");
             var track = Resources.Load<AudioClip>("LocationAudio/Music/Zver1Music");
@@ -107,8 +122,10 @@ namespace CarXCase.Intro
             if (skipping)
             {
                 skipFade = Mathf.MoveTowards(skipFade, 1, Time.deltaTime / 1.2f);
-                UpdateMusic(false, skipFade);
+                UpdateMusic(currentLine != null, Mathf.Max(ExitFade, skipFade));
                 if (engine) engine.volume = engineLevel * (1 - Mathf.SmoothStep(0, 1, Mathf.Max(ExitFade, skipFade)));
+                if (dialogueSource) dialogueSource.volume = 1 - Mathf.SmoothStep(0, 1, skipFade);
+                HeroFace.StopHero();
                 foreach (var vehicle in oncomingVehicles)
                 {
                     if (vehicle.approachAudio) vehicle.approachAudio.volume = 0;
@@ -127,17 +144,15 @@ namespace CarXCase.Intro
 
             elapsed = Mathf.Min(duration, elapsed + Time.deltaTime);
             float t = Mathf.Clamp01(elapsed / duration);
-            float story = elapsed / Mathf.Max(1, duration) * 150;
-            var line = ActiveLine(story);
-            HeroFace.SetTalking(line?.speaker == "АЛЕКСЕЙ");
-            UpdateMusic(line != null, ExitFade);
+            UpdateDialogue();
+            UpdateMusic(currentLine != null, ExitFade);
             ApplyPose(t);
             UpdateOncomingTraffic();
 
             if (car != null)
             {
                 float moved = car.position.z - previousZ;
-                UpdateEngineAudio(moved / Mathf.Max(Time.deltaTime, .001f), line != null);
+                UpdateEngineAudio(moved / Mathf.Max(Time.deltaTime, .001f), currentLine != null);
                 if (wheels != null)
                 {
                     foreach (var wheel in wheels)
@@ -148,10 +163,37 @@ namespace CarXCase.Intro
                 previousZ = car.position.z;
             }
 
+            if (hangingCross)
+            {
+                float swing = Mathf.Lerp(1f, .25f, Mathf.InverseLerp(.90f, .97f, t));
+                hangingCross.localRotation = crossRest * Quaternion.Euler(
+                    .75f * swing * Mathf.Sin(elapsed * 3.3f), 0, 1.8f * swing * Mathf.Sin(elapsed * 3.9f));
+            }
+
             if (elapsed >= duration) LoadApartment();
         }
 
         float ExitFade => Mathf.InverseLerp(duration - ExitFadeDuration, duration, elapsed);
+
+        void UpdateDialogue()
+        {
+            if (!dialogueSource) return;
+            if (!dialogueStarted && elapsed >= dialogueDelay)
+            {
+                dialogueStarted = true;
+                dialogueSource.Play();
+            }
+
+            float time = dialogueSource.isPlaying ? (float)dialogueSource.timeSamples / dialogueClip.frequency : -1f;
+            DialogueLine next = ActiveLine(time);
+            if (next == currentLine) return;
+
+            currentLine = next;
+            if (currentLine?.speaker == "АЛЕКСЕЙ")
+                HeroFace.SpeakAsHero(currentLine.text, currentLine.end - time);
+            else
+                HeroFace.StopHero();
+        }
 
         void StartEngineAudio()
         {
@@ -173,11 +215,11 @@ namespace CarXCase.Intro
             if (!engine) return;
             if (!engine.isPlaying) engine.Play();
 
-            float throttle = Mathf.InverseLerp(0, 5f, speed);
+            float throttle = Mathf.InverseLerp(0, roadDistance / (.905f * duration), speed);
             engine.pitch = Mathf.MoveTowards(engine.pitch, Mathf.Lerp(.92f, 1.26f, throttle), Time.deltaTime);
             float target = engineVolume * GameSettings.SfxGain * Mathf.Lerp(.55f, 1, throttle);
-            if (dialogueActive) target *= .55f;
-            engineLevel = Mathf.MoveTowards(engineLevel, target, Time.deltaTime * .55f);
+            if (dialogueActive) target *= .62f;
+            engineLevel = Mathf.MoveTowards(engineLevel, target, Time.deltaTime * (dialogueActive ? 1.4f : .6f));
             engine.volume = engineLevel * (1 - Mathf.SmoothStep(0, 1, ExitFade));
         }
 
@@ -194,8 +236,8 @@ namespace CarXCase.Intro
             if (!music) return;
 
             float cabin = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(0, 2f, elapsed));
-            float target = dialogueActive ? .7f : Mathf.Lerp(.9f, .8f, cabin);
-            musicLevel = Mathf.MoveTowards(musicLevel, target, Time.deltaTime * (dialogueActive ? .5f : .15f));
+            float target = dialogueActive ? .16f : Mathf.Lerp(.9f, .58f, cabin);
+            musicLevel = Mathf.MoveTowards(musicLevel, target, Time.deltaTime * (dialogueActive ? 3f : .35f));
             musicFilter.cutoffFrequency = Mathf.Lerp(3500f, 1600f, cabin);
             float entrance = Mathf.SmoothStep(0, 1, Mathf.Clamp01(preludeElapsed / 1.2f));
             music.volume = musicLevel * GameSettings.MusicGain * entrance * (1 - Mathf.SmoothStep(0, 1, fade));
@@ -366,12 +408,8 @@ namespace CarXCase.Intro
             Fill(new Rect(0, 0, Screen.width, Screen.height * .065f), Color.black);
             Fill(new Rect(0, Screen.height * .935f, Screen.width, Screen.height * .065f), Color.black);
 
-            if (preludeElapsed >= PreludeDuration && !skipping)
-            {
-                var line = ActiveLine(elapsed / Mathf.Max(1, duration) * 150);
-                if (line != null)
-                    CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(line.speaker, line.text));
-            }
+            if (currentLine != null && !skipping)
+                CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(currentLine.speaker, currentLine.text));
 
             float fade = Mathf.Max(1 - Mathf.Clamp01(elapsed / 2), ExitFade);
             fade = Mathf.Max(fade, skipFade);
