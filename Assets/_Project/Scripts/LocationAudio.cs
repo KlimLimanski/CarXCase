@@ -26,8 +26,11 @@ public sealed class LocationAudio : MonoBehaviour
     CharacterController body;
     ApartmentAnsweringMachine machine;
     OfficeTurntable turntable;
-    public float ScoreLevel => (machine && machine.IsPlaying) || (turntable && turntable.IsPlaying) ? .07f :
-        gameObject.scene.name == "04_Precinct" ? .17f : .29f;
+    // Leave room for the bar dialogue in the rain, soundtrack and record mix.
+    public static float BackgroundGain(Scene scene) => scene.name == "02_Bar" ? .28f : 1f;
+
+    public float ScoreLevel => BackgroundGain(gameObject.scene) * ((machine && machine.IsPlaying) || (turntable && turntable.IsPlaying) ? .07f :
+        gameObject.scene.name == "04_Precinct" ? .17f : .29f);
     static LocationAudio current;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -141,6 +144,7 @@ public sealed class LocationAudio : MonoBehaviour
             rainLevel = Mathf.Lerp(.18f, .56f, near);
             rainFilter.cutoffFrequency = Mathf.Lerp(1550f, 4400f, near);
         }
+        rainLevel *= BackgroundGain(gameObject.scene);
         Loop(weather, true, machine && machine.IsPlaying ? rainLevel * .45f : rainLevel);
         bool grounded = player && player.isActiveAndEnabled && body && body.enabled && body.isGrounded && Time.timeScale > 0f;
         float speed = grounded ? Vector3.ProjectOnPlane(body.velocity, Vector3.up).magnitude : 0f;
