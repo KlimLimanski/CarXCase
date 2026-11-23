@@ -3,7 +3,7 @@ NODE 01 Entrance pos=(-0.86, 1.74, -5.75) local=(-0.86, 1.74, -5.75) rot=(1.36, 
 NODE 02 Elevated Overview pos=(15.00, 14.50, -9.00) local=(15.00, 14.50, -9.00) rot=(18.87, 336.19, 0.00) scale=(1.00, 1.00, 1.00)
 NODE 03 Harbor Road pos=(1.25, 1.83, 14.00) local=(1.25, 1.83, 14.00) rot=(359.28, 358.28, 0.00) scale=(1.00, 1.00, 1.00)
 NODE 04 Warehouse Approach pos=(0.96, 1.86, 35.00) local=(0.96, 1.86, 35.00) rot=(352.51, 356.27, 0.00) scale=(1.00, 1.00, 1.00)
-NODE Player Camera pos=(0.24, 1.74, 49.22) local=(0.24, 1.74, 49.22) rot=(3.68, 356.32, 359.85) scale=(1.00, 1.00, 1.00)
+NODE Player Camera pos=(-0.38, 1.78, -7.36) local=(-0.38, 1.78, -7.36) rot=(2.00, 0.00, 0.00) scale=(1.00, 1.00, 1.00)
 ASSET Assets/_Project/Arts/Heroes/Animations/Source/Running.fbx imported=True
 ASSET Assets/_Project/Arts/Buildings/Street_Buildings_1Scene/03_Fulton.glb imported=True
  MESH 03_Fulton_Geometry bounds=Center: (-0.30, 9.85, -4.86), Extents: (5.70, 9.85, 6.14) mat=Opaque_Window_Atlas:Shader Graphs/glTF-pbrMetallicRoughness,Hardware_Midnight:Shader Graphs/glTF-pbrMetallicRoughness,Warm_Limestone:Shader Graphs/glTF-pbrMetallicRoughness,Weathered_AC:Shader Graphs/glTF-pbrMetallicRoughness,Deep_Shadow:Shader Graphs/glTF-pbrMetallicRoughness,Painted_Iron:Shader Graphs/glTF-pbrMetallicRoughness,Aged_Brass:Shader Graphs/glTF-pbrMetallicRoughness,Fulton_Umber:Shader Graphs/glTF-pbrMetallicRoughness,Simple_Party_Walls:Shader Graphs/glTF-pbrMetallicRoughness,Flat_Roof:Shader Graphs/glTF-pbrMetallicRoughness,Sign_Ivory:Shader Graphs/glTF-pbrMetallicRoughness

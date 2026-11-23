@@ -15,7 +15,7 @@ public sealed class HangarDoor : MonoBehaviour, IInteractable
     float opacity;
 
     public bool CanInteract => isActiveAndEnabled && destination && !crossing;
-    public string InteractPrompt => leadsInside && finale && finale.NeedsListening ? "E  Прислушаться" : leadsInside ? "E  Войти в ангар №4" : "E  Выйти на причал";
+    public string InteractPrompt => leadsInside && finale && finale.NeedsListening ? "E  Прислушаться" : leadsInside && !HangarKey.Found ? "E  Проверить замок" : leadsInside ? "E  Войти в ангар №4" : "E  Выйти на причал";
 
     public void Interact(SimpleUIHUD hud)
     {
@@ -28,6 +28,11 @@ public sealed class HangarDoor : MonoBehaviour, IInteractable
         {
             hud?.ClearPrompt();
             finale.Listen(player);
+            return;
+        }
+        if (leadsInside && !HangarKey.Found)
+        {
+            hud?.ShowInspectionComment("Заперто. Надо поискать ключ среди груза на причале.");
             return;
         }
         StartCoroutine(Cross(player, hud));

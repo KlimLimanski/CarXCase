@@ -36,14 +36,14 @@ public sealed class HangarFinale : MonoBehaviour
     public bool Finished => ClueJournal.Has(Shot) || ClueJournal.Has(Arrest);
     public bool NeedsListening => !Finished && !ClueJournal.Has(Overheard);
     public string Objective => stage == Stage.Approach ? "Подойдите к Косте" :
-        stage != Stage.Outside || Finished ? null : NeedsListening ? "Подслушайте разговор у двери ангара" : "Войдите в ангар";
+        stage != Stage.Outside || Finished ? null : NeedsListening ? "Подслушайте разговор у двери ангара" : HangarKey.Found ? "Войдите в ангар" : "Найдите ключ на причале";
 
     SkinnedMeshRenderer kostyaFace, fatherFace;
     static SkinnedMeshRenderer SpeechFace(Transform root, string model)
     {
         var face = root.Find("Hangar " + model).GetComponentInChildren<SkinnedMeshRenderer>(true);
         face.sharedMesh = Resources.Load<Mesh>("HangarSpeech" + model);
-        face.sharedMaterials = new[] { face.sharedMaterial, Resources.Load<Material>("HangarMouthInterior") };
+        face.sharedMaterials = new[] { face.sharedMaterial, Resources.Load<Material>(model == "Kostya" ? "KostyaMouthInterior" : "HangarMouthInterior") };
         return face;
     }
 
