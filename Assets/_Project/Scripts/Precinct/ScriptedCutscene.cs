@@ -135,8 +135,8 @@ namespace CarXCase.Precinct
             if (Finished) return;
             if (sub == null)
             {
-                sub = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; sub.normal.textColor = Color.white;
-                spk = new GUIStyle(sub); spk.normal.textColor = new Color(1, .82f, .51f);
+                sub = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; sub.normal.textColor = Color.white; sub.Steady();
+                spk = new GUIStyle(sub); spk.normal.textColor = new Color(1, .82f, .51f); spk.Steady();
                 big = new GUIStyle(sub) { font = GameTypography.Face, fontStyle = FontStyle.Bold };
                 small = new GUIStyle(sub) { font = GameTypography.Face, alignment = TextAnchor.MiddleRight };
             }

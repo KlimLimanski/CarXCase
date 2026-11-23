@@ -169,7 +169,7 @@ namespace CarXCase.Precinct
             if (prompt == null)
             {
                 prompt = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleRight };
-                prompt.normal.textColor = DialogueChoiceRows.Cream;
+                prompt.normal.textColor = DialogueChoiceRows.Cream; prompt.Steady();
             }
             prompt.fontSize = Mathf.RoundToInt(16f * scale);
 

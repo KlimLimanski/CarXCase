@@ -507,7 +507,7 @@ namespace CarXCase.Precinct
             string hint = selected == null ? "Сопоставьте две улики"
                 : "Найдите пару для улики «" + InvestigationIntegration.Controller.caseFile.Find(selected).title + "»";
             controlsStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter };
-            controlsStyle.normal.textColor = Color.white;
+            controlsStyle.normal.textColor = Color.white; controlsStyle.Steady();
             float scale = Mathf.Clamp(Screen.height / 900f, .75f, 2f);
             controlsStyle.fontSize = Mathf.RoundToInt(15 * scale);
             if (Time.time < deductionUntil) CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker("Алексей", deductionLine), .76f);

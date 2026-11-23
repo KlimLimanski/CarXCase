@@ -17,9 +17,9 @@ namespace CarXCase.UI
             if (text == null)
             {
                 text = new GUIStyle(GUI.skin.label) { font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"), alignment = TextAnchor.UpperCenter, wordWrap = true, fontStyle = FontStyle.Normal, richText = false };
-                text.normal.textColor = new Color(0.95f, 0.95f, 0.93f, 1f);
+                text.normal.textColor = new Color(0.95f, 0.95f, 0.93f, 1f); text.Steady();
                 shadow = new GUIStyle(text);
-                shadow.normal.textColor = new Color(0f, 0f, 0f, 0.55f);
+                shadow.normal.textColor = new Color(0f, 0f, 0f, 0.55f); shadow.Steady();
             }
             float W = Screen.width, H = Screen.height;
             int size = Mathf.RoundToInt(Mathf.Clamp(H * 0.031f, 15f, 64f));

@@ -367,7 +367,7 @@ namespace CarXCase.Precinct
             {
                 displayFont = GameTypography.Face;
                 big = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
-                small = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; small.normal.textColor = new Color(.8f, .8f, .8f);
+                small = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; small.normal.textColor = new Color(.8f, .8f, .8f); small.Steady();
             }
             float k = Mathf.Clamp(Screen.height / 720f, .7f, 2f), W = Screen.width, H = Screen.height;
             big.fontSize = Mathf.RoundToInt(30 * k); small.fontSize = Mathf.RoundToInt(14 * k);
@@ -386,13 +386,13 @@ namespace CarXCase.Precinct
                 // probability + stress (top-left, Detroit style)
                 var panel = new Rect(18 * k, H * .07f, 250 * k, 104 * k);
                 Fill(panel, new Color(0, 0, 0, .55f));
-                small.alignment = TextAnchor.MiddleLeft; small.normal.textColor = new Color(.55f, .85f, 1f);
+                small.alignment = TextAnchor.MiddleLeft; small.normal.textColor = new Color(.55f, .85f, 1f); small.Steady();
                 GUI.Label(new Rect(panel.x + 12 * k, panel.y + 6 * k, panel.width, 20 * k), "ВЕРОЯТНОСТЬ УСПЕХА", small);
-                big.alignment = TextAnchor.MiddleLeft; big.normal.textColor = Color.white;
+                big.alignment = TextAnchor.MiddleLeft; big.normal.textColor = Color.white; big.Steady();
                 GUI.Label(new Rect(panel.x + 12 * k, panel.y + 24 * k, 120 * k, 36 * k), probability + "%", big);
                 if (showDelta)
                 {
-                    var arrow = new GUIStyle(big); arrow.normal.textColor = lastDelta > 0 ? new Color(.4f, 1f, .5f) : new Color(1f, .35f, .3f);
+                    var arrow = new GUIStyle(big); arrow.normal.textColor = lastDelta > 0 ? new Color(.4f, 1f, .5f) : new Color(1f, .35f, .3f); arrow.Steady();
                     arrow.fontSize = Mathf.RoundToInt(22 * k);
                     GUI.Label(new Rect(panel.x + 110 * k, panel.y + 26 * k, 120 * k, 32 * k), (lastDelta > 0 ? "▲ +" : "▼ ") + lastDelta, arrow);
                 }
@@ -400,7 +400,7 @@ namespace CarXCase.Precinct
                 var bar = new Rect(panel.x + 12 * k, panel.y + 84 * k, panel.width - 24 * k, 8 * k);
                 Fill(bar, new Color(1, 1, 1, .15f));
                 Fill(new Rect(bar.x, bar.y, bar.width * stress / 100f, bar.height), Color.Lerp(new Color(.4f, .8f, 1f), new Color(1f, .25f, .2f), stress / 100f));
-                small.alignment = TextAnchor.MiddleCenter; small.normal.textColor = new Color(.8f, .8f, .8f);
+                small.alignment = TextAnchor.MiddleCenter; small.normal.textColor = new Color(.8f, .8f, .8f); small.Steady();
                 big.alignment = TextAnchor.MiddleCenter;
             }
 
@@ -449,7 +449,7 @@ namespace CarXCase.Precinct
                 Fill(new Rect(0, 0, W, H), new Color(0, 0, 0, .78f));
                 var box = new Rect(W * .18f, H * .16f, W * .64f, H * .68f);
                 GUILayout.BeginArea(box);
-                var t = new GUIStyle(big); t.normal.textColor = success ? new Color(.45f, 1f, .6f) : new Color(1f, .4f, .35f);
+                var t = new GUIStyle(big); t.normal.textColor = success ? new Color(.45f, 1f, .6f) : new Color(1f, .4f, .35f); t.Steady();
                 GUILayout.Label(shutdown ? shutdownTitle : success ? successTitle : failTitle, t);
                 GUILayout.Label($"Итоговая вероятность успеха: {probability}%  ·  стресс: {Mathf.RoundToInt(stress)}", small);
                 GUILayout.Space(16 * k);
@@ -460,13 +460,13 @@ namespace CarXCase.Precinct
                 if (success && !string.IsNullOrEmpty(grantTitle))
                 {
                     GUILayout.Space(8 * k);
-                    var g = new GUIStyle(small); g.normal.textColor = new Color(1f, .85f, .4f);
+                    var g = new GUIStyle(small); g.normal.textColor = new Color(1f, .85f, .4f); g.Steady();
                     GUILayout.Label("Новая улика: " + grantTitle, g);
                 }
                 if (success && !string.IsNullOrEmpty(endingTag))
                 {
                     GUILayout.Space(10 * k);
-                    var e = new GUIStyle(big); e.normal.textColor = new Color(1f, .85f, .4f); e.fontSize = Mathf.RoundToInt(24 * k);
+                    var e = new GUIStyle(big); e.normal.textColor = new Color(1f, .85f, .4f); e.Steady(); e.fontSize = Mathf.RoundToInt(24 * k);
                     GUILayout.Label(endingTag, e);
                 }
                 if (recoveredLead)
@@ -501,6 +501,7 @@ namespace CarXCase.Precinct
                 {
                     normal = { textColor = DialogueGold }
                 };
+                trustLabel.Steady(); trustValue.Steady();
             }
 
             trustLabel.fontSize = Mathf.RoundToInt(18f * scale);
@@ -526,9 +527,9 @@ namespace CarXCase.Precinct
         static void DrawWithShadow(Rect rect, string text, GUIStyle style)
         {
             var ink = style.normal.textColor;
-            style.normal.textColor = new Color(.06f, .04f, .025f, .95f);
+            style.normal.textColor = new Color(.06f, .04f, .025f, .95f); style.Steady();
             GUI.Label(new Rect(rect.x + 1f, rect.y + 2f, rect.width, rect.height), text, style);
-            style.normal.textColor = ink;
+            style.normal.textColor = ink; style.Steady();
             GUI.Label(rect, text, style);
         }
 

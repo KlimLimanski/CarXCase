@@ -287,8 +287,8 @@ namespace CarXCase.Precinct
             if (sub == null)
             {
                 sub = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
-                sub.normal.textColor = Color.white;
-                speaker = new GUIStyle(sub); speaker.normal.textColor = new Color(1, .82f, .51f);
+                sub.normal.textColor = Color.white; sub.Steady();
+                speaker = new GUIStyle(sub); speaker.normal.textColor = new Color(1, .82f, .51f); speaker.Steady();
                 small = new GUIStyle(sub) { font = GameTypography.Face, alignment = TextAnchor.MiddleRight };
                 big = new GUIStyle(sub) { font = GameTypography.Face, fontStyle = FontStyle.Bold };
             }
