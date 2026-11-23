@@ -14,6 +14,7 @@ namespace DetectiveGame.Core
     {
         public static QteManager Instance { get; private set; }
 
+        [SerializeField] private bool enableDebugHotkey = true;
         private bool _isActive = false;
         private QteType _currentType;
         private Key _targetKey;
@@ -54,7 +55,7 @@ namespace DetectiveGame.Core
 
             if (!_isActive)
             {
-                if (Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame)
+                if (enableDebugHotkey && Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame)
                 {
                     StartRandomTestQte();
                 }
@@ -146,20 +147,11 @@ namespace DetectiveGame.Core
 
         private void EndQte(bool success)
         {
-            _isActive = false;
+            var callback = success ? _onSuccess : _onFailure;
             ShowResult(success, success ? "УСПЕХ!" : "ПРОВАЛ!");
             CarXCase.Interaction.InteractionGlyphs.Finish(this, success);
-            _anchor = null;
-            _label = null;
-
-            if (success)
-            {
-                _onSuccess?.Invoke();
-            }
-            else
-            {
-                _onFailure?.Invoke();
-            }
+            Cancel();
+            callback?.Invoke();
         }
 
         private void ShowResult(bool success, string message)
@@ -170,6 +162,15 @@ namespace DetectiveGame.Core
         }
 
         public bool IsQteActive() => _isActive;
+        public int CurrentMashes => _currentMashes;
+
+        public void Cancel()
+        {
+            _isActive = false;
+            _onSuccess = _onFailure = null;
+            _anchor = null;
+            _label = null;
+        }
 
         /// Where the key hangs and what it says; QteTrigger sets this before starting.
         public void Present(Transform anchor, string label)

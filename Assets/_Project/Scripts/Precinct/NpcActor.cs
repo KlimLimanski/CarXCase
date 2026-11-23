@@ -16,7 +16,7 @@ namespace CarXCase.Precinct
         Quaternion armLRot, armRRot; Vector3 mouthScale, eyeScale;
         float open, openVel, nextBlink, blink, talkBlend;
 
-        void Awake()
+        void Start()
         {
             if (!head) head = transform.Find("Head");
             if (!torso) torso = transform.Find("Torso");

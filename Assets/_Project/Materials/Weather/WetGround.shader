@@ -10,6 +10,7 @@ Shader "Project/Wet Ground"
   _Wetness("Wetness",Range(0,1))=0.7
   _WetDarken("Darkening when wet",Range(0,1))=0.4
   _PuddleAmount("Puddle amount",Range(0,1))=0.32
+  _PuddleContrast("Standing water contrast",Range(0,1))=0
   _PuddleScale("Puddle size (lower = bigger)",Float)=0.22
   _PuddleSeed("Puddle seed",Float)=0
   _RainSpeed("Rain ripples speed",Float)=1.1
@@ -45,7 +46,7 @@ Shader "Project/Wet Ground"
    CBUFFER_START(UnityPerMaterial)
    float4 _BaseMap_ST,_DetailNormal_ST,_BaseColor;
    float _TextureScale,_DetailScale,_DetailStrength,_Wetness,_WetDarken,_PuddleAmount,_PuddleScale,_PuddleSeed,_RainSpeed,_RippleScale,_RippleStrength;
-   float _ReflectionStrength,_WetReflection,_ReflectionBlur,_StreakLength,_ReflectionDistort;
+   float _ReflectionStrength,_WetReflection,_ReflectionBlur,_StreakLength,_ReflectionDistort,_PuddleContrast;
    CBUFFER_END
    // planar reflection of the street rendered by PuddleReflection.cs (global)
    TEXTURE2D(_PuddleReflectionTex); SAMPLER(sampler_PuddleReflectionTex);
@@ -78,7 +79,8 @@ Shader "Project/Wet Ground"
     // puddles: irregular world-space blobs on top faces
     float pn=vnoise(float3(xz*_PuddleScale,_PuddleSeed))*0.62+vnoise(float3(xz*_PuddleScale*2.9,_PuddleSeed+5.3))*0.28+vnoise(float3(xz*_PuddleScale*9.0,_PuddleSeed+1.7))*0.10;
     float th=0.75-_PuddleAmount*0.55;
-    float puddle=smoothstep(th-0.025,th+0.056,pn)*top;
+    float edgeWidth=lerp(1.0,0.47,_PuddleContrast);
+    float puddle=smoothstep(th-0.025*edgeWidth,th+0.056*edgeWidth,pn)*top;
     float damp=smoothstep(th-0.12,th,pn)*top;
     // detail normal (top faces), flattened by water
     half3 dn=UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal,sampler_DetailNormal,xz*_DetailScale),_DetailStrength);
@@ -101,8 +103,12 @@ Shader "Project/Wet Ground"
     InputData d=(InputData)0;d.positionWS=v.positionWS;d.normalWS=nw;d.viewDirectionWS=GetWorldSpaceNormalizeViewDir(v.positionWS);d.shadowCoord=TransformWorldToShadowCoord(v.positionWS);d.bakedGI=SampleSH(nw);d.vertexLighting=VertexLighting(v.positionWS,nw);d.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(v.positionCS);d.shadowMask=half4(1,1,1,1);
     half4 col=UniversalFragmentPBR(d,s);
     col.rgb*=lerp(1.0,0.76,puddle);
+    float NoV=saturate(dot(nw,d.viewDirectionWS));
+    half fresnel=pow(1.0-NoV,3.0);
+    // Standing water carries a cool sky sheen even where the planar camera has no coverage.
+    half3 skySheen=half3(0.041,0.065,0.105)*(0.50+0.50*fresnel);
+    col.rgb=lerp(col.rgb,col.rgb*0.60+skySheen,puddle*_PuddleContrast);
     if(_PuddleReflectionOn>0.5){
-     float NoV=saturate(dot(nw,d.viewDirectionWS));
      half F=0.02+0.98*pow(1.0-NoV,5.0);
      float3 pr=v.positionWS+float3(slope.x,0,slope.y)*_ReflectionDistort;
      float4 rc=mul(_PuddleReflectionVP,float4(pr,1));
@@ -115,7 +121,8 @@ Shader "Project/Wet Ground"
      [unroll] for(int k=-2;k<=2;k++) blur+=SAMPLE_TEXTURE2D_LOD(_PuddleReflectionTex,sampler_PuddleReflectionTex,ruv+float2(0,k*_StreakLength),_ReflectionBlur).rgb;
      blur*=0.2;
      half3 refl=clamp(lerp(blur,sharp,puddle),0.0,8.0);
-     half amount=saturate((puddle*_ReflectionStrength+(1.0-puddle)*wet*_WetReflection)*F)*inside;
+     half waterF=lerp(F,max(F,0.23),_PuddleContrast);
+     half amount=saturate(puddle*_ReflectionStrength*waterF+(1.0-puddle)*wet*_WetReflection*F)*inside;
      if(inside>0.001) col.rgb=lerp(col.rgb,col.rgb*0.6,amount)+refl*amount;
     }
     col.rgb=clamp(MixFog(col.rgb,v.fog),0.0,64.0);return col;

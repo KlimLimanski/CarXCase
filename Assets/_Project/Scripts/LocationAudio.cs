@@ -10,7 +10,6 @@ public sealed class LocationAudio : MonoBehaviour
 {
     static readonly Dictionary<string, string[]> Lists = new()
     {
-        ["00_BrightonDrive_Models"] = new[] { "take-a-rest" },
         ["01_FatherApartment"] = new[] { "Lilith Nyx — Missing Person", "Normand Corbeil - Two Brothers", "take-a-rest" },
         ["02_Bar"] = new[] { "dark-saxophone", "Wez Devine — Funky Jazzy Flow", "WEZ DEVINE — Yield Hop" },
         ["03_Pawnshop"] = new[] { "Lilith Nyx — Gritty Noir", "Normand Corbeil - The Artful Dodger", "noir-jazz-detective-midnight-mystery" },
@@ -28,7 +27,7 @@ public sealed class LocationAudio : MonoBehaviour
     ApartmentAnsweringMachine machine;
     OfficeTurntable turntable;
     public float ScoreLevel => (machine && machine.IsPlaying) || (turntable && turntable.IsPlaying) ? .07f :
-        driving || gameObject.scene.name == "04_Precinct" ? .17f : .29f;
+        gameObject.scene.name == "04_Precinct" ? .17f : .29f;
     static LocationAudio current;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -42,7 +41,8 @@ public sealed class LocationAudio : MonoBehaviour
 
     static void Enter(Scene scene, LoadSceneMode mode)
     {
-        if (!Lists.TryGetValue(scene.name, out var tracks)) return;
+        bool driving = scene.name == "00_BrightonDrive_Models";
+        if (!Lists.TryGetValue(scene.name, out var tracks) && !driving) return;
         var go = new GameObject("Location audio");
         SceneManager.MoveGameObjectToScene(go, scene);
         var audio = go.AddComponent<LocationAudio>();
@@ -55,8 +55,8 @@ public sealed class LocationAudio : MonoBehaviour
         }
         if (audio.player) audio.body = audio.player.GetComponent<CharacterController>();
         bool harbor = scene.name == "05_BrightonHarbor";
-        SceneScore.StartFor(audio, tracks);
-        audio.driving = scene.name == "00_BrightonDrive_Models";
+        if (tracks != null) SceneScore.StartFor(audio, tracks);
+        audio.driving = driving;
         audio.outdoors = harbor;
         if (harbor) audio.harborFinale = FindAnyObjectByType<HangarFinale>();
         var rainObject = new GameObject("Rain ambience");

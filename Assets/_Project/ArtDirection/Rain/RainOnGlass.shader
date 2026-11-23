@@ -123,7 +123,7 @@ Shader "CarXCase/RainOnGlass"
             {
                 float2 p = i.uv;
                 float age = 1e4;
-                if (_Wipers > 0.5) age = min(WipeAge(p, _WiperPivots.xy), WipeAge(p, _WiperPivots.zw));
+                if (_Wipers > 0.5 && _RainWiperParams.w > 0) age = min(WipeAge(p, _WiperPivots.xy), WipeAge(p, _WiperPivots.zw));
 
                 float t = _RainTime;
                 float4 run = Runners(p, 0.032, 0.30, t, 0) + Runners(p * 1.0, 0.055, 0.45, t * 0.8, 17.0) * 0.8;

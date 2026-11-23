@@ -8,10 +8,22 @@ namespace CarXCase.Precinct
     {
         [SerializeField] Animator animator;
         [SerializeField] HeroFace face;
+        [Tooltip("Conversation acting on the humanoid (gaze, weight shifts, gestures).")]
+        [SerializeField] ConversationActing acting;
         static readonly int Standing = Animator.StringToHash("Base Layer.Standing");
-        static readonly int Walking = Animator.StringToHash("Base Layer.Walking");
         const float ReleaseCounter = .25f;
         const float TurnDuration = .85f;
+
+        void Awake()
+        {
+            if (!acting && animator) acting = animator.GetComponent<ConversationActing>();
+        }
+
+        /// The conversation starts: Dmitry turns his attention to the listener.
+        public void Engage(Transform listener)
+        {
+            if (acting) acting.Engage(listener);
+        }
 
         public IEnumerator TurnTo(Transform listener)
         {
@@ -30,30 +42,45 @@ namespace CarXCase.Precinct
             transform.rotation = end;
         }
 
+        /// Dmitry says a line: lips follow the subtitle, body acting follows its meaning.
+        public void Speak(string line, float shownFor, Transform glance = null, float glanceStart = 0f)
+        {
+            if (acting) acting.Speak(line, shownFor, glance, glanceStart);
+            else if (face) face.Speak(line, shownFor);
+        }
+
+        /// Alexey speaks: Dmitry listens and reacts.
+        public void Listen(string heroLine)
+        {
+            if (acting) acting.Listen(heroLine);
+            else if (face) face.StopSpeaking();
+        }
+
+        /// Nobody speaks (a choice is on screen).
+        public void Wait()
+        {
+            if (acting) acting.Wait();
+            else if (face) face.StopSpeaking();
+        }
+
+        public void EndConversation()
+        {
+            if (acting) acting.Disengage();
+            else if (face) face.StopSpeaking();
+        }
+
+        /// Kept for older callers: talking without a line of text.
         public void SetTalking(bool talking)
         {
             if (face) face.SetSpeech(talking);
+            if (!talking) Wait();
         }
 
         public IEnumerator WalkTo(Vector3 destination)
         {
-            const float Speed = 1.65f;
-            destination.y = transform.position.y;
-            Vector3 delta = destination - transform.position;
-            if (delta.sqrMagnitude < .001f) yield break;
-            Quaternion facing = Quaternion.LookRotation(delta);
-            while (Quaternion.Angle(transform.rotation, facing) > 1f)
-            {
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, facing, 280f * Time.deltaTime);
-                yield return NoirMenu.GameSession.NextStoryFrame;
-            }
-            animator.CrossFadeInFixedTime(Walking, .2f);
-            while (transform.position != destination)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, destination, Speed * Time.deltaTime);
-                yield return NoirMenu.GameSession.NextStoryFrame;
-            }
-            animator.CrossFadeInFixedTime(Standing, .2f);
+            if (acting) acting.Disengage(true);
+            if (face) face.StopSpeaking();
+            return ConversationActing.WalkTo(transform, animator, destination, 1.65f);
         }
     }
 }

@@ -21,10 +21,36 @@ namespace DetectiveGame.Core
             ShowInspectionComment(line, Mathf.Clamp(2.7f + line.Length * .033f, 3.2f, 7f));
         }
 
-        public void ShowInspectionComment(string line, float duration, string speaker = "Алексей")
+        public const string HeroSpeaker = "Алексей";
+        bool heroSpeaking;
+
+        public void ShowInspectionComment(string line, float duration, string speaker = HeroSpeaker) =>
+            ShowInspectionComment(line, duration, speaker, null);
+
+        /// Shows a spoken comment. Alexey's own lines are articulated by his face for as long as the
+        /// subtitle stays up (or for the length of the optional voice clip).
+        public void ShowInspectionComment(string line, float duration, string speaker, AudioClip voice)
         {
+            if (voice) duration = Mathf.Max(duration, voice.length + .3f);
             _inspectionLine = CarXCase.UI.Subtitles.WithSpeaker(speaker, line);
             _inspectionUntil = Time.time + duration;
+            heroSpeaking = speaker == HeroSpeaker && !string.IsNullOrWhiteSpace(line);
+            if (heroSpeaking) CarXCase.Hero.HeroFace.SpeakAsHero(line, duration, voice);
+            else CarXCase.Hero.HeroFace.StopHero();
+        }
+
+        /// Removes the current comment at once; the face returns to neutral.
+        public void ClearInspectionComment()
+        {
+            _inspectionUntil = 0f;
+            StopHeroSpeech();
+        }
+
+        void StopHeroSpeech()
+        {
+            if (!heroSpeaking) return;
+            heroSpeaking = false;
+            CarXCase.Hero.HeroFace.StopHero();
         }
 
         public void ShowJournalHint() => journalHintUntil = Time.time + 8f;
@@ -40,7 +66,13 @@ namespace DetectiveGame.Core
         }
 
         public void CloseJournal() => CarXCase.Investigation.InvestigationIntegration.Close();
-        void OnDisable() => CloseJournal();
+        void OnDisable()
+        {
+            CloseJournal();
+            // A scripted scene took over the screen: the comment is gone, so is the speech.
+            if (Time.time < _inspectionUntil) _inspectionUntil = 0f;
+            StopHeroSpeech();
+        }
 
         public string CurrentInspectionComment => Time.time < _inspectionUntil ? _inspectionLine : "";
 
@@ -112,8 +144,9 @@ namespace DetectiveGame.Core
                         return "Осмотрите зал бара";
                     return "Поговорите с Дмитрием";
                 case "03_Pawnshop":
-                    if (PortLead.HasAny(PortLead.Pawnshop)) return "Отправляйтесь в Шипсхед-Бей";
-                    return ClueJournal.Has(PortLead.CheckSafe) ? "Найдите сейф за стойкой" : "Осмотрите ломбард";
+                    if (ClueJournal.Has(PortLead.CheckSafe) && !ClueJournal.Has(PortLead.Safe))
+                        return ClueJournal.Has(PawnshopSafe.OpenFlag) ? "Осмотрите записку в сейфе" : "Откройте сейф за стойкой";
+                    return PortLead.HasAny(PortLead.Pawnshop) ? "Отправляйтесь в Шипсхед-Бей" : "Осмотрите ломбард";
                 case "04_Precinct": return "Осмотрите кабинет";
                 case "05_BrightonHarbor":
                     return ClueJournal.Has("harbor_gate_open") ? (harborFinale ? harborFinale.Objective : "Осмотрите склад") : "Откройте ворота порта";

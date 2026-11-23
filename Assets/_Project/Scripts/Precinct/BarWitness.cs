@@ -1,4 +1,5 @@
 using System.Collections;
+using CarXCase.Hero;
 using CarXCase.Interaction;
 using CarXCase.UI;
 using DetectiveGame.Core;
@@ -9,8 +10,13 @@ namespace CarXCase.Precinct
 {
     public sealed class BarWitness : MonoBehaviour, IInteractable, IGlyphAnchor
     {
+        const string Girl = "Девушка";
+        const string Hero = "Алексей";
+
         public Transform witness;
         public ClueObject lead;
+        [Tooltip("Seated acting of the witness (gaze, speech, reactions).")]
+        public BarWitnessActor actor;
 
         OfficerController player;
         ThirdPersonCamera view;
@@ -18,12 +24,19 @@ namespace CarXCase.Precinct
         bool previousCursor, active, choosing, skip;
         int answer;
         string line;
-        GUIStyle choiceStyle;
+        Camera lens;
+        readonly DialogueChoiceRows choiceRows = new();
+        static readonly string[] Answers = { "Выпить с девушкой", "Отказаться" };
 
         public bool CanInteract => isActiveAndEnabled && !active && ClueJournal.Has(PortLead.AskWitness) &&
             lead && !ClueJournal.Has(PortLead.Witness);
         public string InteractPrompt => "E  Поговорить с девушкой";
         public Vector3 GlyphPosition => transform.position;
+
+        void Awake()
+        {
+            if (!actor && witness) actor = witness.GetComponent<BarWitnessActor>();
+        }
 
         public void Interact(SimpleUIHUD hud)
         {
@@ -36,46 +49,91 @@ namespace CarXCase.Precinct
             player.LockInput(true);
             if (witness && player.cameraTransform && player.cameraTransform.TryGetComponent(out view))
             {
-                var head = witness.position + Vector3.up * 1.33f;
-                // The seated mesh faces local -Z. Frame her from the open end of the counter.
-                Vector3 front = -witness.forward;
-                Vector3 eye = head + front * 1.12f + Vector3.Cross(Vector3.up, front) * .63f;
-                player.FaceTowards(head);
-                view.BeginStation(eye + Vector3.up * .12f, head);
+                lens = view.GetComponent<Camera>();
+                player.FaceTowards(GirlHead);
+                FrameConversation();
             }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             active = true;
+            if (actor) actor.BeginConversation(player.transform);
             StartCoroutine(Talk());
         }
 
         IEnumerator Talk()
         {
-            yield return Say("Девушка: Выпьешь со мной? Тогда скажу, куда делись те двое.");
+            // she notices him first and turns before anyone speaks
+            yield return new WaitForSeconds(.55f);
+            yield return Say(Hero, "Добрый вечер. Дмитрий говорит, вчера сюда приходили двое, искали моего отца. Вы их видели?");
+            yield return Say(Girl, "Выпьешь со мной? Тогда скажу, куда делись те двое.");
             answer = -1;
             choosing = true;
+            if (actor) actor.Wait();
             yield return new WaitUntil(() => answer >= 0);
             choosing = false;
             if (answer == 0)
             {
+                yield return Say(Hero, "Одну. Но сначала — про них.");
                 LocationAudio.Effect("Place Open Box Bottles Ff", .45f);
-                yield return Say("Девушка: Месяц назад они так же подставили ювелира с Кони-Айленда. На причалах ими заправляет местный, с Брайтона.");
-                yield return Say("Девушка: Найдёшь их в Шипсхед-Бей. Они держат старый ангар, четвёртый.");
+                yield return Say(Girl, "Месяц назад они так же подставили ювелира с Кони-Айленда. На причалах ими заправляет местный, с Брайтона.");
+                yield return Say(Girl, "Найдёшь их в Шипсхед-Бей. Они держат старый ангар, четвёртый.");
+                yield return Say(Hero, "Шипсхед-Бей, четвёртый ангар. Спасибо — за мной должок.");
             }
             else
-                yield return Say("Девушка: Как хочешь. Слышала, как один велел другому ехать на причал Шипсхед-Бей, в четвёртый ангар. Больше ничего.");
+            {
+                yield return Say(Hero, "Я на службе. Просто скажи, что слышала.");
+                yield return Say(Girl, "Как хочешь. Слышала, как один велел другому ехать на причал Шипсхед-Бей, в четвёртый ангар. Больше ничего.");
+                yield return Say(Hero, "Четвёртый ангар. Этого хватит, спасибо.");
+            }
             lead.AddEntry();
             Release();
         }
 
-        IEnumerator Say(string text)
+        Vector3 GirlHead => actor && actor.head ? actor.head.position + Vector3.up * .06f : witness.position + Vector3.up * 1.47f;
+        Vector3 HeroHead => player.transform.position + Vector3.up * 1.62f;
+
+        // Hold a two-shot from the aisle for the conversation and the response choices.
+        void FrameConversation()
         {
-            line = text;
+            Vector3 girl = GirlHead, hero = HeroHead;
+            Vector3 look = (girl + hero) * .5f - Vector3.up * .23f;
+            Vector3 alongCounter = Vector3.Cross(witness.forward, Vector3.up).normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, girl - hero).normalized;
+            if (Vector3.Dot(side, alongCounter) < 0f) side = -side;
+            Vector3 direction = (alongCounter * .8f + side * .2f).normalized;
+            Vector3 atLensHeight = look + Vector3.up * .39f;
+            float distance = 2.4f;
+            foreach (var hit in Physics.SphereCastAll(atLensHeight, .16f, direction, distance, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.distance <= 0f || hit.transform.IsChildOf(witness) || hit.transform.IsChildOf(player.transform)) continue;
+                distance = Mathf.Min(distance, Mathf.Max(.05f, hit.distance - .1f));
+            }
+            view.BeginConversationShot(atLensHeight + direction * distance, look);
+        }
+
+        IEnumerator Say(string speaker, string text)
+        {
+            bool hero = speaker == Hero;
+            line = Subtitles.WithSpeaker(speaker, text);
             skip = false;
             float earliest = Time.time + .3f;
-            float end = Time.time + Mathf.Clamp(text.Length * .05f, 2.3f, 7f);
+            float shown = Mathf.Clamp(text.Length * .05f + (hero ? .2f : 0f), 2.3f, 7f);
+            float end = Time.time + shown;
+            if (hero)
+            {
+                if (actor) actor.Listen();
+                HeroFace.SpeakAsHero(text, shown);
+            }
+            else
+            {
+                HeroFace.StopHero();
+                if (actor) actor.Speak(text, shown);
+            }
             while (Time.time < end && !(skip && Time.time > earliest))
                 yield return NoirMenu.GameSession.NextStoryFrame;
+            // line over or skipped: both faces settle at once
+            HeroFace.StopHero();
+            if (actor) actor.Wait();
             line = null;
         }
 
@@ -97,22 +155,29 @@ namespace CarXCase.Precinct
             if (NoirMenu.GameSession.Paused) return;
             if (!active) return;
             if (!choosing) { Subtitles.Draw(line); return; }
-            choiceStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft, fontSize = 20 };
-            float width = Mathf.Min(420f, Screen.width * .45f);
-            float left = Screen.width - width - Screen.width * .08f;
-            DrawAnswer(new Rect(left, Screen.height * .61f, width, 42f), "[1]  Выпить с девушкой", 0);
-            DrawAnswer(new Rect(left, Screen.height * .68f, width, 42f), "[2]  Отказаться", 1);
-        }
-
-        void DrawAnswer(Rect rect, string text, int index)
-        {
-            var previous = GUI.color;
-            bool hover = rect.Contains(Event.current.mousePosition);
-            GUI.color = hover ? new Color(.32f, .27f, .19f, .92f) : new Color(.045f, .072f, .079f, .88f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = previous;
-            GUI.Label(new Rect(rect.x + 12f, rect.y, rect.width - 18f, rect.height), text, choiceStyle);
-            if (GUI.Button(rect, GUIContent.none, GUIStyle.none)) answer = index;
+            // Keep the choices below both faces in the wide shot.
+            float k = Mathf.Clamp(Screen.height / 720f, .7f, 2f), W = Screen.width, H = Screen.height;
+            float width = Mathf.Min(282f * k, W * .43f);
+            float margin = Mathf.Min(29f * k, W * .04f);
+            float row = Mathf.Min(47f * k, H * .092f);
+            Vector3 face = lens ? lens.WorldToViewportPoint(GirlHead) : new Vector3(.5f, .5f, 1f);
+            if (face.z <= 0f) face = new Vector3(.5f, .5f, 1f);
+            bool onRight = face.x <= .56f;
+            float x = onRight ? Mathf.Max(W * .55f, face.x * W + margin) : Mathf.Min(W * .45f - width, face.x * W - margin - width);
+            x = Mathf.Clamp(x, margin, W - width - margin);
+            float top = Mathf.Clamp((1f - face.y) * H - row * .45f, H * .53f, H * .79f - row * Answers.Length);
+            for (int i = 0; i < Answers.Length; i++)
+            {
+                float rowWidth = choiceRows.Measure(Answers[i], k, width);
+                var r = new Rect(onRight ? x + width - rowWidth : x, top + i * row, rowWidth, row - 6f * k);
+                bool hover = answer < 0 && r.Contains(Event.current.mousePosition);
+                choiceRows.Draw(r, Answers[i], i + 1, k, answer == i || hover);
+                if (hover && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+                {
+                    answer = i;
+                    Event.current.Use();
+                }
+            }
         }
 
         void OnDisable()
@@ -124,11 +189,14 @@ namespace CarXCase.Precinct
 
         void Release()
         {
+            HeroFace.StopHero();
+            if (actor) actor.EndConversation();
             if (view) view.EndShot();
             if (player) { player.ClearFaceTarget(); player.LockInput(false); }
             Cursor.lockState = previousLock;
             Cursor.visible = previousCursor;
             active = choosing = false;
+            line = null;
         }
     }
 }

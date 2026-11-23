@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace NoirMenu
 {
@@ -9,6 +10,29 @@ namespace NoirMenu
     {
         public float fadeInOnStart = 1.6f;
         CanvasGroup group;
+        AsyncOperation sceneLoad;
+
+        public static void RevealAfterLoad(AsyncOperation load, float seconds)
+        {
+            if (load == null) return;
+            var overlay = new GameObject("Scene transition", typeof(Canvas), typeof(CanvasGroup));
+            var canvas = overlay.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = short.MaxValue;
+            DontDestroyOnLoad(overlay);
+
+            var black = new GameObject("Black", typeof(Image)).GetComponent<Image>();
+            black.color = Color.black;
+            black.raycastTarget = false;
+            black.rectTransform.SetParent(overlay.transform, false);
+            black.rectTransform.anchorMin = Vector2.zero;
+            black.rectTransform.anchorMax = Vector2.one;
+            black.rectTransform.offsetMin = black.rectTransform.offsetMax = Vector2.zero;
+
+            var fader = overlay.AddComponent<ScreenFader>();
+            fader.sceneLoad = load;
+            fader.fadeInOnStart = seconds;
+        }
 
         void Awake()
         {
@@ -20,6 +44,14 @@ namespace NoirMenu
 
         IEnumerator Start()
         {
+            if (sceneLoad != null)
+            {
+                yield return sceneLoad;
+                yield return null;
+                yield return FadeTo(0f, fadeInOnStart);
+                Destroy(gameObject);
+                yield break;
+            }
             if (GameSession.Paused) yield break;
             if (fadeInOnStart > 0f) yield return FadeTo(0f, fadeInOnStart);
             else { group.alpha = 0f; group.blocksRaycasts = false; }
