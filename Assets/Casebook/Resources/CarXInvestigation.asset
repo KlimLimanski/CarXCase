@@ -180,15 +180,6 @@ MonoBehaviour:
     narrator: 
     attachments: []
     revealedBy: []
-  - id: clue_harbor_warehouse
-    title: "\u0414\u0432\u0435\u0440\u0438 \u0430\u043D\u0433\u0430\u0440\u0430 \u21164"
-    section: 0
-    location: "\u041F\u043E\u0440\u0442 \u0428\u0438\u043F\u0441\u0445\u0435\u0434-\u0411\u0435\u0439"
-    time: 
-    observation: "\u0422\u0440\u0435\u0442\u0438\u0439 \u043F\u0438\u0440\u0441. \u0412\u043E\u0442 \u0438 \u0441\u0442\u0430\u0440\u044B\u0439 \u0430\u043D\u0433\u0430\u0440. \u041F\u0440\u043E\u0432\u0435\u0440\u044E \u0434\u0432\u0435\u0440\u0438."
-    narrator: 
-    attachments: []
-    revealedBy: []
   - id: person_father
     title: "\u0424\u0451\u0434\u043E\u0440 \u041F\u0430\u0432\u043B\u043E\u0432\u0438\u0447, \u043E\u0442\u0435\u0446"
     section: 2
