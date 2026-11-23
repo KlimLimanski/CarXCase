@@ -10,6 +10,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     public GameObject rescue, late;
     public Transform kostya;
     HangarStaging staging;
+    HangarProps props;
     public Light pendant, backlight;
     public AudioSource pulse;
     public ParticleSystemRenderer yardRain;
@@ -53,6 +54,8 @@ public sealed partial class HangarFinale : MonoBehaviour
         kostyaFace = SpeechFace(kostya, "Kostya");
         fatherFace = SpeechFace(rescue.transform, "Rescue");
         staging.Initialize(rescue.transform, kostya);
+        props = gameObject.AddComponent<HangarProps>();
+        props.Setup(staging, kostya, rescue.transform);
         confrontationFacing = Quaternion.Euler(0, -155f, 0);
         confrontationMark = staging.KostyaMark;
         SetBranch(ClueJournal.Has(LateRoute));
@@ -72,6 +75,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     void TakeControl(OfficerController officer)
     {
         player = officer;
+        props.SetHero(officer);
         view = officer.cameraTransform ? officer.cameraTransform.GetComponent<ThirdPersonCamera>() : null;
         previousLock = Cursor.lockState;
         previousCursorVisible = Cursor.visible;
@@ -152,7 +156,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         if (yardRain) yardRain.enabled = true;
         StopAllCoroutines();
         endingFade = 0;
-        if (fallenVisual) { fallenVisual.localRotation = standingRotation; fallenVisual = null; }
+        props.ResetAll();
         if (kostyaFace) kostyaFace.SetBlendShapeWeight(0, 0);
         if (fatherFace) fatherFace.SetBlendShapeWeight(0, 0);
         CarXCase.Hero.HeroFace.SetTalking(false);
@@ -227,6 +231,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         staging.ResetActors();
         player.FaceTowards(kostya.position);
         StartDirecting(Cover.Walk, 1);
+        props.Aim(1f, kostya);              // storms in with his service pistol up
         player.WalkTo(transform.TransformPoint(new Vector3(-.28f, .10f, 3.15f)), .57f);
         yield return Say("Алексей", "На пол! Руки за голову!", 2.1f);
         player.StopWalking();
@@ -249,6 +254,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         if (delayed) concern = 1f;
         yield return Say(delayed ? "Костя" : "Алексей", delayed ? "Я не хотел… Он сам отключился полчаса назад…" : "Костя, не дёргайся. Руки так, чтобы я их видел.", 3.6f);
         concern = .28f;
+        props.Aim(0f, kostya);
         Release();
         stage = Stage.Approach;
     }
@@ -268,6 +274,7 @@ public sealed partial class HangarFinale : MonoBehaviour
             TakeControl(player);
             player.FaceTowards(kostya.position);
             StartDirecting(Cover.Choice);
+            props.Aim(.5f, kostya);         // low ready while they talk
             UnlockCursor();
             StartCoroutine(Negotiate());
             return;
@@ -290,6 +297,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         {
             reach = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((DecisionSeconds - deadline + Time.time) / .48f));
             staging.Reach(reach);
+            if (reach > .85f && !props.KostyaArmed) props.ArmKostya(true, player.transform);
             if (keys != null && (keys.digit1Key.wasPressedThisFrame || keys.numpad1Key.wasPressedThisFrame)) Resolve(true);
             else if (keys != null && (keys.digit2Key.wasPressedThisFrame || keys.numpad2Key.wasPressedThisFrame)) Resolve(false);
             else if (Time.time >= deadline) stage = Stage.Missed;
@@ -313,6 +321,8 @@ public sealed partial class HangarFinale : MonoBehaviour
         stage = Stage.Decision;
         reach = 0f;
         staging.Reach(0f);
+        props.ArmKostya(false);
+        props.Aim(1f, kostya);
         deadline = Time.time + DecisionSeconds;
     }
 
@@ -339,6 +349,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     {
         Frame(new Vector3(2.85f, 1.47f, 5.32f), new Vector3(1.03f, .92f, 7.20f));
         if (shot) LocationAudio.Effect("Hangar shot", .55f);
+        props.DropKostyaGun();
         yield return Animate(staging.FallDuration(shot),
             t => staging.Subside(shot, t, confrontationMark, confrontationFacing));
         LocationAudio.Effect("Body fall", shot ? .75f : .4f);
@@ -353,6 +364,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         }
         LocationAudio.Effect("Police siren", .22f);   // backup on its way across the docks
         yield return StandardLastWords(shot);
+        props.Aim(0f, kostya);             // holsters before going to his father
         if (!delayed)
         {
             Frame(new Vector3(-1.16f, 1.14f, 5.84f), new Vector3(-.08f, .90f, 7.07f));
