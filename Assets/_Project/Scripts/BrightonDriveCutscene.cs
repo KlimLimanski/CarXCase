@@ -40,12 +40,21 @@ namespace CarXCase.Intro
         [Header("Oncoming Traffic")]
         public List<OncomingVehicle> oncomingVehicles = new List<OncomingVehicle>();
 
+        [Header("Hero car audio")]
+        [SerializeField, Range(0, 1)] float engineVolume = .36f;
+
         [Header("Temporary dialogue")]
         public DialogueLine[] dialogue;
 
         const float PassPeakSeconds = 1.7f;
+        const float BlackHold = 2.5f, TitleHold = 2f;
+        const float PreludeDuration = BlackHold + 2 * TitleHold;
+        const float ExitFadeDuration = 2.5f;
         AudioClip approachClip, passClip;
-        float elapsed, skipFade, previousZ;
+        AudioSource music, engine;
+        AudioLowPassFilter musicFilter;
+        float preludeElapsed, elapsed, skipFade, previousZ;
+        float musicLevel = .18f, engineLevel;
         bool loading, skipping;
         string loadError;
         Vector3 cameraStart;
@@ -69,8 +78,22 @@ namespace CarXCase.Intro
             }
             ApplyPose(0);
             previousZ = car != null ? car.position.z : 0;
+            StartEngineAudio();
             approachClip = Resources.Load<AudioClip>("LocationAudio/Effects/Approaching traffic");
             passClip = Resources.Load<AudioClip>("LocationAudio/Effects/Passing car");
+            var track = Resources.Load<AudioClip>("LocationAudio/Music/Zver1Music");
+            if (track)
+            {
+                var soundtrack = new GameObject("Brighton intro music");
+                soundtrack.transform.SetParent(transform, false);
+                music = soundtrack.AddComponent<AudioSource>();
+                music.playOnAwake = false;
+                music.clip = track;
+                music.volume = 0;
+                musicFilter = soundtrack.AddComponent<AudioLowPassFilter>();
+                musicFilter.cutoffFrequency = 3500f;
+                music.Play();
+            }
         }
 
         void Update()
@@ -84,6 +107,8 @@ namespace CarXCase.Intro
             if (skipping)
             {
                 skipFade = Mathf.MoveTowards(skipFade, 1, Time.deltaTime / 1.2f);
+                UpdateMusic(false, skipFade);
+                if (engine) engine.volume = engineLevel * (1 - Mathf.SmoothStep(0, 1, Mathf.Max(ExitFade, skipFade)));
                 foreach (var vehicle in oncomingVehicles)
                 {
                     if (vehicle.approachAudio) vehicle.approachAudio.volume = 0;
@@ -93,20 +118,26 @@ namespace CarXCase.Intro
                 return;
             }
 
-            elapsed += Time.deltaTime;
+            if (preludeElapsed < PreludeDuration)
+            {
+                preludeElapsed = Mathf.Min(PreludeDuration, preludeElapsed + Time.deltaTime);
+                UpdateMusic(false, 0);
+                return;
+            }
+
+            elapsed = Mathf.Min(duration, elapsed + Time.deltaTime);
             float t = Mathf.Clamp01(elapsed / duration);
             float story = elapsed / Mathf.Max(1, duration) * 150;
-            bool heroTalks = false;
-            if (dialogue != null)
-                foreach (var l in dialogue)
-                    if (story >= l.start && story < l.end) { heroTalks = l.speaker == "АЛЕКСЕЙ"; break; }
-            HeroFace.SetTalking(heroTalks);
+            var line = ActiveLine(story);
+            HeroFace.SetTalking(line?.speaker == "АЛЕКСЕЙ");
+            UpdateMusic(line != null, ExitFade);
             ApplyPose(t);
             UpdateOncomingTraffic();
 
             if (car != null)
             {
                 float moved = car.position.z - previousZ;
+                UpdateEngineAudio(moved / Mathf.Max(Time.deltaTime, .001f), line != null);
                 if (wheels != null)
                 {
                     foreach (var wheel in wheels)
@@ -118,6 +149,56 @@ namespace CarXCase.Intro
             }
 
             if (elapsed >= duration) LoadApartment();
+        }
+
+        float ExitFade => Mathf.InverseLerp(duration - ExitFadeDuration, duration, elapsed);
+
+        void StartEngineAudio()
+        {
+            if (!car) return;
+            var clip = Resources.Load<AudioClip>("LocationAudio/Effects/Hero car engine");
+            if (!clip) return;
+
+            var motor = new GameObject("Hero car engine");
+            motor.transform.SetParent(car, false);
+            engine = motor.AddComponent<AudioSource>();
+            engine.playOnAwake = false;
+            engine.clip = clip;
+            engine.loop = true;
+            engine.volume = 0;
+        }
+
+        void UpdateEngineAudio(float speed, bool dialogueActive)
+        {
+            if (!engine) return;
+            if (!engine.isPlaying) engine.Play();
+
+            float throttle = Mathf.InverseLerp(0, 5f, speed);
+            engine.pitch = Mathf.MoveTowards(engine.pitch, Mathf.Lerp(.92f, 1.26f, throttle), Time.deltaTime);
+            float target = engineVolume * GameSettings.SfxGain * Mathf.Lerp(.55f, 1, throttle);
+            if (dialogueActive) target *= .55f;
+            engineLevel = Mathf.MoveTowards(engineLevel, target, Time.deltaTime * .55f);
+            engine.volume = engineLevel * (1 - Mathf.SmoothStep(0, 1, ExitFade));
+        }
+
+        DialogueLine ActiveLine(float storyTime)
+        {
+            if (dialogue != null)
+                foreach (var line in dialogue)
+                    if (storyTime >= line.start && storyTime < line.end) return line;
+            return null;
+        }
+
+        void UpdateMusic(bool dialogueActive, float fade)
+        {
+            if (!music) return;
+
+            float cabin = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(0, 2f, elapsed));
+            float target = dialogueActive ? .7f : Mathf.Lerp(.9f, .8f, cabin);
+            musicLevel = Mathf.MoveTowards(musicLevel, target, Time.deltaTime * (dialogueActive ? .5f : .15f));
+            musicFilter.cutoffFrequency = Mathf.Lerp(3500f, 1600f, cabin);
+            float entrance = Mathf.SmoothStep(0, 1, Mathf.Clamp01(preludeElapsed / 1.2f));
+            music.volume = musicLevel * GameSettings.MusicGain * entrance * (1 - Mathf.SmoothStep(0, 1, fade));
         }
 
         void UpdateOncomingTraffic()
@@ -259,7 +340,8 @@ namespace CarXCase.Intro
                 return;
             }
             loading = true;
-            SceneManager.LoadSceneAsync(destinationScene, LoadSceneMode.Single);
+            var load = SceneManager.LoadSceneAsync(destinationScene, LoadSceneMode.Single);
+            ScreenFader.RevealAfterLoad(load, 1.25f);
         }
 
         void OnGUI()
@@ -284,29 +366,27 @@ namespace CarXCase.Intro
             Fill(new Rect(0, 0, Screen.width, Screen.height * .065f), Color.black);
             Fill(new Rect(0, Screen.height * .935f, Screen.width, Screen.height * .065f), Color.black);
 
-            if (elapsed < 7)
+            if (preludeElapsed >= PreludeDuration && !skipping)
             {
-                GUI.Label(new Rect(0, Screen.height * .12f, Screen.width, 45 * s), "БРАЙТОН-БИЧ · 1999", titleStyle);
-                GUI.Label(new Rect(0, Screen.height * .12f + 45 * s, Screen.width, 30 * s), "Дождливый вечер", new GUIStyle(GameTypography.Label) { fontSize = subtitleStyle.fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true });
+                var line = ActiveLine(elapsed / Mathf.Max(1, duration) * 150);
+                if (line != null)
+                    CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(line.speaker, line.text));
             }
 
-            float storyTime = elapsed / Mathf.Max(1, duration) * 150;
-            if (dialogue != null && !skipping)
-            {
-                foreach (var line in dialogue)
-                {
-                    if (storyTime >= line.start && storyTime < line.end)
-                    {
-                        CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(line.speaker, line.text));
-                        break;
-                    }
-                }
-            }
-
-            float fade = Mathf.Max(1 - Mathf.Clamp01(elapsed / 2), Mathf.InverseLerp(duration - 2.5f, duration, elapsed));
+            float fade = Mathf.Max(1 - Mathf.Clamp01(elapsed / 2), ExitFade);
             fade = Mathf.Max(fade, skipFade);
             if (loading) fade = 1;
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, fade));
+
+            if (!skipping && preludeElapsed >= BlackHold && preludeElapsed < PreludeDuration)
+            {
+                bool showYear = preludeElapsed >= BlackHold + TitleHold;
+                float titleTime = preludeElapsed - BlackHold - (showYear ? TitleHold : 0);
+                float alpha = BlendWindow(titleTime, 0, .3f, TitleHold - .3f, TitleHold);
+                titleStyle.normal.textColor = new Color(1, 1, 1, alpha);
+                GUI.Label(new Rect(0, (Screen.height - 45 * s) / 2, Screen.width, 45 * s),
+                    showYear ? "1999" : "БРАЙТОН-БИЧ", titleStyle);
+            }
 
             if (loadError != null)
             {

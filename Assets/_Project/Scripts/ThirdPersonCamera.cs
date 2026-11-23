@@ -101,7 +101,7 @@ namespace DetectiveGame.Core
         private bool _radialInitialized;
         private float _radialShare = 1f, _radialVelocity;
         private readonly RaycastHit[] _hits = new RaycastHit[16];
-        private bool _shot, _station, _arrivalShot, _directed;
+        private bool _shot, _station, _arrivalShot, _directed, _showHero;
         private float _directRoll, _directFovScale = 1f;
         private float _shotWeight, _shotVelocity, _shotStarted, _shotBaseFov;
         private Vector3 _shotPosition, _shotLook, _shotDrift;
@@ -289,8 +289,7 @@ namespace DetectiveGame.Core
             {
                 bool clear = Vector3.Dot(position - focus, backward) >= 0.85f;
                 // Examination shots keep Alexey in frame; a station close-up (the board) looks past him, so he steps out of view.
-                // A directed dialogue shot frames the hero on purpose (over his shoulder, in a two-shot).
-                bool visible = _directed || (_station ? (_arrivalShot || shotBlend < .4f) && clear : shotBlend > .3f || clear);
+                bool visible = _directed || (_station ? (_showHero && _shot) || ((_arrivalShot || shotBlend < .4f) && clear) : shotBlend > .3f || clear);
                 foreach (var bodyRenderer in _characterRenderers)
                     if (bodyRenderer != null) bodyRenderer.enabled = visible;
             }
@@ -507,6 +506,7 @@ namespace DetectiveGame.Core
             _shotStarted = Time.time;
             _station = true;
             _arrivalShot = false;
+            _showHero = false;
             _directed = false;
             _shot = true;
         }
@@ -529,6 +529,13 @@ namespace DetectiveGame.Core
             _directRoll = roll;
             _directFovScale = fovScale;
             _shot = true;
+        }
+
+        /// A conversation angle (shot / reverse shot): like a station, but Alexey stays in frame.
+        public void BeginConversationShot(Vector3 position, Vector3 lookAt)
+        {
+            BeginStation(position, lookAt);
+            _showHero = true;
         }
 
         public void BeginArrivalShot(Vector3 position, Vector3 lookAt)

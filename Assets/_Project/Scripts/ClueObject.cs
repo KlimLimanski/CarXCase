@@ -17,6 +17,8 @@ namespace DetectiveGame.Core
         [Tooltip("Optional real evidence images and captions shared by diary and board.")]
         public Casebook.Attachment[] journalAttachments = System.Array.Empty<Casebook.Attachment>();
         [TextArea] public string inspectionComment;
+        [Tooltip("Optional recorded line for the comment; Alexey's lips follow it instead of the text pacing.")]
+        public AudioClip inspectionVoice;
         [TextArea] public string journalThought;
         [Header("Examination")]
         [Tooltip("Ракурс камеры при осмотре. Auto выбирает сторону со свободным местом.")]
@@ -120,7 +122,9 @@ namespace DetectiveGame.Core
             if (!ui) return;
             var line = !string.IsNullOrWhiteSpace(inspectionComment) ? inspectionComment :
                 !string.IsNullOrWhiteSpace(journalThought) ? journalThought : clueDescription;
-            if (!string.IsNullOrWhiteSpace(line)) ui.ShowInspectionComment(line);
+            if (string.IsNullOrWhiteSpace(line)) return;
+            float duration = Mathf.Clamp(2.7f + line.Length * .033f, 3.2f, 7f);
+            ui.ShowInspectionComment(line, duration, SimpleUIHUD.HeroSpeaker, inspectionVoice);
         }
     }
 }

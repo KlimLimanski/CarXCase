@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace CarXCase.Weather
@@ -26,11 +27,24 @@ namespace CarXCase.Weather
 
         Camera cam; RenderTexture rt;
 
+        void OnEnable()
+        {
+            RenderPipelineManager.beginCameraRendering += SetReflectionAvailability;
+        }
+
         void OnDisable()
         {
+            RenderPipelineManager.beginCameraRendering -= SetReflectionAvailability;
             Shader.SetGlobalFloat(OnId, 0);
             if (cam) DestroyImmediate(cam.gameObject);
             if (rt) { rt.Release(); DestroyImmediate(rt); }
+        }
+
+        void SetReflectionAvailability(ScriptableRenderContext context, Camera renderingCamera)
+        {
+            if (!cam || !cam.enabled) return;
+            // Wet surfaces in the mirrored camera must not sample its own render target.
+            Shader.SetGlobalFloat(OnId, renderingCamera == cam ? 0 : 1);
         }
 
         void Ensure(Camera main)

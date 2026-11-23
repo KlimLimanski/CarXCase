@@ -73,6 +73,7 @@ namespace CarXCase.Precinct
         public bool revealHarborCode;
         [TextArea] public string recoveryClueText;
         [SerializeField] BarServiceRoute barServiceRoute;
+        [SerializeField] PawnshopDeparture pawnshopDeparture;
 
         enum Phase { Idle, Arrival, Talking, Choosing, Outcome }
         Phase phase = Phase.Idle;
@@ -96,6 +97,7 @@ namespace CarXCase.Precinct
         float glanceWeight;
         bool liveConversation;
         BarDmitryPerformance barPerformance;
+        ConversationActing suspectActing;
         Vector3 explorationCameraPosition;
         Quaternion explorationCameraRotation;
         float explorationFov;
@@ -116,6 +118,8 @@ namespace CarXCase.Precinct
                 smoother.Apply(cam, explorationCameraPosition, explorationCameraRotation, explorationFov, 0);
             }
             barPerformance = suspect ? suspect.GetComponent<BarDmitryPerformance>() : null;
+            suspectActing = suspect && !barPerformance ? suspect.GetComponentInChildren<ConversationActing>() : null;
+            if (suspectActing) suspectActing.Engage(listener);
             StartCoroutine(Run(listener));
         }
 
@@ -127,6 +131,7 @@ namespace CarXCase.Precinct
             {
                 phase = Phase.Arrival;
                 SetCam(camOnSuspect);
+                barPerformance.Engage(listener);
                 yield return barPerformance.TurnTo(listener);
             }
             else yield return new WaitForSeconds(0.6f);
@@ -140,6 +145,7 @@ namespace CarXCase.Precinct
                 if (current.Length == 0) break;
                 picked = null; choiceLeft = choiceTime; phase = Phase.Choosing;
                 SetCam(camOnSuspect);
+                SetSuspectTalking(false);
                 while (picked == null)
                 {
                     choiceLeft -= Time.deltaTime;
@@ -160,6 +166,25 @@ namespace CarXCase.Precinct
                 node = picked.next == "END" ? null : nodes.FirstOrDefault(n => n.id == picked.next);
             }
             success = !shutdown && probability >= successThreshold;
+            if (pawnshopDeparture && listener && listener.TryGetComponent<OfficerController>(out var shopper))
+            {
+                bool failed = !success && probability <= failureThreshold;
+                yield return SayLines(suspectName, success ? successText : failed ? shutdownText : partialReply, true);
+                if (success)
+                {
+                    GrantClue();
+                    yield return Say(suspectName, pawnshopDeparture.Farewell, true);
+                }
+                phase = Phase.Arrival;
+                SetCam(pawnshopDeparture.Shot);
+                EndPerformance();
+                yield return pawnshopDeparture.Leave();
+                ClueJournal.AddConclusion(followUpFlag);
+                ClueJournal.AddConclusion(completedFlag);
+                NoirMenu.GameSession.SaveCurrent();
+                ResumeExploration(shopper, failed ? failureThought : followUpThought);
+                yield break;
+            }
             if (useTrust)
             {
                 if (success) yield return SayLines(suspectName, successText, true);
@@ -179,7 +204,7 @@ namespace CarXCase.Precinct
                     yield break;
                 }
             }
-            if (success && !string.IsNullOrEmpty(grantId)) { ClueJournal.Collect(grantId, grantTitle, grantText); ClueJournal.AddConclusion(grantId); }
+            if (success) GrantClue();
             if (useTrust && success) ClueJournal.AddConclusion(completedFlag);
             if (success && revealHarborCode)
                 ClueJournal.Collect(HarborGate.CodeNote, "Код ворот пирса", "Дмитрий назвал код ворот: " + HarborGate.AccessCode + ".");
@@ -195,13 +220,21 @@ namespace CarXCase.Precinct
             phase = Phase.Outcome;
             travelAt = Time.time + autoTravelDelay;
             SetCam(camWide ? camWide : camOnSuspect);
-            SetSuspectTalking(false);
+            EndPerformance();
             if (useTrust && success) BeginTravel();
+        }
+
+        void GrantClue()
+        {
+            if (string.IsNullOrEmpty(grantId)) return;
+            ClueJournal.Collect(grantId, grantTitle, grantText);
+            ClueJournal.AddConclusion(grantId);
         }
 
         void ResumeExploration(OfficerController player, string thought)
         {
             phase = Phase.Idle;
+            EndPerformance();
             if (cam)
             {
                 cam.transform.SetPositionAndRotation(explorationCameraPosition, explorationCameraRotation);
@@ -240,8 +273,22 @@ namespace CarXCase.Precinct
             phase = Phase.Talking; speaker = who; line = text; skip = false;
             lineLeft = Mathf.Clamp(text.Length * .055f, 2.2f, 7.5f) * Mathf.Max(1f, subtitleDurationMultiplier);
             SetCam(isSuspect ? camOnSuspect : camOnHero);
-            SetSuspectTalking(isSuspect);
-            HeroFace.SetTalking(!isSuspect && text != "…");
+            // The speaker articulates the subtitle over the time it is shown; the other one listens.
+            if (isSuspect)
+            {
+                HeroFace.StopHero();
+                if (suspect) suspect.talking = true;
+                if (barPerformance) barPerformance.Speak(text, lineLeft, glance, glanceStart);
+                else if (suspectActing) suspectActing.Speak(text, lineLeft, glance, glanceStart);
+            }
+            else
+            {
+                if (suspect) suspect.talking = false;
+                if (barPerformance) barPerformance.Listen(text);
+                else if (suspectActing) suspectActing.Listen(text);
+                if (text != "…") HeroFace.SpeakAsHero(text, lineLeft);
+                else HeroFace.StopHero();
+            }
             float minShow = Mathf.Max(.3f, minimumSubtitleHold);
             float duration = lineLeft;
             glanceTarget = glance;
@@ -261,15 +308,33 @@ namespace CarXCase.Precinct
             }
             glanceTarget = null;
             glanceWeight = 0f;
+            // Line over or skipped: mouths close at once, the brother goes back to waiting.
             SetSuspectTalking(false);
-            HeroFace.SetTalking(false);
+            HeroFace.StopHero();
             line = null;
         }
 
         void SetSuspectTalking(bool talking)
         {
             if (suspect) suspect.talking = talking;
-            if (barPerformance) barPerformance.SetTalking(talking);
+            if (talking) return;
+            if (barPerformance) barPerformance.Wait();
+            else if (suspectActing) suspectActing.Wait();
+        }
+
+        void EndPerformance()
+        {
+            HeroFace.StopHero();
+            HeroFace.SetEmotion(0f);
+            if (suspect) suspect.talking = false;
+            if (barPerformance) barPerformance.EndConversation();
+            else if (suspectActing) suspectActing.Disengage();
+        }
+
+        void OnDisable()
+        {
+            if (phase == Phase.Idle && !liveConversation) return;
+            EndPerformance();
         }
 
         void SetCam(Transform a)

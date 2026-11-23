@@ -36,6 +36,7 @@ Material:
     - _DetailScale: 0.8
     - _DetailStrength: 0.2
     - _PuddleAmount: 0.31
+    - _PuddleContrast: 0.55
     - _PuddleScale: 0.36
     - _PuddleSeed: 0
     - _RainSpeed: 1.4
