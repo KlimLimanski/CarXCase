@@ -158,6 +158,7 @@ public sealed partial class HangarFinale : MonoBehaviour
 
     void LateUpdate()
     {
+        if (NoirMenu.GameSession.Paused) return;
         if (stage == Stage.Aftermath && fatherReleased)
             staging.Father(1f, 1f);
     }
@@ -200,7 +201,7 @@ public sealed partial class HangarFinale : MonoBehaviour
             {
                 face.SetBlendShapeWeight(0, SpeechOpening(words, elapsed, seconds));
             }
-            yield return null;
+            yield return NoirMenu.GameSession.NextStoryFrame;
         }
         if (face) face.SetBlendShapeWeight(0, 0);
         caption = null;
@@ -238,6 +239,7 @@ public sealed partial class HangarFinale : MonoBehaviour
 
     void Update()
     {
+        if (NoirMenu.GameSession.Paused) return;
         if (stage == Stage.Outside || stage == Stage.Listening || Time.timeScale <= 0) return;
         if (!delayed && !Finished)
         {
@@ -312,7 +314,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         for (float elapsed = 0; elapsed < duration; elapsed += Time.deltaTime)
         {
             pose(elapsed / duration);
-            yield return null;
+            yield return NoirMenu.GameSession.NextStoryFrame;
         }
         pose(1f);
     }
@@ -340,7 +342,7 @@ public sealed partial class HangarFinale : MonoBehaviour
             {
                 player.WalkTo(mark, .55f);
                 for (float elapsed = 0; elapsed < 1.55f && player.IsWalking; elapsed += Time.deltaTime)
-                    yield return null;
+                    yield return NoirMenu.GameSession.NextStoryFrame;
                 player.StopWalking();
                 player.FaceTowards(rescue.transform.position);
             }
@@ -403,6 +405,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     void OnGUI()
     {
         if (endingFade > 0f) Fill(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,endingFade));
+        if (NoirMenu.GameSession.Paused) return;
         Subtitles.Draw(caption);
         if (stage != Stage.DialogueChoice && stage != Stage.Decision && stage != Stage.Missed && stage != Stage.Report) return;
         float k = Mathf.Min(Screen.width / 800f,Screen.height / 800f);

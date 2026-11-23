@@ -34,7 +34,7 @@ namespace DetectiveGame.Core
 
             follow.BeginArrivalShot(logoPosition, logoLookAt);
             yield return FadeTo(0f, .65f);
-            yield return new WaitForSecondsRealtime(.8f);
+            yield return new WaitForSeconds(.8f);
             yield return FadeTo(1f, .25f);
 
             follow.BeginArrivalShot(openingPosition, openingLookAt);
@@ -42,7 +42,7 @@ namespace DetectiveGame.Core
 
             follow.EndShot();
             ownsShot = false;
-            while (follow.isActiveAndEnabled && follow.InShot) yield return null;
+            while (follow.isActiveAndEnabled && follow.InShot) yield return NoirMenu.GameSession.NextStoryFrame;
 
             enabled = false;
         }
@@ -54,9 +54,9 @@ namespace DetectiveGame.Core
             while (elapsed < duration)
             {
                 black = Mathf.SmoothStep(start, target, elapsed / duration);
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
                 // A slow render must not consume the on-screen fade.
-                elapsed += Mathf.Min(Time.unscaledDeltaTime, .05f);
+                elapsed += Mathf.Min(Time.deltaTime, .05f);
             }
             black = target;
         }
@@ -73,6 +73,7 @@ namespace DetectiveGame.Core
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!playing || black <= 0f || Event.current.type != EventType.Repaint) return;
 
             var color = GUI.color;

@@ -25,7 +25,7 @@ namespace CarXCase.Precinct
             {
                 elapsed += Time.deltaTime;
                 transform.rotation = Quaternion.Slerp(start, end, Mathf.SmoothStep(0f, 1f, elapsed / TurnDuration));
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             }
             transform.rotation = end;
         }
@@ -45,13 +45,13 @@ namespace CarXCase.Precinct
             while (Quaternion.Angle(transform.rotation, facing) > 1f)
             {
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, facing, 280f * Time.deltaTime);
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             }
             animator.CrossFadeInFixedTime(Walking, .2f);
             while (transform.position != destination)
             {
                 transform.position = Vector3.MoveTowards(transform.position, destination, Speed * Time.deltaTime);
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             }
             animator.CrossFadeInFixedTime(Standing, .2f);
         }

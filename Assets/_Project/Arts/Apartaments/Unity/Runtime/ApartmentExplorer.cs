@@ -33,6 +33,7 @@ public sealed class ApartmentExplorer : MonoBehaviour
     }
     void Update()
     {
+        if (NoirMenu.GameSession.Paused) return;
         // With the hero controller present, doors go through its single, visibility-checked target choice.
         if (externalMovement)
         {
@@ -107,6 +108,7 @@ public sealed class ApartmentExplorer : MonoBehaviour
     }
     void OnGUI()
     {
+        if (NoirMenu.GameSession.Paused) return;
         if(!externalMovement){GUI.Label(new Rect(Screen.width/2f-4,Screen.height/2f-12,20,25),"·",GameTypography.Label);
         GUI.Label(new Rect(20,Screen.height-62,700,30),"WASD — walk   |   Mouse — look   |   E — interact   |   Esc — release cursor",GameTypography.Label);}
         if(!externalMovement)GUI.Label(new Rect(20,Screen.height-37,500,30),hint,GameTypography.Label);

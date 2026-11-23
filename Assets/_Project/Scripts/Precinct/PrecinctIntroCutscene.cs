@@ -110,6 +110,7 @@ namespace CarXCase.Precinct
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (Finished)
             {
                 fadeIn = Mathf.MoveTowards(fadeIn, 0, Time.deltaTime / 0.8f);
@@ -277,6 +278,7 @@ namespace CarXCase.Precinct
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (Finished)
             {
                 if (fadeIn > 0) Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, fadeIn));

@@ -122,6 +122,7 @@ public sealed class LocationAudio : MonoBehaviour
 
     void Update()
     {
+        if (NoirMenu.GameSession.Paused) return;
         effects.volume = GameSettings.SfxGain;
         float rainLevel = outdoors ? .78f : .22f;
         if (outdoors && harborFinale)
@@ -152,7 +153,7 @@ public sealed class LocationAudio : MonoBehaviour
     {
         if (!source.clip) return;
         float target = audible ? GameSettings.SfxGain * gain : 0;
-        source.volume = Mathf.MoveTowards(source.volume, target, Time.unscaledDeltaTime * 2);
+        source.volume = Mathf.MoveTowards(source.volume, target, Time.deltaTime * 2);
         if (target > 0 && !source.isPlaying) source.Play();
         if (source.volume == 0 && source.isPlaying) source.Stop();
     }

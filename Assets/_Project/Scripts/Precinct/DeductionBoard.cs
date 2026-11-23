@@ -80,7 +80,7 @@ namespace CarXCase.Precinct
             follow = Camera.main ? Camera.main.GetComponent<ThirdPersonCamera>() : null;
             cursor = Cursor.lockState;
             cursorVisible = Cursor.visible;
-            modeStarted = Time.unscaledTime;
+            modeStarted = Time.time;
 
             if (officer)
             {
@@ -124,12 +124,13 @@ namespace CarXCase.Precinct
             loadScheduled = false;
             ClueJournal.Decision = options[index].label;
             mode = Mode.Leaving;
-            modeStarted = Time.unscaledTime;
+            modeStarted = Time.time;
         }
 
         void Update()
         {
-            float elapsed = Time.unscaledTime - modeStarted;
+            if (NoirMenu.GameSession.Paused) return;
+            float elapsed = Time.time - modeStarted;
             if (mode == Mode.SteppingAway && (elapsed >= .92f || (elapsed >= .50f && (!officer || !officer.IsWalking))))
             {
                 if (officer) officer.StopWalking();
@@ -159,6 +160,7 @@ namespace CarXCase.Precinct
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (mode != Mode.Decision && mode != Mode.Leaving) return;
             float w = Screen.width, h = Screen.height;
             float scale = Mathf.Clamp(Mathf.Min(h / 720f, w / 650f), .60f, 2f);
@@ -193,7 +195,7 @@ namespace CarXCase.Precinct
             }
             if (mode == Mode.Leaving)
             {
-                float fade = Mathf.Clamp01((Time.unscaledTime - modeStarted - .16f) / .88f);
+                float fade = Mathf.Clamp01((Time.time - modeStarted - .16f) / .88f);
                 DialogueChoiceRows.Fill(new Rect(0, 0, w, h), new Color(0, 0, 0, fade));
             }
         }

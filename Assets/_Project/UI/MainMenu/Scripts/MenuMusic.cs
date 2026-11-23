@@ -19,6 +19,7 @@ namespace NoirMenu
         void Awake()
         {
             source = GetComponent<AudioSource>();
+            source.ignoreListenerPause = true;
             source.playOnAwake = false;
             source.loop = true;
             source.spatialBlend = 0f;

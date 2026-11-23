@@ -132,6 +132,7 @@ namespace DetectiveGame.Core
 
         private void LateUpdate()
         {
+            if (NoirMenu.GameSession.Paused) return;
             // The diary freezes the view, except while the camera is gliding to or from a station (the board).
             bool staged = _shot || _shotWeight > 0f;
             if (target == null || (_hud && _hud.IsShowingJournal && !staged))
@@ -257,7 +258,7 @@ namespace DetectiveGame.Core
 
             Quaternion look = Quaternion.Euler(_renderPitch + _attendPitch * _attend, _renderYaw + _attendYaw * _attend, roll);
             float blendTime = _shot ? shotInTime : shotOutTime;
-            _shotWeight = Mathf.SmoothDamp(_shotWeight, _shot ? 1f : 0f, ref _shotVelocity, blendTime * .45f, Mathf.Infinity, Time.unscaledDeltaTime);
+            _shotWeight = Mathf.SmoothDamp(_shotWeight, _shot ? 1f : 0f, ref _shotVelocity, blendTime * .45f, Mathf.Infinity, Time.deltaTime);
             if (!_shot && _shotWeight < .002f)
             {
                 _shotWeight = 0f;
@@ -267,7 +268,7 @@ namespace DetectiveGame.Core
             if (shotBlend > 0f)
             {
                 // Slow lateral dolly while holding the angle, like a camera operator easing along.
-                float held = Mathf.Min(Time.unscaledTime - _shotStarted, 6f);
+                float held = Mathf.Min(Time.time - _shotStarted, 6f);
                 Vector3 shotPos = _shotPosition + _shotDrift * held;
                 Quaternion shotRot = Quaternion.LookRotation(_shotLook - shotPos);
                 position = Vector3.Lerp(position, shotPos, shotBlend);
@@ -478,7 +479,7 @@ namespace DetectiveGame.Core
             }
             _shotLook = look;
             _shotDrift = side * sideSign * .035f;
-            _shotStarted = Time.unscaledTime;
+            _shotStarted = Time.time;
             _shot = true;
         }
 
@@ -496,7 +497,7 @@ namespace DetectiveGame.Core
             _shotPosition = position;
             _shotLook = lookAt;
             _shotDrift = Vector3.zero;
-            _shotStarted = Time.unscaledTime;
+            _shotStarted = Time.time;
             _station = true;
             _arrivalShot = false;
             _shot = true;

@@ -97,7 +97,7 @@ namespace CarXCase.Precinct
                 Quaternion rotation = Quaternion.Slerp(from, to, Mathf.SmoothStep(0f, 1f, elapsed / duration));
                 if (world) part.rotation = rotation;
                 else part.localRotation = rotation;
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             } while (elapsed < duration);
         }
     }

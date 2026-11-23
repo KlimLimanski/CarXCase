@@ -24,13 +24,13 @@ namespace DetectiveGame.Core
         public void ShowInspectionComment(string line, float duration, string speaker = "Алексей")
         {
             _inspectionLine = CarXCase.UI.Subtitles.WithSpeaker(speaker, line);
-            _inspectionUntil = Time.unscaledTime + duration;
+            _inspectionUntil = Time.time + duration;
         }
 
-        public void ShowJournalHint() => journalHintUntil = Time.unscaledTime + 8f;
+        public void ShowJournalHint() => journalHintUntil = Time.time + 8f;
         /// Drawn by JournalKeyHint: true once the scene asked for the hint, Fresh while it should stay bright.
         public bool JournalHintRequested => journalHintUntil > 0f;
-        public bool JournalHintFresh => Time.unscaledTime < journalHintUntil;
+        public bool JournalHintFresh => Time.time < journalHintUntil;
 
         public bool HandleJournalInput(Transform view, bool freeInput)
         {
@@ -42,7 +42,7 @@ namespace DetectiveGame.Core
         public void CloseJournal() => CarXCase.Investigation.InvestigationIntegration.Close();
         void OnDisable() => CloseJournal();
 
-        public string CurrentInspectionComment => Time.unscaledTime < _inspectionUntil ? _inspectionLine : "";
+        public string CurrentInspectionComment => Time.time < _inspectionUntil ? _inspectionLine : "";
 
         public void SetPrompt(string text)
         {
@@ -123,9 +123,10 @@ namespace DetectiveGame.Core
 
         private void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (destinationAnnounced || !DestinationAvailable()) return;
             destinationAnnounced = true;
-            locationNoticeUntil = Time.unscaledTime + 4f;
+            locationNoticeUntil = Time.time + 4f;
         }
 
         private void DrawObjective()
@@ -166,7 +167,8 @@ namespace DetectiveGame.Core
 
         private void OnGUI()
         {
-            if (Time.unscaledTime < locationNoticeUntil)
+            if (NoirMenu.GameSession.Paused) return;
+            if (Time.time < locationNoticeUntil)
                 DrawObjectiveCard("Открыта новая локация", Screen.height * .19f);
             if (IsShowingJournal || (precinctBoard && precinctBoard.IsChoosingRoute)) return;
             DrawObjective();
@@ -198,7 +200,7 @@ namespace DetectiveGame.Core
                 GUI.Label(area, _promptText, _inspectionPromptStyle);
             }
             GUI.color = Color.white;
-            if (Time.unscaledTime < journalHintUntil && !GetComponent<CarXCase.Investigation.JournalKeyHint>())
+            if (Time.time < journalHintUntil && !GetComponent<CarXCase.Investigation.JournalKeyHint>())
             {
                 journalHintStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter };
                 journalHintStyle.fontSize = Mathf.RoundToInt(17 * scale);

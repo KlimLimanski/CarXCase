@@ -46,6 +46,7 @@ namespace DetectiveGame.Core
 
         private void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (_resultTimer > 0f)
             {
                 _resultTimer -= Time.deltaTime;

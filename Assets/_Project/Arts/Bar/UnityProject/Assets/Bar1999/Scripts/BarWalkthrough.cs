@@ -20,6 +20,7 @@ namespace ReferenceBar {
         void Start() { LockMouse(); }
         void LockMouse() { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
         void Update() {
+            if (NoirMenu.GameSession.Paused) return;
             var kb = Keyboard.current; var mouse = Mouse.current;
             if (kb == null) return;
             if (kb.escapeKey.wasPressedThisFrame) { Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }

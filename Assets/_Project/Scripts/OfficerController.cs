@@ -86,6 +86,7 @@ namespace DetectiveGame.Core
 
         private void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (_inputLocked)
             {
                 HandleMovement();
@@ -273,10 +274,10 @@ namespace DetectiveGame.Core
                 else
                 {
                     // 2) Everything else competes on distance and on how directly Alexey faces it.
-                    if (Time.unscaledTime - _cluesListedAt > 1f)
+                    if (Time.time - _cluesListedAt > 1f)
                     {
                         _allClues = FindObjectsByType<ClueObject>(FindObjectsInactive.Exclude);
-                        _cluesListedAt = Time.unscaledTime;
+                        _cluesListedAt = Time.time;
                     }
                     if (_allClues != null)
                         foreach (var clue in _allClues)
@@ -399,13 +400,13 @@ namespace DetectiveGame.Core
             FaceTowards(point);
             var view = cameraTransform ? cameraTransform.GetComponent<ThirdPersonCamera>() : null;
             if (view) view.BeginShot(point, clue.cameraShot, clue.clueId);
-            yield return new WaitForSecondsRealtime(.45f);
+            yield return new WaitForSeconds(.45f);
             clue.Inspect(hud);
-            float started = Time.unscaledTime;
-            yield return null;
-            while (Time.unscaledTime - started < 1.6f ||
+            float started = Time.time;
+            yield return NoirMenu.GameSession.NextStoryFrame;
+            while (Time.time - started < 1.6f ||
                    (hud && (hud.IsListening || !string.IsNullOrEmpty(hud.CurrentInspectionComment))))
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             if (view) view.EndShot();
             ClearFaceTarget();
             LockInput(false);

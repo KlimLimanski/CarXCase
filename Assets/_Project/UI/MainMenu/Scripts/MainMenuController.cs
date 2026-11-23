@@ -61,7 +61,7 @@ namespace NoirMenu
             UITween.SetVisible(mainGroup, false);
             UITween.SetVisible(settingsGroup, false);
             UITween.SetVisible(creditsGroup, false);
-            Time.timeScale = 1f;
+            if (!GameSession.Paused) Time.timeScale = 1f;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             UiSfx.Muted = true;
@@ -70,11 +70,16 @@ namespace NoirMenu
         IEnumerator Start()
         {
             RefreshContinue();
-            yield return new WaitForSecondsRealtime(menuAppearDelay);
-            mainGroup.blocksRaycasts = true;
-            var rt = (RectTransform)mainGroup.transform;
-            yield return UITween.Fade(mainGroup, 1f, menuAppearTime, rt, Vector2.zero, -14f, 0f);
-            mainGroup.interactable = true;
+            if (GameSession.Paused)
+                UITween.SetVisible(mainGroup, true);
+            else
+            {
+                yield return new WaitForSecondsRealtime(menuAppearDelay);
+                mainGroup.blocksRaycasts = true;
+                var rt = (RectTransform)mainGroup.transform;
+                yield return UITween.Fade(mainGroup, 1f, menuAppearTime, rt, Vector2.zero, -14f, 0f);
+                mainGroup.interactable = true;
+            }
             current = mainGroup;
             Select(newGameButton.gameObject);
             busy = false;
@@ -83,7 +88,7 @@ namespace NoirMenu
 
         void RefreshContinue()
         {
-            continueButton.interactable = SaveSystem.HasSave();
+            continueButton.interactable = GameSession.Paused || SaveSystem.HasSave();
         }
 
         void Update()
@@ -173,6 +178,12 @@ namespace NoirMenu
         void ContinueGame()
         {
             if (busy) return;
+            if (GameSession.Paused)
+            {
+                busy = true;
+                GameSession.Resume();
+                return;
+            }
             var save = SaveSystem.Load();
             if (save == null) { RefreshContinue(); return; }
             SaveSystem.PendingLoad = save;

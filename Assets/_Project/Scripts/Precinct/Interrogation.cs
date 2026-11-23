@@ -144,7 +144,7 @@ namespace CarXCase.Precinct
                 {
                     choiceLeft -= Time.deltaTime;
                     if (choiceLeft <= 0) picked = current.OrderBy(c => c.probability).First(); // hesitation costs
-                    yield return null;
+                    yield return NoirMenu.GameSession.NextStoryFrame;
                 }
                 bool timedOut = choiceLeft <= 0;
                 if (!timedOut) yield return new WaitForSeconds(.24f);
@@ -193,7 +193,7 @@ namespace CarXCase.Precinct
                 yield break;
             }
             phase = Phase.Outcome;
-            travelAt = Time.unscaledTime + autoTravelDelay;
+            travelAt = Time.time + autoTravelDelay;
             SetCam(camWide ? camWide : camOnSuspect);
             SetSuspectTalking(false);
             if (useTrust && success) BeginTravel();
@@ -257,7 +257,7 @@ namespace CarXCase.Precinct
                 }
                 lineLeft -= Time.deltaTime;
                 minShow -= Time.deltaTime;
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             }
             glanceTarget = null;
             glanceWeight = 0f;
@@ -280,6 +280,7 @@ namespace CarXCase.Precinct
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (phase == Phase.Idle) return;
             displayedTrust = Mathf.MoveTowards(displayedTrust, probability, Time.deltaTime * 85f);
             if (cam && camTarget)
@@ -313,7 +314,7 @@ namespace CarXCase.Precinct
             {
                 if (leave >= 0)
                 {
-                    leave += Time.unscaledDeltaTime / 1.2f;
+                    leave += Time.deltaTime / 1.2f;
                     if (leave >= 1 && leave < 50)
                     {
                         leave = 99;
@@ -326,7 +327,7 @@ namespace CarXCase.Precinct
                 {
                     if (kb != null && kb.eKey.wasPressedThisFrame) RecoverLead();
                 }
-                else if ((autoTravelDelay > 0f && Time.unscaledTime >= travelAt) ||
+                else if ((autoTravelDelay > 0f && Time.time >= travelAt) ||
                          (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)))
                     BeginTravel();
             }
@@ -337,7 +338,7 @@ namespace CarXCase.Precinct
             if (!NeedsLead) return;
             ClueJournal.Collect(recoveryClueId, recoveryClueTitle, recoveryClueText);
             recoveredLead = true;
-            travelAt = Time.unscaledTime + autoTravelDelay;
+            travelAt = Time.time + autoTravelDelay;
         }
 
         void BeginTravel()
@@ -355,6 +356,7 @@ namespace CarXCase.Precinct
         // ------------------------------------------------------------------ GUI
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (phase == Phase.Idle) return;
             if (useTrust && success && phase == Phase.Outcome && leave >= 0f)
             {

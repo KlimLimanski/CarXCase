@@ -112,6 +112,7 @@ namespace CarXCase.Precinct
 
         void LateUpdate()
         {
+            if (NoirMenu.GameSession.Paused) return;
             var desk = InvestigationIntegration.Controller;
             reading = desk && desk.View == DeskView.Board && board.isActiveAndEnabled;
             if (!reading)
@@ -139,12 +140,12 @@ namespace CarXCase.Precinct
                 RebuildThreads(session);
             }
 
-            float slide = 1f - Mathf.Exp(-Time.unscaledDeltaTime * 8f);
+            float slide = 1f - Mathf.Exp(-Time.deltaTime * 8f);
             foreach (var pair in targetPositions)
             {
                 var card = pair.Key;
                 card.anchoredPosition = Vector2.Lerp(card.anchoredPosition, pair.Value, slide);
-                if (card.TryGetComponent<CanvasGroup>(out var ink)) ink.alpha = Mathf.MoveTowards(ink.alpha, 1f, Time.unscaledDeltaTime * 3.6f);
+                if (card.TryGetComponent<CanvasGroup>(out var ink)) ink.alpha = Mathf.MoveTowards(ink.alpha, 1f, Time.deltaTime * 3.6f);
             }
             foreach (var thread in yarn) PositionThread(thread);
             lastSession = session;
@@ -196,7 +197,7 @@ namespace CarXCase.Precinct
                 if (match is Match.Discovered or Match.Linked)
                 {
                     deductionLine = rule.hint;
-                    deductionUntil = Time.unscaledTime + Mathf.Clamp(rule.hint.Length * .045f, 3.6f, 7f);
+                    deductionUntil = Time.time + Mathf.Clamp(rule.hint.Length * .045f, 3.6f, 7f);
                 }
                 return;
             }
@@ -501,6 +502,7 @@ namespace CarXCase.Precinct
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!reading) return;
             string hint = selected == null ? "Сопоставьте две улики"
                 : "Найдите пару для улики «" + InvestigationIntegration.Controller.caseFile.Find(selected).title + "»";
@@ -508,7 +510,7 @@ namespace CarXCase.Precinct
             controlsStyle.normal.textColor = Color.white;
             float scale = Mathf.Clamp(Screen.height / 900f, .75f, 2f);
             controlsStyle.fontSize = Mathf.RoundToInt(15 * scale);
-            if (Time.unscaledTime < deductionUntil) CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker("Алексей", deductionLine), .76f);
+            if (Time.time < deductionUntil) CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker("Алексей", deductionLine), .76f);
             string controls = board.DecisionReady ? "Esc — отойти и выбрать маршрут" : "Esc — отойти";
             GUI.Label(new Rect(0, Screen.height - 69 * scale, Screen.width, 24 * scale), hint, controlsStyle);
             GUI.Label(new Rect(0, Screen.height - 38 * scale, Screen.width, 24 * scale), controls, controlsStyle);

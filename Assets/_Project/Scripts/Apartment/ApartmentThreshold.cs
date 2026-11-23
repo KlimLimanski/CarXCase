@@ -74,6 +74,7 @@ namespace CarXCase.Apartment
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!doorOpened || doorClosed || !officer || !officer.isActiveAndEnabled || !journalHintPoint || !hinge) return;
             // Close only once Alexey is well inside, so the leaf never sweeps through him.
             if (Vector3.Dot(officer.transform.position - journalHintPoint.position, journalHintPoint.forward) < .9f) return;
@@ -132,7 +133,7 @@ namespace CarXCase.Apartment
                 "Замок и косяк целы, следов взлома нет, но дверь в квартиру отца не заперта.",
                 "Взламывать не пришлось. Отец ушёл в спешке или сам открыл тому, кого знал.");
             if (hud) hud.ShowJournalHint();
-            yield return new WaitForSecondsRealtime(5.2f);
+            yield return new WaitForSeconds(5.2f);
 
             // 3) He turns to the doorway; the shot follows the door as it swings inwards.
             LocationAudio.Effect("Door Knock Wood", .42f);
@@ -150,9 +151,9 @@ namespace CarXCase.Apartment
             float elapsed = 0;
             while (elapsed < swingTime)
             {
-                elapsed += Time.unscaledDeltaTime;
+                elapsed += Time.deltaTime;
                 door.rotation = Quaternion.Slerp(start, target, Mathf.SmoothStep(0, 1, elapsed / swingTime));
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             }
             door.rotation = target;
 
@@ -177,7 +178,7 @@ namespace CarXCase.Apartment
 
             // 5) The door shuts once he clears the opening, then control returns.
             if (!journalHintPoint || !hinge) EnableInterior();
-            yield return new WaitForSecondsRealtime(.6f);
+            yield return new WaitForSeconds(.6f);
             if (lightSwitch)
             {
                 var plate = lightSwitch.transform;
@@ -206,14 +207,15 @@ namespace CarXCase.Apartment
             float elapsed = 0f;
             while (elapsed < duration)
             {
-                elapsed += Time.unscaledDeltaTime;
+                elapsed += Time.deltaTime;
                 reachWeight = Mathf.SmoothStep(from, to, elapsed / duration);
-                yield return null;
+                yield return NoirMenu.GameSession.NextStoryFrame;
             }
         }
 
         void LateUpdate()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (reachWeight <= 0f || !upperArm || !forearm || !hand) return;
             Vector3 shoulder = upperArm.position;
             Vector3 target = lightSwitch.transform.position + lightSwitch.transform.forward * .055f;
@@ -238,8 +240,8 @@ namespace CarXCase.Apartment
         {
             point.y = officer.transform.position.y;
             officer.WalkTo(point);
-            float walkStarted = Time.unscaledTime;
-            while (officer.IsWalking && Time.unscaledTime - walkStarted < timeout) yield return null;
+            float walkStarted = Time.time;
+            while (officer.IsWalking && Time.time - walkStarted < timeout) yield return NoirMenu.GameSession.NextStoryFrame;
             officer.StopWalking();
         }
     }

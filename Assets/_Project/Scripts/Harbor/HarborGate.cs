@@ -50,7 +50,7 @@ namespace CarXCase.Harbor
             if (!CanInteract) return;
             hud = sourceHud;
             panel = true;
-            openedAt = Time.unscaledTime;
+            openedAt = Time.time;
             timing = false;
             entry = status = "";
             cursorWasLocked = Cursor.lockState == CursorLockMode.Locked;
@@ -63,9 +63,10 @@ namespace CarXCase.Harbor
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (open && openAmount < 1f)
             {
-                openAmount = Mathf.MoveTowards(openAmount, 1f, Time.unscaledDeltaTime / 1.35f);
+                openAmount = Mathf.MoveTowards(openAmount, 1f, Time.deltaTime / 1.35f);
                 SetGate();
             }
             var keyboard = Keyboard.current;
@@ -124,20 +125,21 @@ namespace CarXCase.Harbor
             timing = true;
             pulses = 0;
             status = "";
-            pulseStart = Time.unscaledTime;
+            pulseStart = Time.time;
             if (follow && lockDetail)
             {
                 previousCameraPosition = follow.transform.position;
                 previousCameraRotation = follow.transform.rotation;
-                approachStart = Time.unscaledTime;
+                approachStart = Time.time;
                 pulseStart = approachStart + ApproachDuration;
             }
         }
 
         void LateUpdate()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!timing || !follow || !lockDetail) return;
-            float blend = Mathf.SmoothStep(0, 1, (Time.unscaledTime - approachStart) / ApproachDuration);
+            float blend = Mathf.SmoothStep(0, 1, (Time.time - approachStart) / ApproachDuration);
             Vector3 end = lockDetail.position + lockDetail.rotation * new Vector3(.06f, .06f, -.48f);
             Quaternion aim = Quaternion.LookRotation(lockDetail.position + Vector3.up * .04f - end);
             follow.transform.SetPositionAndRotation(Vector3.Lerp(previousCameraPosition, end, blend),
@@ -151,11 +153,11 @@ namespace CarXCase.Harbor
             timing = false;
         }
 
-        float TimeLeft => Mathf.Clamp01(1f - (Time.unscaledTime - pulseStart) / Mathf.Lerp(1.9f, .85f, (float)pulses / (Sequence.Length - 1)));
+        float TimeLeft => Mathf.Clamp01(1f - (Time.time - pulseStart) / Mathf.Lerp(1.9f, .85f, (float)pulses / (Sequence.Length - 1)));
 
         void UpdateSequence(Keyboard keyboard)
         {
-            if (Time.unscaledTime < pulseStart) return;
+            if (Time.time < pulseStart) return;
             if (lockDetail)
                 InteractionGlyphs.Show(this, lockDetail.position + Vector3.right * .20f, KeyLabel(Sequence[pulses]), progress: TimeLeft, urgent: true);
             bool wrongKey = System.Array.Exists(Sequence, key => key != Sequence[pulses] && keyboard[key].wasPressedThisFrame);
@@ -169,7 +171,7 @@ namespace CarXCase.Harbor
             if (!keyboard[Sequence[pulses]].wasPressedThisFrame) return;
             InteractionGlyphs.Press(this);
             if (++pulses == Sequence.Length) { Unlock(); return; }
-            pulseStart = Time.unscaledTime;
+            pulseStart = Time.time;
         }
         void Unlock()
         {
@@ -209,6 +211,7 @@ namespace CarXCase.Harbor
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (!panel) return;
             if (timing)
             {
@@ -316,7 +319,7 @@ namespace CarXCase.Harbor
         void DrawKeypad()
         {
             PreparePanel();
-            float appear = Mathf.SmoothStep(0,1,Mathf.Clamp01((Time.unscaledTime-openedAt)/.18f));
+            float appear = Mathf.SmoothStep(0,1,Mathf.Clamp01((Time.time-openedAt)/.18f));
             Paint(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,.48f*appear));
             float scale = Mathf.Min(Screen.width/850f, Screen.height/605f, 1.5f);
             var previous = GUI.matrix;

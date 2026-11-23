@@ -13,13 +13,14 @@ namespace NoirMenu
         void Awake()
         {
             group = GetComponent<CanvasGroup>();
-            group.alpha = 1f;
-            group.blocksRaycasts = true;
+            group.alpha = GameSession.Paused ? 0f : 1f;
+            group.blocksRaycasts = !GameSession.Paused;
             group.interactable = false;
         }
 
         IEnumerator Start()
         {
+            if (GameSession.Paused) yield break;
             if (fadeInOnStart > 0f) yield return FadeTo(0f, fadeInOnStart);
             else { group.alpha = 0f; group.blocksRaycasts = false; }
         }
