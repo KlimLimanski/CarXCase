@@ -51,6 +51,9 @@ public sealed class HangarPadlock : MonoBehaviour
 
         var go = new GameObject("Hangar padlock");
         go.transform.SetPositionAndRotation(point + normal * .004f, Quaternion.LookRotation(normal, Vector3.up));
+        var mount = interaction.Find("Exterior hasp mount");
+        if (mount) go.transform.SetPositionAndRotation(mount.position, mount.rotation);
+        go.transform.SetParent(interaction, true);
         var lockOn = go.AddComponent<HangarPadlock>();
         lockOn.ground = interaction.position.y - 1.1f;
         if (Physics.Raycast(point + normal * .3f, Vector3.down, out var floor, 3f, ~0, QueryTriggerInteraction.Ignore))
@@ -182,7 +185,25 @@ public sealed class HangarPadlock : MonoBehaviour
     public IEnumerator Unlock()
     {
         LocationAudio.Effect("Lock key press", .6f);
-        yield return Wait(.35f);
+        var key = new GameObject("Pier key in cylinder").transform;
+        key.SetParent(body, false);
+        var metal = body.Find("Body").GetComponent<Renderer>().sharedMaterial;
+        Part("Blade", key, Cube(), metal, Vector3.forward * .018f, new Vector3(.004f,.008f,.044f));
+        var ring = new List<Vector3>();
+        for (int i = 0; i <= 20; i++)
+        {
+            float a = Mathf.PI * 2f * i / 20f;
+            ring.Add(new Vector3(0, .012f * Mathf.Sin(a), .052f + .013f * Mathf.Cos(a)));
+        }
+        Part("Key bow", key, Rod(ring,.0025f), metal, Vector3.zero, Vector3.one);
+        Vector3 slot = new Vector3(0,-.008f,.012f);
+        for (float t = 0; t < 1f; t += Time.deltaTime / .6f)
+        {
+            key.localPosition = slot + Vector3.forward * (.035f * (1f - Mathf.SmoothStep(0,1,Mathf.Clamp01(t*2.5f))));
+            key.localRotation = Quaternion.Euler(0,0,75f*Mathf.SmoothStep(0,1,Mathf.InverseLerp(.4f,1f,t)));
+            yield return null;
+        }
+        Destroy(key.gameObject);
         LocationAudio.Effect("Gate unlocked", .5f);
         for (float t = 0; t < 1f; t += Time.deltaTime / .18f)
         {

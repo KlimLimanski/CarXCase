@@ -138,8 +138,9 @@ namespace CarXCase.Precinct
             if (!string.IsNullOrEmpty(openingLine)) yield return SayLines(heroName, openingLine, false);
             while (node != null)
             {
+                var lineHold = CarXCase.UI.VoiceOver.Spread(node.lines);
                 for (int i = 0; i < node.lines.Length; i++)
-                    yield return Say(suspectName, node.lines[i], true, i == 0 ? node.glanceTarget : null, node.glanceStart);
+                    yield return Say(suspectName, node.lines[i], true, i == 0 ? node.glanceTarget : null, node.glanceStart, lineHold[i]);
                 current = node.choices.Where(c => string.IsNullOrEmpty(c.requires) || ClueJournal.Has(c.requires))
                     .OrderBy(c => c.slot).ToArray();
                 if (current.Length == 0) break;
@@ -156,8 +157,10 @@ namespace CarXCase.Precinct
                 if (!timedOut) yield return new WaitForSeconds(.24f);
                 HeroFace.SetEmotion(picked.stress >= 15 ? -0.9f : picked.stress <= -10 ? 0.6f : picked.probability < 0 ? -0.4f : 0.15f);
                 Apply(timedOut && !useTrust ? picked.probability - 5 : picked.probability, picked.stress + (timedOut ? 5 : 0));
-                yield return SayLines(heroName, timedOut ? "…" : picked.heroLine, false);
-                if (!string.IsNullOrEmpty(picked.reply)) yield return SayLines(suspectName, picked.reply, true);
+                // A recorded answer may carry the reply too: keep both subtitles in step with it.
+                var exchange = CarXCase.UI.VoiceOver.Spread(new[] { timedOut ? "…" : picked.heroLine, picked.reply ?? "" });
+                yield return SayLines(heroName, timedOut ? "…" : picked.heroLine, false, exchange[0]);
+                if (!string.IsNullOrEmpty(picked.reply)) yield return SayLines(suspectName, picked.reply, true, exchange[1]);
                 if (useTrust ? interruptAtFailureThreshold && probability <= failureThreshold : stress >= 100)
                 {
                     shutdown = true;
@@ -262,16 +265,24 @@ namespace CarXCase.Precinct
             lastDelta = dProb; deltaTime = Time.time;
         }
 
-        IEnumerator SayLines(string who, string text, bool isSuspect)
+        IEnumerator SayLines(string who, string text, bool isSuspect, float voiced = -1f)
         {
-            foreach (var part in (text ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                yield return Say(who, part.Trim(), isSuspect);
+            var parts = (text ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            // One recording can cover several subtitle lines: share its length out by line length.
+            float voice = voiced > 0f ? voiced : parts.Length > 0 ? CarXCase.UI.VoiceOver.Length(parts[0]) : 0f, total = 0f;
+            foreach (var part in parts) total += part.Trim().Length;
+            foreach (var part in parts)
+                yield return Say(who, part.Trim(), isSuspect, null, 0f,
+                    voice > 0f ? voice * part.Trim().Length / Mathf.Max(1f, total) + .15f : -1f);
         }
 
-        IEnumerator Say(string who, string text, bool isSuspect, Transform glance = null, float glanceStart = 0f)
+        IEnumerator Say(string who, string text, bool isSuspect, Transform glance = null, float glanceStart = 0f, float voiced = -1f)
         {
             phase = Phase.Talking; speaker = who; line = text; skip = false;
             lineLeft = Mathf.Clamp(text.Length * .055f, 2.2f, 7.5f) * Mathf.Max(1f, subtitleDurationMultiplier);
+            // Hold the line for its recording (voiced < 0: look it up; 0: part of an earlier recording).
+            if (voiced < 0f) voiced = CarXCase.UI.VoiceOver.Length(text) + .25f;
+            if (voiced > 0f) lineLeft = Mathf.Max(lineLeft, voiced);
             SetCam(isSuspect ? camOnSuspect : camOnHero);
             // The speaker articulates the subtitle over the time it is shown; the other one listens.
             if (isSuspect)

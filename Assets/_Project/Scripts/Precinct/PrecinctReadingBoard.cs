@@ -197,7 +197,7 @@ namespace CarXCase.Precinct
                 if (match is Match.Discovered or Match.Linked)
                 {
                     deductionLine = rule.hint;
-                    deductionUntil = Time.time + Mathf.Clamp(rule.hint.Length * .045f, 3.6f, 7f);
+                    deductionUntil = Time.time + Mathf.Max(Mathf.Clamp(rule.hint.Length * .045f, 3.6f, 7f), CarXCase.UI.VoiceOver.Length(rule.hint) + .3f);
                 }
                 return;
             }

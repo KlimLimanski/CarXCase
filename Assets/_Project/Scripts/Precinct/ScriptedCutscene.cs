@@ -53,7 +53,29 @@ namespace CarXCase.Precinct
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0, v.z);
 
-        void Start() { Evaluate(0); }
+        void Start() { FitDialogueToVoice(); Evaluate(0); }
+
+        /// A recorded line holds until its recording ends; later lines move back and the cutscene grows,
+        /// so voices never overlap or get cut off.
+        void FitDialogueToVoice()
+        {
+            if (dialogue == null || dialogue.Length == 0) return;
+            var ordered = (Line[])dialogue.Clone();
+            System.Array.Sort(ordered, (a, b) => a.start.CompareTo(b.start));
+            var hold = CarXCase.UI.VoiceOver.Spread(System.Array.ConvertAll(ordered, l => l.text));
+            float shift = 0f;
+            for (int i = 0; i < ordered.Length; i++)
+            {
+                ordered[i].start += shift;
+                ordered[i].end += shift;
+                if (hold[i] <= 0f) continue;
+                float missing = ordered[i].start + hold[i] - ordered[i].end;
+                if (missing <= 0f) continue;
+                ordered[i].end += missing;
+                shift += missing;
+            }
+            tail += shift;
+        }
 
         void Update()
         {

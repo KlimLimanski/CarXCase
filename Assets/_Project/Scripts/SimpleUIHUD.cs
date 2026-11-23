@@ -31,10 +31,13 @@ namespace DetectiveGame.Core
         /// subtitle stays up (or for the length of the optional voice clip).
         public void ShowInspectionComment(string line, float duration, string speaker, AudioClip voice)
         {
+            // Recorded dialogue: Alexey's comments are voiced through his face (lip-synced), others by Subtitles.
+            if (!voice && speaker == HeroSpeaker) voice = CarXCase.UI.VoiceOver.ForText(line);
             if (voice) duration = Mathf.Max(duration, voice.length + .3f);
             _inspectionLine = CarXCase.UI.Subtitles.WithSpeaker(speaker, line);
             _inspectionUntil = Time.time + duration;
             heroSpeaking = speaker == HeroSpeaker && !string.IsNullOrWhiteSpace(line);
+            if (voice && heroSpeaking) CarXCase.UI.VoiceOver.MarkHandled(_inspectionLine);
             if (heroSpeaking) CarXCase.Hero.HeroFace.SpeakAsHero(line, duration, voice);
             else CarXCase.Hero.HeroFace.StopHero();
         }

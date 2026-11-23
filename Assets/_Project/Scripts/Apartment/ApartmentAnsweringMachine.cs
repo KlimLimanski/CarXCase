@@ -66,7 +66,8 @@ namespace CarXCase.Apartment
 
             var clue = GetComponent<ClueObject>();
             clue.AddEntry();
-            hud.ShowInspectionComment(clue.inspectionComment);
+            hud.ShowInspectionComment(clue.inspectionComment, Mathf.Clamp(2.7f + (clue.inspectionComment ?? "").Length * .033f, 3.2f, 7f),
+                SimpleUIHUD.HeroSpeaker, CarXCase.UI.VoiceOver.ForTitle(clue.clueTitle));
             hud.IsListening = false;
             playbackHud = null;
             IsPlaying = false;
@@ -74,6 +75,7 @@ namespace CarXCase.Apartment
 
         static IEnumerator Line(SimpleUIHUD hud, string line, float seconds, string speaker = null)
         {
+            seconds = Mathf.Max(seconds, CarXCase.UI.VoiceOver.Length(line) + .2f);   // let the recording finish
             hud.ShowInspectionComment(line, seconds, speaker);
             yield return new WaitForSeconds(seconds);
         }

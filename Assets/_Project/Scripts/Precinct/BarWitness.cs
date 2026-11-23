@@ -64,8 +64,8 @@ namespace CarXCase.Precinct
         {
             // she notices him first and turns before anyone speaks
             yield return new WaitForSeconds(.55f);
-            yield return Say(Hero, "Добрый вечер. Дмитрий говорит, вчера сюда приходили двое, искали моего отца. Вы их видели?");
-            yield return Say(Girl, "Выпьешь со мной? Тогда скажу, куда делись те двое.");
+            yield return Exchange((Hero, "Добрый вечер. Дмитрий говорит, вчера сюда приходили двое, искали моего отца. Вы их видели?"),
+                (Girl, "Выпьешь со мной? Тогда скажу, куда делись те двое."));
             answer = -1;
             choosing = true;
             if (actor) actor.Wait();
@@ -73,17 +73,17 @@ namespace CarXCase.Precinct
             choosing = false;
             if (answer == 0)
             {
-                yield return Say(Hero, "Одну. Но сначала — про них.");
                 LocationAudio.Effect("Place Open Box Bottles Ff", .45f);
-                yield return Say(Girl, "Месяц назад они так же подставили ювелира с Кони-Айленда. На причалах ими заправляет местный, с Брайтона.");
-                yield return Say(Girl, "Найдёшь их в Шипсхед-Бей. Они держат старый ангар, четвёртый.");
-                yield return Say(Hero, "Шипсхед-Бей, четвёртый ангар. Спасибо — за мной должок.");
+                yield return Exchange((Hero, "Одну. Но сначала — про них."),
+                    (Girl, "Месяц назад они так же подставили ювелира с Кони-Айленда. На причалах ими заправляет местный, с Брайтона."),
+                    (Girl, "Найдёшь их в Шипсхед-Бей. Они держат старый ангар, четвёртый."),
+                    (Hero, "Шипсхед-Бей, четвёртый ангар. Спасибо — за мной должок."));
             }
             else
             {
-                yield return Say(Hero, "Я на службе. Просто скажи, что слышала.");
-                yield return Say(Girl, "Как хочешь. Слышала, как один велел другому ехать на причал Шипсхед-Бей, в четвёртый ангар. Больше ничего.");
-                yield return Say(Hero, "Четвёртый ангар. Этого хватит, спасибо.");
+                yield return Exchange((Hero, "Я на службе. Просто скажи, что слышала."),
+                    (Girl, "Как хочешь. Слышала, как один велел другому ехать на причал Шипсхед-Бей, в четвёртый ангар. Больше ничего."),
+                    (Hero, "Четвёртый ангар. Этого хватит, спасибо."));
             }
             lead.AddEntry();
             Release();
@@ -111,13 +111,20 @@ namespace CarXCase.Precinct
             view.BeginConversationShot(atLensHeight + direction * distance, look);
         }
 
-        IEnumerator Say(string speaker, string text)
+        /// A run of lines voiced by one recording: the subtitles follow its pace.
+        IEnumerator Exchange(params (string speaker, string text)[] lines)
+        {
+            var hold = VoiceOver.Spread(System.Array.ConvertAll(lines, l => l.text));
+            for (int i = 0; i < lines.Length; i++) yield return Say(lines[i].speaker, lines[i].text, hold[i]);
+        }
+
+        IEnumerator Say(string speaker, string text, float voiced = -1f)
         {
             bool hero = speaker == Hero;
             line = Subtitles.WithSpeaker(speaker, text);
             skip = false;
             float earliest = Time.time + .3f;
-            float shown = Mathf.Clamp(text.Length * .05f + (hero ? .2f : 0f), 2.3f, 7f);
+            float shown = voiced > 0f ? voiced : Mathf.Clamp(text.Length * .05f + (hero ? .2f : 0f), 2.3f, 7f);
             float end = Time.time + shown;
             if (hero)
             {

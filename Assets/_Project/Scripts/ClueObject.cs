@@ -124,7 +124,7 @@ namespace DetectiveGame.Core
                 !string.IsNullOrWhiteSpace(journalThought) ? journalThought : clueDescription;
             if (string.IsNullOrWhiteSpace(line)) return;
             float duration = Mathf.Clamp(2.7f + line.Length * .033f, 3.2f, 7f);
-            ui.ShowInspectionComment(line, duration, SimpleUIHUD.HeroSpeaker, inspectionVoice);
+            ui.ShowInspectionComment(line, duration, SimpleUIHUD.HeroSpeaker, inspectionVoice ? inspectionVoice : CarXCase.UI.VoiceOver.ForTitle(clueTitle));
         }
     }
 }

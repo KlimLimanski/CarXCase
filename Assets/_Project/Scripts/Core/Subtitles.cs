@@ -25,6 +25,7 @@ namespace CarXCase.UI
         public static void Draw(string line, float top = 0.79f)
         {
             if (string.IsNullOrEmpty(line)) return;
+            VoiceOver.OnSubtitle(line);
             if (text == null)
             {
                 text = new GUIStyle(GUI.skin.label) { font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"), alignment = TextAnchor.UpperCenter, wordWrap = true, fontStyle = FontStyle.Normal, richText = false };
