@@ -262,6 +262,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     void Update()
     {
         if (NoirMenu.GameSession.Paused) return;
+        DebugKeys();
         if (stage == Stage.Outside || stage == Stage.Listening || Time.timeScale <= 0) return;
         if (!delayed && !Finished)
         {
@@ -435,6 +436,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     void OnGUI()
     {
         if (endingFade > 0f) Fill(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,endingFade));
+        if (DebugMenu()) return;
         if (NoirMenu.GameSession.Paused) return;
         Subtitles.Draw(caption);
         if (stage != Stage.DialogueChoice && stage != Stage.Decision && stage != Stage.Missed && stage != Stage.Report) return;

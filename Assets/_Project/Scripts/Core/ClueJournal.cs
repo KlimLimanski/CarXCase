@@ -29,6 +29,11 @@ namespace DetectiveGame.Core
             Changed?.Invoke();
         }
 
+        /// Debug only: forget a clue or conclusion so a scene can be replayed.
+        public static void Forget(string id)
+        {
+            if (entries.RemoveAll(e => e.id == id) + (conclusions.Remove(id) ? 1 : 0) > 0) Changed?.Invoke();
+        }
         public static void AddConclusion(string id) { if (!string.IsNullOrEmpty(id) && conclusions.Add(id)) Changed?.Invoke(); }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
