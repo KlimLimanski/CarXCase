@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
-public sealed class HangarFinale : MonoBehaviour
+public sealed partial class HangarFinale : MonoBehaviour
 {
     public GameObject rescue, late;
     public Transform kostya;
@@ -19,7 +19,7 @@ public sealed class HangarFinale : MonoBehaviour
     const string Overheard = "hangar_guards_departed";
     const float DecisionSeconds = 4f;
 
-    enum Stage { Outside, Listening, Conversation, Approach, Decision, Missed, Aftermath, Report }
+    enum Stage { Outside, Listening, Conversation, Approach, DialogueChoice, Decision, Missed, Aftermath, Report }
     Stage stage;
     OfficerController player;
     ThirdPersonCamera view;
@@ -33,7 +33,7 @@ public sealed class HangarFinale : MonoBehaviour
     GUIStyle title, body, action;
     readonly Color ink = new Color(.065f,.086f,.086f,.96f);
     readonly Color brass = new Color(.77f,.65f,.43f);
-    public bool Finished => ClueJournal.Has(Shot) || ClueJournal.Has(Arrest);
+    public bool Finished => ClueJournal.Has(Shot) || ClueJournal.Has(Arrest) || SpecialTitle != null;
     public bool NeedsListening => !Finished && !ClueJournal.Has(Overheard);
     public string Objective => stage == Stage.Approach ? "Подойдите к Косте" :
         stage != Stage.Outside || Finished ? null : NeedsListening ? "Подслушайте разговор у двери ангара" : HangarKey.Found ? "Войдите в ангар" : "Найдите ключ на причале";
@@ -56,7 +56,7 @@ public sealed class HangarFinale : MonoBehaviour
         confrontationFacing = Quaternion.Euler(0, -155f, 0);
         confrontationMark = staging.KostyaMark;
         SetBranch(ClueJournal.Has(LateRoute));
-        if (Finished) EndPose(ClueJournal.Has(Shot));
+        if (Finished) RestoreOutcome();
     }
 
     public void SetBranch(bool arrivedLate)
@@ -129,7 +129,7 @@ public sealed class HangarFinale : MonoBehaviour
         if (yardRain) yardRain.enabled = false;
         if (Finished)
         {
-            EndPose(ClueJournal.Has(Shot));
+            RestoreOutcome();
             ShowReport();
             return;
         }
@@ -142,6 +142,8 @@ public sealed class HangarFinale : MonoBehaviour
     {
         if (yardRain) yardRain.enabled = true;
         StopAllCoroutines();
+        endingFade = 0;
+        if (fallenVisual) { fallenVisual.localRotation = standingRotation; fallenVisual = null; }
         if (kostyaFace) kostyaFace.SetBlendShapeWeight(0, 0);
         if (fatherFace) fatherFace.SetBlendShapeWeight(0, 0);
         Release();
@@ -251,7 +253,7 @@ public sealed class HangarFinale : MonoBehaviour
             player.FaceTowards(kostya.position);
             Frame(new Vector3(-.05f,1.42f,5.38f),new Vector3(.95f,1.2f,7.1f));
             UnlockCursor();
-            BeginDecision();
+            StartCoroutine(Negotiate());
             return;
         }
         if (!turning && (stage == Stage.Conversation || stage == Stage.Approach))
@@ -261,6 +263,13 @@ public sealed class HangarFinale : MonoBehaviour
             staging.Conversation(gesture, concern);
         }
         var keys = Keyboard.current;
+        if (stage == Stage.DialogueChoice && keys != null)
+        {
+            if (keys.digit1Key.wasPressedThisFrame || keys.numpad1Key.wasPressedThisFrame) Pick(0);
+            else if (keys.digit2Key.wasPressedThisFrame || keys.numpad2Key.wasPressedThisFrame) Pick(1);
+            else if (keys.digit3Key.wasPressedThisFrame || keys.numpad3Key.wasPressedThisFrame) Pick(2);
+            else if (keys.digit4Key.wasPressedThisFrame || keys.numpad4Key.wasPressedThisFrame) Pick(3);
+        }
         if (stage == Stage.Decision)
         {
             reach = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((DecisionSeconds - deadline + Time.time) / .48f));
@@ -324,6 +333,7 @@ public sealed class HangarFinale : MonoBehaviour
             staging.SetCuff(true);
             yield return new WaitForSeconds(.44f);
         }
+        yield return StandardLastWords(shot);
         if (!delayed)
         {
             Frame(new Vector3(-1.16f, 1.14f, 5.84f), new Vector3(-.08f, .90f, 7.07f));
@@ -343,8 +353,8 @@ public sealed class HangarFinale : MonoBehaviour
                 staging.Father(1f, Mathf.SmoothStep(0, 1, t));
             });
             fatherReleased = true;
-            yield return Say("Фёдор Павлович", shot ? "Спасибо тебе, сынок… Ты спас мне жизнь." :
-                "Спасибо тебе, сынок… И за то, что меня вытащил, и за то, что душу не замарал.", 5f);
+            yield return Say("Фёдор Павлович", shot ? "Спасибо тебе, сынок... за всё. Ты спас мне жизнь." :
+                "Спасибо тебе, сынок... за всё. И за то, что меня вытащил, и за то, что душу не замарал.", 5f);
         }
         else yield return new WaitForSeconds(1.5f);
         EndPose(shot);
@@ -395,8 +405,9 @@ public sealed class HangarFinale : MonoBehaviour
     void OnGUI()
     {
         if (NoirMenu.GameSession.Paused) return;
+        if (endingFade > 0f) Fill(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,endingFade));
         Subtitles.Draw(caption);
-        if (stage != Stage.Decision && stage != Stage.Missed && stage != Stage.Report) return;
+        if (stage != Stage.DialogueChoice && stage != Stage.Decision && stage != Stage.Missed && stage != Stage.Report) return;
         float k = Mathf.Min(Screen.width / 800f,Screen.height / 800f);
         title ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft, wordWrap = true };
         body ??= new GUIStyle(title);
@@ -408,6 +419,16 @@ public sealed class HangarFinale : MonoBehaviour
         body.normal.textColor = brass;
         float width = 570*k;
         var r = new Rect((Screen.width-width)*.5f, Screen.height-226*k,width,198*k);
+        if (stage == Stage.DialogueChoice)
+        {
+            r.height = 245*k;
+            r.y = Screen.height - r.height - 22*k;
+            Fill(r, ink);
+            GUI.Label(new Rect(r.x+18*k,r.y+7*k,r.width-36*k,38*k),"Ответить Косте",title);
+            for (int i=0; i<4; i++)
+                if (ActionButton(new Rect(r.x+16*k,r.y+(50+46*i)*k,r.width-32*k,41*k),(i+1)+"   "+Replies[round,i])) Pick(i);
+            return;
+        }
         Fill(r,ink);
         Fill(new Rect(r.x,r.y,68*k,2*k),brass);
         float x = r.x+22*k, w = width-44*k;
@@ -416,7 +437,7 @@ public sealed class HangarFinale : MonoBehaviour
             (shot ? "Цена спасения" : "Возвращение домой")) :
             stage == Stage.Missed ? "Момент упущен" : "Костя тянется к карману";
         GUI.Label(new Rect(x,r.y+11*k,w,26*k), delayed ? "Шипсхед-Бей   /   02:35" : "Шипсхед-Бей   /   01:55",body);
-        GUI.Label(new Rect(x,r.y+39*k,w,43*k),heading,title);
+        GUI.Label(new Rect(x,r.y+39*k,w,43*k),report ? SpecialTitle ?? heading : heading,title);
         if (stage == Stage.Decision)
         {
             Fill(new Rect(x,r.y+98*k,w,3*k),new Color(.28f,.28f,.25f));
@@ -427,7 +448,7 @@ public sealed class HangarFinale : MonoBehaviour
         else
         {
             if (report) GUI.Label(new Rect(x,r.y+80*k,w,48*k),
-                (delayed ? "Фёдор погиб. " : "Фёдор спасён. ") + (shot ? "Костя застрелен." : "Костя арестован."),body);
+                SpecialText ?? (delayed ? "Фёдор погиб. " : "Фёдор спасён. ") + (shot ? "Костя застрелен." : "Костя арестован."),body);
             if (ActionButton(new Rect(x,r.y+129*k,w,45*k),report ? "Завершить дело   [Enter]" : "Повторить выбор   [Enter]"))
             {
                 if (report) FinishCase(); else BeginDecision();

@@ -17,7 +17,7 @@ public sealed class LocationAudio : MonoBehaviour
         ["04_Precinct"] = new[] { "Angelo Badalamenti - Theme from Twin Peaks-Fire Walk with Me" },
         ["05_BrightonHarbor"] = new[] { "sub_clair-suspense", "Wez Devine — Shadows of Doom", "Lilith Nyx — Fear and Paranoia", "suspense", "Lilith Nyx — Monster" }
     };
-    AudioSource weather, feet, pulse, effects;
+    AudioSource weather, feet, runningFeet, pulse, effects;
     readonly Dictionary<string, AudioClip> cues = new();
     AudioLowPassFilter rainFilter;
     readonly List<Bounds> rainWindows = new();
@@ -86,7 +86,8 @@ public sealed class LocationAudio : MonoBehaviour
                     if (t.name == opening)
                         audio.rainWindows.Add(t.TryGetComponent<Renderer>(out var r) ? r.bounds : new Bounds(t.position, Vector3.zero));
         }
-        audio.feet = audio.Source(harbor ? "Walking On Pavement" : "Indoor Footsteps Loop");
+        audio.feet = audio.Source("steps-2");
+        audio.runningFeet = audio.Source("running-on-concrete");
         audio.pulse = audio.Source("heartbeat");
         audio.effects = audio.Source();
         audio.effects.volume = GameSettings.SfxGain;
@@ -140,7 +141,11 @@ public sealed class LocationAudio : MonoBehaviour
             rainFilter.cutoffFrequency = Mathf.Lerp(1550f, 4400f, near);
         }
         Loop(weather, true, machine && machine.IsPlaying ? rainLevel * .45f : rainLevel);
-        Loop(feet, body && body.isGrounded && player.PlanarVelocity.sqrMagnitude > .08f, .34f);
+        bool grounded = player && player.isActiveAndEnabled && body && body.enabled && body.isGrounded && Time.timeScale > 0f;
+        float speed = grounded ? Vector3.ProjectOnPlane(body.velocity, Vector3.up).magnitude : 0f;
+        bool running = grounded && speed > (player.walkSpeed + player.runSpeed) * .5f;
+        Loop(feet, speed > .28f && !running, .34f);
+        Loop(runningFeet, running, 1f);
         Loop(pulse, QteManager.Instance && QteManager.Instance.IsQteActive(), .34f);
     }
 
