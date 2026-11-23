@@ -117,7 +117,7 @@ namespace CarXCase.Precinct
                 return;
             }
             fadeIn = Mathf.MoveTowards(fadeIn, 0, Time.deltaTime / 1.5f);
-            if (Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame))
+            if (Application.isEditor && Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame))
                 elapsed = Mathf.Max(elapsed, Duration - 1.0f);
             elapsed += Time.deltaTime;
             live = true; Evaluate(elapsed); live = false;
@@ -304,7 +304,7 @@ namespace CarXCase.Precinct
                 foreach (var l in dialogue)
                     if (elapsed >= l.start && elapsed < l.end)
                     {
-                        CarXCase.UI.Subtitles.Draw(l.text, .76f);
+                        CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(l.speaker, l.text), .76f);
                         break;
                     }
             float f = Mathf.Max(fadeIn, fadeOut);

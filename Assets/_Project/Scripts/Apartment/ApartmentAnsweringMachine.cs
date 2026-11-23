@@ -59,9 +59,9 @@ namespace CarXCase.Apartment
 
             if (message2140) audioSource.PlayOneShot(message2140);
             float scale = message2140 ? message2140.length / 13f : 1f;
-            yield return Line(hud, "21:40 · Фёдор Павлович, передай Дмитрию, что в сказки мы не верим.", 4f * scale);
-            yield return Line(hud, "Контейнер на двенадцатом пирсе вскрыт, бумаги пропали.", 3.5f * scale);
-            yield return Line(hud, "Если до утра пятницы товар или пятнадцать тысяч не лягут на стол — разговор продолжим в его забегаловке.", 5.5f * scale);
+            yield return Line(hud, "21:40 · Фёдор Павлович, передай Дмитрию, что в сказки мы не верим.", 4f * scale, "Неизвестный голос");
+            yield return Line(hud, "Контейнер на двенадцатом пирсе вскрыт, бумаги пропали.", 3.5f * scale, "Неизвестный голос");
+            yield return Line(hud, "Если до утра пятницы товар или пятнадцать тысяч не лягут на стол — разговор продолжим в его забегаловке.", 5.5f * scale, "Неизвестный голос");
 
             var clue = GetComponent<ClueObject>();
             clue.AddEntry();
@@ -71,9 +71,9 @@ namespace CarXCase.Apartment
             IsPlaying = false;
         }
 
-        static IEnumerator Line(SimpleUIHUD hud, string line, float seconds)
+        static IEnumerator Line(SimpleUIHUD hud, string line, float seconds, string speaker = null)
         {
-            hud.ShowInspectionComment(line, seconds);
+            hud.ShowInspectionComment(line, seconds, speaker);
             yield return new WaitForSecondsRealtime(seconds);
         }
 

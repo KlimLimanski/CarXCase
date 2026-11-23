@@ -77,7 +77,7 @@ namespace CarXCase.Intro
         {
             if (loading || loadError != null) return;
 
-            if (Keyboard.current != null && (Keyboard.current.escapeKey.wasPressedThisFrame ||
+            if (Application.isEditor && Keyboard.current != null && (Keyboard.current.escapeKey.wasPressedThisFrame ||
                 Keyboard.current.spaceKey.wasPressedThisFrame)) skipping = true;
 
             if (skipping)
@@ -295,7 +295,7 @@ namespace CarXCase.Intro
                 {
                     if (storyTime >= line.start && storyTime < line.end)
                     {
-                        CarXCase.UI.Subtitles.Draw(line.text);
+                        CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(line.speaker, line.text));
                         break;
                     }
                 }

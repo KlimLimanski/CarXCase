@@ -50,7 +50,8 @@ namespace CarXCase.Harbor
             elapsed += Time.deltaTime;
             if (!returning)
             {
-                if (elapsed < WideTime + WaterTime + WarehouseTime && Keyboard.current?.spaceKey.wasPressedThisFrame != true)
+                bool skip = Application.isEditor && Keyboard.current?.spaceKey.wasPressedThisFrame == true;
+                if (elapsed < WideTime + WaterTime + WarehouseTime && !skip)
                 {
                     Frame(elapsed);
                     return;

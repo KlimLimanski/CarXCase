@@ -1,0 +1,296 @@
+fileFormatVersion: 2
+guid: a1af8af0613cb344fa99fa19ec5f254f
+ModelImporter:
+  serializedVersion: 24600
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Antique brass
+    second: {fileID: 2100000, guid: f268bef63a2e13545b13e63743dcc7fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Archive board
+    second: {fileID: 2100000, guid: f38c4dd5e50c9f148908ffd93d3aaedc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Archive dark
+    second: {fileID: 2100000, guid: a5a9a8bcf598a614b829fd32d709cb9d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Backboard
+    second: {fileID: 2100000, guid: 96fedadc8c15ae44a820592c2ada3e39, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Banker green
+    second: {fileID: 2100000, guid: 32a2b9864362d5c4da74c7b831066c90, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Books moss
+    second: {fileID: 2100000, guid: 19863bb9ce2cf3d499cbad79248c2f0f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Books olive
+    second: {fileID: 2100000, guid: e208970d5f3dafb4b85fbd36ef837c2f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Books oxblood
+    second: {fileID: 2100000, guid: cd621eb28a44c7347b0389413d2c1f39, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Books slate
+    second: {fileID: 2100000, guid: 2b2529aed3a511149a3903bf59497931, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Books tan
+    second: {fileID: 2100000, guid: e3a442ead7216b2479e91f1b680f9ed1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Books umber
+    second: {fileID: 2100000, guid: 3bf2086b379b09b4098ae7fe8960b1ef, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Bridge print
+    second: {fileID: 2100000, guid: 332edd1b5db082945b38b301a13f50d2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Bright brass
+    second: {fileID: 2100000, guid: a217bd46b15f94542b6eb2ab90138272, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Coffee
+    second: {fileID: 2100000, guid: d83b0de7b43dcee4bac853ea23fb42c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Cream linen
+    second: {fileID: 2100000, guid: 52b4719fb07699544b3b4c7109971126, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Cushions
+    second: {fileID: 2100000, guid: a749374d78eb3a14ebd23523a34d043f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Dark piping
+    second: {fileID: 2100000, guid: 242d50a8a93f52647932ab843d7d40ba, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Globe land
+    second: {fileID: 2100000, guid: 87997a17ba013684e87c7407dac7ce11, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Globe sea
+    second: {fileID: 2100000, guid: 0795a73d8d60d3646b1bff862dad81f9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Grained walnut
+    second: {fileID: 2100000, guid: 5136f4239adf29c4b9d473568b0fcbaa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Ink
+    second: {fileID: 2100000, guid: d4d1eb1ff9872e4498eaa44b50ee6ec8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Iron
+    second: {fileID: 2100000, guid: d80d6c0dc8854d3439dbefcfffc6571d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Lamp shade
+    second: {fileID: 2100000, guid: 4a512c8f1577b3b4d88de85a76679bae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Leaf bronze
+    second: {fileID: 2100000, guid: 43d2bfc977128e946bd2ffce774562ea, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Leaf jade
+    second: {fileID: 2100000, guid: 3bac1c9ab2caed844b07afffbdb3cb2e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Leaf moss
+    second: {fileID: 2100000, guid: f53d7d4f228da624ca21f11ecbdef6e6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Leaf olive
+    second: {fileID: 2100000, guid: ec5effd30d1292e4899a1be897f0bf37, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Paper
+    second: {fileID: 2100000, guid: 6365c91de4b626b42a90244ee344467b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Saddle leather
+    second: {fileID: 2100000, guid: 688fbca5724bbf546af11262663ce769, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Sails
+    second: {fileID: 2100000, guid: 28ef251e89165b041bcadf1501d1032c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Soil
+    second: {fileID: 2100000, guid: 398812d897864174fb3b1a657a7369c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Stem
+    second: {fileID: 2100000, guid: 280a925da54e300439e72ad54c92dbe0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Terracotta
+    second: {fileID: 2100000, guid: 8038879315988534792fdc5cc84cb1aa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Vein
+    second: {fileID: 2100000, guid: cf7a293c52bf70a4fae4cc1f647549aa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Walnut
+    second: {fileID: 2100000, guid: c3cf211b012cd8240a9dc341d414105e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GA3 Walnut edge
+    second: {fileID: 2100000, guid: ca0d6b9ff223d1d4182b8aa68b5447de, type: 2}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 0
+    importLights: 0
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 1
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 0
+  referencedClips: []
+  importAnimation: 0
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

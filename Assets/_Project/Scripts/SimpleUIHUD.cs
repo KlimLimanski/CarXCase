@@ -21,9 +21,9 @@ namespace DetectiveGame.Core
             ShowInspectionComment(line, Mathf.Clamp(2.7f + line.Length * .033f, 3.2f, 7f));
         }
 
-        public void ShowInspectionComment(string line, float duration)
+        public void ShowInspectionComment(string line, float duration, string speaker = "Алексей")
         {
-            _inspectionLine = line;
+            _inspectionLine = CarXCase.UI.Subtitles.WithSpeaker(speaker, line);
             _inspectionUntil = Time.unscaledTime + duration;
         }
 
@@ -59,6 +59,9 @@ namespace DetectiveGame.Core
         private string objectiveScene;
         private DeductionBoard precinctBoard;
         private ConversationInteraction barConversation;
+        private HangarFinale harborFinale;
+        private bool destinationAnnounced;
+        private float locationNoticeUntil;
 
         private bool DestinationAvailable()
         {
@@ -88,6 +91,9 @@ namespace DetectiveGame.Core
                 apartmentExit = FindAnyObjectByType<CarXCase.Precinct.SceneExit>();
             if (objectiveScene == "04_Precinct")
                 precinctBoard = FindAnyObjectByType<DeductionBoard>();
+            if (objectiveScene == "05_BrightonHarbor")
+                harborFinale = FindAnyObjectByType<HangarFinale>();
+            destinationAnnounced = DestinationAvailable();
         }
 
         private string CurrentObjective()
@@ -107,12 +113,19 @@ namespace DetectiveGame.Core
                     return "Поговорите с Дмитрием";
                 case "03_Pawnshop":
                     if (PortLead.HasAny(PortLead.Pawnshop)) return "Отправляйтесь в Шипсхед-Бей";
-                    return ClueJournal.Has(PortLead.CheckSafe) ? "Найдите сейф в глубине ломбарда" : "Поговорите с Борисом Марковичем";
+                    return ClueJournal.Has(PortLead.CheckSafe) ? "Найдите сейф за стойкой" : "Осмотрите ломбард";
                 case "04_Precinct": return "Осмотрите кабинет";
                 case "05_BrightonHarbor":
-                    return ClueJournal.Has("harbor_gate_open") ? "Осмотрите склад" : "Откройте ворота порта";
+                    return ClueJournal.Has("harbor_gate_open") ? (harborFinale ? harborFinale.Objective : "Осмотрите склад") : "Откройте ворота порта";
                 default: return null;
             }
+        }
+
+        private void Update()
+        {
+            if (destinationAnnounced || !DestinationAvailable()) return;
+            destinationAnnounced = true;
+            locationNoticeUntil = Time.unscaledTime + 4f;
         }
 
         private void DrawObjective()
@@ -122,24 +135,39 @@ namespace DetectiveGame.Core
 
             string text = CurrentObjective();
             if (string.IsNullOrEmpty(text)) return;
-            DrawFieldObjective(text);
+            DrawObjectiveCard(text, Screen.height * .085f);
         }
 
-        GUIStyle fieldObjective;
-        void DrawFieldObjective(string text)
+        private static GUIStyle objectiveStyle;
+
+        internal static void DrawObjectiveCard(string text, float top)
         {
-            fieldObjective ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft };
             float scale = Mathf.Clamp(Screen.height / 800f, .72f, 2f);
-            fieldObjective.fontSize = Mathf.RoundToInt(19f * scale);
-            var rect = new Rect(30f * scale, Screen.height * .085f, Screen.width * .85f, 26f * scale);
-            fieldObjective.normal.textColor = new Color(0f, 0f, 0f, .9f);
-            GUI.Label(new Rect(rect.x + 1.5f, rect.y + 2f, rect.width, rect.height), text, fieldObjective);
-            fieldObjective.normal.textColor = new Color(.92f, .91f, .85f);
-            GUI.Label(rect, text, fieldObjective);
+            objectiveStyle ??= new GUIStyle(GameTypography.Label) { wordWrap = true, padding = new RectOffset() };
+            objectiveStyle.fontSize = Mathf.RoundToInt(19 * scale);
+            objectiveStyle.normal.textColor = new Color(.96f, .94f, .86f);
+            var content = new GUIContent(text);
+            float inset = 15 * scale;
+            float width = Mathf.Min(Screen.width * .70f, objectiveStyle.CalcSize(content).x + 2 * inset);
+            float bodyHeight = objectiveStyle.CalcHeight(content, width - 2 * inset);
+            var card = new Rect(24 * scale, top,
+                width, bodyHeight + 20 * scale);
+            Color previous = GUI.color;
+            GUI.color = new Color(0, 0, 0, .22f);
+            GUI.DrawTexture(new Rect(card.x + 2 * scale, card.y + 3 * scale, width, card.height), Texture2D.whiteTexture);
+            GUI.color = new Color(.08f, .12f, .12f, .91f);
+            GUI.DrawTexture(card, Texture2D.whiteTexture);
+            GUI.color = new Color(.77f, .65f, .43f);
+            GUI.DrawTexture(new Rect(card.x, card.y, 42 * scale, Mathf.Max(1, 2 * scale)), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(card.x + inset, card.y + 10 * scale, width - 2 * inset, bodyHeight + scale), content, objectiveStyle);
+            GUI.color = previous;
         }
 
         private void OnGUI()
         {
+            if (Time.unscaledTime < locationNoticeUntil)
+                DrawObjectiveCard("Открыта новая локация", Screen.height * .19f);
             if (IsShowingJournal || (precinctBoard && precinctBoard.IsChoosingRoute)) return;
             DrawObjective();
             CarXCase.UI.Subtitles.Draw(CurrentInspectionComment);

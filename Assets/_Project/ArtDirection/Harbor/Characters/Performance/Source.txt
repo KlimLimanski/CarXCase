@@ -1,0 +1,7 @@
+The data used in this project was obtained from mocap.cs.cmu.edu.
+The database was created with funding from NSF EIA-0196217.
+BVH conversion by Bruce Hahn (cgspeed), distributed via github.com/Shriinivas/cmubvh.
+Retargeted and edited for the Brighton Beach hangar characters.
+CMU 18_08 - dialogue gestures; 69_16 - pivot; 114_05 - seated movement;
+90_18 - backward fall; 23_03 - kneeling descent adapted for restraint.
+Source and terms: https://mocap.cs.cmu.edu/

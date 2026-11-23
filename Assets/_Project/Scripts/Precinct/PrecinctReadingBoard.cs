@@ -508,7 +508,7 @@ namespace CarXCase.Precinct
             controlsStyle.normal.textColor = Color.white;
             float scale = Mathf.Clamp(Screen.height / 900f, .75f, 2f);
             controlsStyle.fontSize = Mathf.RoundToInt(15 * scale);
-            if (Time.unscaledTime < deductionUntil) CarXCase.UI.Subtitles.Draw(deductionLine, .76f);
+            if (Time.unscaledTime < deductionUntil) CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker("Алексей", deductionLine), .76f);
             string controls = board.DecisionReady ? "Esc — отойти и выбрать маршрут" : "Esc — отойти";
             GUI.Label(new Rect(0, Screen.height - 69 * scale, Screen.width, 24 * scale), hint, controlsStyle);
             GUI.Label(new Rect(0, Screen.height - 38 * scale, Screen.width, 24 * scale), controls, controlsStyle);

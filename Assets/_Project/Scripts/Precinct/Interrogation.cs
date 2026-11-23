@@ -50,6 +50,9 @@ namespace CarXCase.Precinct
         public int successThreshold = 60;
         public float choiceTime = 12;
         public Node[] nodes;
+        [Header("Subtitle pacing")]
+        [Min(1f)] public float subtitleDurationMultiplier = 1f;
+        [Min(.3f)] public float minimumSubtitleHold = .3f;
         [Header("Trust and follow-up")]
         public bool useTrust;
         public int failureThreshold = 25;
@@ -235,15 +238,16 @@ namespace CarXCase.Precinct
         IEnumerator Say(string who, string text, bool isSuspect, Transform glance = null, float glanceStart = 0f)
         {
             phase = Phase.Talking; speaker = who; line = text; skip = false;
-            lineLeft = Mathf.Clamp(text.Length * 0.055f, 2.2f, 7.5f);
+            lineLeft = Mathf.Clamp(text.Length * .055f, 2.2f, 7.5f) * Mathf.Max(1f, subtitleDurationMultiplier);
             SetCam(isSuspect ? camOnSuspect : camOnHero);
             SetSuspectTalking(isSuspect);
             HeroFace.SetTalking(!isSuspect && text != "…");
-            float minShow = 0.3f;
+            float minShow = Mathf.Max(.3f, minimumSubtitleHold);
             float duration = lineLeft;
             glanceTarget = glance;
             while (lineLeft > 0 && !(skip && minShow <= 0))
             {
+                if (minimumSubtitleHold > .3f) skip = false;
                 if (glanceTarget)
                 {
                     float t = duration - lineLeft - glanceStart;
@@ -359,7 +363,7 @@ namespace CarXCase.Precinct
             }
             if (big == null)
             {
-                displayFont = Resources.Load<Font>("EvidenceLettering/FiraSansExtraCondensed-Bold");
+                displayFont = GameTypography.Face;
                 big = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
                 small = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; small.normal.textColor = new Color(.8f, .8f, .8f);
             }
@@ -400,7 +404,7 @@ namespace CarXCase.Precinct
 
             if (phase == Phase.Talking && !string.IsNullOrEmpty(line))
             {
-                CarXCase.UI.Subtitles.Draw(line);
+                CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(speaker, line));
             }
 
             if (phase == Phase.Choosing)
