@@ -11,11 +11,31 @@ public sealed class HangarDoor : MonoBehaviour, IInteractable
     HangarFinale finale;
     void Awake() => finale = destination ? destination.GetComponentInParent<HangarFinale>() : null;
 
+    HangarPadlock padlock;
+    bool unlocking;
+    void Start()
+    {
+        if (leadsInside) padlock = HangarPadlock.Build(transform, destination);
+    }
+
+    public bool LeadsInside => leadsInside;
+
+    /// Review: hang a fresh, locked padlock again.
+    public void ResetPadlock()
+    {
+        if (!leadsInside) return;
+        if (padlock) Destroy(padlock.gameObject);
+        ClueJournal.Forget(HangarPadlock.OpenedId);
+        padlock = HangarPadlock.Build(transform, destination);
+    }
+
     OfficerController crossing;
     float opacity;
 
-    public bool CanInteract => isActiveAndEnabled && destination && !crossing;
-    public string InteractPrompt => leadsInside && finale && finale.NeedsListening ? "E  Прислушаться" : leadsInside && !HangarKey.Found ? "E  Проверить замок" : leadsInside ? "E  Войти в ангар №4" : "E  Выйти на причал";
+    public bool CanInteract => isActiveAndEnabled && destination && !crossing && !unlocking;
+    bool Locked => leadsInside && padlock && !padlock.Open;
+    public string InteractPrompt => leadsInside && finale && finale.NeedsListening ? "E  Прислушаться" : leadsInside && !HangarKey.Found ? "E  Проверить замок" :
+        Locked ? "E  Открыть замок ключом" : leadsInside ? "E  Войти в ангар №4" : "E  Выйти на причал";
 
     public void Interact(SimpleUIHUD hud)
     {
@@ -35,7 +55,33 @@ public sealed class HangarDoor : MonoBehaviour, IInteractable
             hud?.ShowInspectionComment("Заперто. Надо поискать ключ среди груза на причале.");
             return;
         }
+        if (Locked)
+        {
+            StartCoroutine(Unlock(player, hud));
+            return;
+        }
         StartCoroutine(Cross(player, hud));
+    }
+
+    /// Close-up on the padlock while the key turns and it drops; then the door can be entered.
+    IEnumerator Unlock(OfficerController player, SimpleUIHUD hud)
+    {
+        unlocking = true;
+        player.LockInput(true);
+        hud?.ClearPrompt();
+        player.FaceTowards(padlock.Point);
+        ThirdPersonCamera view = null;
+        if (player.cameraTransform && player.cameraTransform.TryGetComponent(out view))
+        {
+            Vector3 side = Vector3.Cross(Vector3.up, padlock.Outward);
+            view.BeginStation(padlock.Point + padlock.Outward * .62f + side * .28f + Vector3.up * .12f, padlock.Point - Vector3.up * .08f);
+        }
+        yield return new WaitForSeconds(.5f);
+        yield return padlock.Unlock();
+        if (view) view.EndShot();
+        player.ClearFaceTarget();
+        player.LockInput(false);
+        unlocking = false;
     }
 
     IEnumerator Cross(OfficerController player, SimpleUIHUD hud)
@@ -81,6 +127,7 @@ public sealed class HangarDoor : MonoBehaviour, IInteractable
     {
         StopAllCoroutines();
         if (crossing) crossing.LockInput(false);
+        unlocking = false;
         crossing = null;
         opacity = 0;
     }

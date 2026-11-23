@@ -432,6 +432,43 @@ public sealed partial class HangarFinale : MonoBehaviour
         return ChoiceButton.Draw(rect,text,action.fontSize);
     }
 
+    readonly DialogueChoiceRows hangarRows = new();
+    void DrawHangarChoices()
+    {
+        bool timed = stage == Stage.Decision;
+        int count = timed ? 2 : Replies.GetLength(1);
+        float w = Screen.width, h = Screen.height, k = Mathf.Clamp(h / 720f, .7f, 2f);
+        float width = Mathf.Min(282f*k, w*.43f), margin = Mathf.Min(29f*k, w*.04f);
+        float row = Mathf.Min(47f*k, h*.092f);
+        var cam = player && player.cameraTransform ? player.cameraTransform.GetComponent<Camera>() : Camera.main;
+        Vector3 face = cam ? cam.WorldToViewportPoint(kostya.position + Vector3.up*1.55f) : new Vector3(.5f,.5f,1);
+        bool right = face.x <= .56f;
+        float x = Mathf.Clamp(right ? Mathf.Max(w*.55f,face.x*w+margin) : Mathf.Min(w*.45f-width,face.x*w-margin-width),margin,w-width-margin);
+        float top = Mathf.Clamp((1-face.y)*h-row*.45f,h*.29f,h*.76f-row*count);
+        for (int i=0;i<count;i++)
+        {
+            string text = timed ? (i==0 ? "Выстрелить" : "Обезвредить") : Replies[round,i];
+            float size = hangarRows.Measure(text,k,width);
+            var rect = new Rect(right ? x+width-size : x,top+i*row,size,row-6*k);
+            bool hover = rect.Contains(Event.current.mousePosition);
+            hangarRows.Draw(rect,text,i+1,k,hover);
+            if (hover && Event.current.type==EventType.MouseDown && Event.current.button==0)
+            {
+                Event.current.Use();
+                if (timed) Resolve(i==0); else Pick(i);
+                return;
+            }
+        }
+        if (timed)
+        {
+            float size = Mathf.Min(width,108*k);
+            var timer = new Rect(right ? x+width-size : x,top+count*row+2*k,size,2*k);
+            Fill(timer,new Color(.07f,.06f,.04f,.88f));
+            timer.width *= Mathf.Clamp01((deadline-Time.time)/DecisionSeconds);
+            Fill(timer,DialogueChoiceRows.Gold);
+        }
+    }
+
     void OnGUI()
     {
         if (endingFade > 0f) Fill(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,endingFade));
@@ -440,6 +477,11 @@ public sealed partial class HangarFinale : MonoBehaviour
         if (NoirMenu.GameSession.Paused) return;
         Subtitles.Draw(caption);
         if (stage != Stage.DialogueChoice && stage != Stage.Decision && stage != Stage.Missed && stage != Stage.Report) return;
+        if (stage == Stage.DialogueChoice || stage == Stage.Decision)
+        {
+            DrawHangarChoices();
+            return;
+        }
         float k = Mathf.Min(Screen.width / 800f,Screen.height / 800f);
         title ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleLeft, wordWrap = true };
         body ??= new GUIStyle(title);
@@ -451,16 +493,6 @@ public sealed partial class HangarFinale : MonoBehaviour
         body.normal.textColor = brass; body.Steady();
         float width = 570*k;
         var r = new Rect((Screen.width-width)*.5f, Screen.height-226*k,width,198*k);
-        if (stage == Stage.DialogueChoice)
-        {
-            r.height = 245*k;
-            r.y = Screen.height - r.height - 22*k;
-            Fill(r, ink);
-            GUI.Label(new Rect(r.x+18*k,r.y+7*k,r.width-36*k,38*k),"Ответить Косте",title);
-            for (int i=0; i<4; i++)
-                if (ActionButton(new Rect(r.x+16*k,r.y+(50+46*i)*k,r.width-32*k,41*k),"["+(i+1)+"]  "+Replies[round,i])) Pick(i);
-            return;
-        }
         Fill(r,ink);
         Fill(new Rect(r.x,r.y,68*k,2*k),brass);
         float x = r.x+22*k, w = width-44*k;
@@ -470,14 +502,6 @@ public sealed partial class HangarFinale : MonoBehaviour
             stage == Stage.Missed ? "Момент упущен" : "Костя тянется к карману";
         GUI.Label(new Rect(x,r.y+11*k,w,26*k), delayed ? "Шипсхед-Бей   /   02:35" : "Шипсхед-Бей   /   01:55",body);
         GUI.Label(new Rect(x,r.y+39*k,w,43*k),report ? SpecialTitle ?? heading : heading,title);
-        if (stage == Stage.Decision)
-        {
-            Fill(new Rect(x,r.y+98*k,w,3*k),new Color(.28f,.28f,.25f));
-            Fill(new Rect(x,r.y+98*k,w*Mathf.Clamp01((deadline-Time.time)/DecisionSeconds),3*k),brass);
-            if (ActionButton(new Rect(x,r.y+120*k,(w-12*k)/2,50*k),"[1]  Выстрелить")) Resolve(true);
-            else if (ActionButton(new Rect(x+(w+12*k)/2,r.y+120*k,(w-12*k)/2,50*k),"[2]  Обезвредить")) Resolve(false);
-        }
-        else
         {
             if (report) GUI.Label(new Rect(x,r.y+80*k,w,48*k),
                 SpecialText ?? (delayed ? "Фёдор погиб. " : "Фёдор спасён. ") + (shot ? "Костя застрелен." : "Костя арестован."),body);

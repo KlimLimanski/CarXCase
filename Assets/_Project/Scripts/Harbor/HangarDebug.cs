@@ -16,6 +16,7 @@ public sealed partial class HangarFinale
     static readonly (string label, string ending, bool late)[] DebugEndings =
     {
         ("Подслушивание у двери", "door", false),
+        ("Замок на ангаре", "padlock", false),
         ("Успел · выбор «Выстрелить»", "shot", false),
         ("Успел · выбор «Обезвредить»", "arrest", false),
         ("Успел · не успел нажать (промах)", "missed", false),
@@ -84,6 +85,24 @@ public sealed partial class HangarFinale
         staging.ResetActors();
         var officer = FindAnyObjectByType<OfficerController>();
         if (!officer) return;
+        if (ending == "padlock")
+        {
+            ClueJournal.AddConclusion(Overheard);
+            foreach (var door in FindObjectsByType<HangarDoor>(FindObjectsSortMode.None))
+                if (door.LeadsInside)
+                {
+                    door.ResetPadlock();
+                    var controller = officer.GetComponent<CharacterController>();
+                    if (controller) controller.enabled = false;
+                    Vector3 at = door.transform.position - door.transform.forward * .4f;
+                    at.y = door.transform.position.y - 1.1f + .05f;
+                    officer.transform.position = at;
+                    if (controller) controller.enabled = true;
+                    officer.transform.rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(door.transform.forward, Vector3.up));
+                }
+            Cursor.lockState = debugLock; Cursor.visible = debugCursor;
+            return;
+        }
         if (ending == "door")
         {
             ClueJournal.Forget(Overheard);
