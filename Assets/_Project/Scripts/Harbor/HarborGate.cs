@@ -253,7 +253,7 @@ namespace CarXCase.Harbor
         void Caption(Rect r, string value, int size, Color ink)
         {
             lettering.fontSize = size;
-            lettering.normal.textColor = ink;
+            lettering.normal.textColor = ink; lettering.Steady();
             GUI.Label(r, value, lettering);
         }
 

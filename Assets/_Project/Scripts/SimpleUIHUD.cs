@@ -179,7 +179,7 @@ namespace DetectiveGame.Core
             float scale = Mathf.Clamp(Screen.height / 800f, .72f, 2f);
             objectiveStyle ??= new GUIStyle(GameTypography.Label) { wordWrap = true, padding = new RectOffset() };
             objectiveStyle.fontSize = Mathf.RoundToInt(19 * scale);
-            objectiveStyle.normal.textColor = new Color(.96f, .94f, .86f);
+            objectiveStyle.normal.textColor = new Color(.96f, .94f, .86f); objectiveStyle.Steady();
             var content = new GUIContent(text);
             float inset = 15 * scale;
             float width = Mathf.Min(Screen.width * .70f, objectiveStyle.CalcSize(content).x + 2 * inset);

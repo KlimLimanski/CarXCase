@@ -81,6 +81,7 @@ public sealed partial class HangarFinale : MonoBehaviour
 
     void Release()
     {
+        StopDirecting();
         if (!ownsPlayer) return;
         if (view) { view.EndShot(); view.SetCursorLock(previousLock == CursorLockMode.Locked); }
         Cursor.lockState = previousLock;
@@ -96,6 +97,14 @@ public sealed partial class HangarFinale : MonoBehaviour
 
     void Frame(Vector3 localEye, Vector3 localLook)
     {
+        if (directing)
+        {
+            // Inside a directed dialogue the placed angle becomes one more cut, held for the next line.
+            authoredEye = transform.TransformPoint(localEye);
+            authoredLook = transform.TransformPoint(localLook);
+            Cut(Cover.Authored, 1);
+            return;
+        }
         if (view) view.BeginStation(transform.TransformPoint(localEye), transform.TransformPoint(localLook));
     }
 
@@ -146,6 +155,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         if (fallenVisual) { fallenVisual.localRotation = standingRotation; fallenVisual = null; }
         if (kostyaFace) kostyaFace.SetBlendShapeWeight(0, 0);
         if (fatherFace) fatherFace.SetBlendShapeWeight(0, 0);
+        CarXCase.Hero.HeroFace.SetTalking(false);
         Release();
         if (pulse) pulse.Stop();
         caption = null;
@@ -161,6 +171,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         if (NoirMenu.GameSession.Paused) return;
         if (stage == Stage.Aftermath && fatherReleased)
             staging.Father(1f, 1f);
+        DirectCamera();
     }
 
     void OnDisable() => Leave();
@@ -193,6 +204,8 @@ public sealed partial class HangarFinale : MonoBehaviour
     IEnumerator Say(string speaker, string words, float seconds)
     {
         kostyaSpeaking = speaker == "Костя";
+        CarXCase.Hero.HeroFace.SetTalking(speaker == "Алексей");
+        OnLine(speaker, words);
         caption = Subtitles.WithSpeaker(speaker, words);
         var face = speaker == "Костя" ? kostyaFace : speaker == "Фёдор Павлович" ? fatherFace : null;
         for (float elapsed = 0; elapsed < seconds; elapsed += Time.deltaTime)
@@ -204,30 +217,33 @@ public sealed partial class HangarFinale : MonoBehaviour
             yield return NoirMenu.GameSession.NextStoryFrame;
         }
         if (face) face.SetBlendShapeWeight(0, 0);
+        CarXCase.Hero.HeroFace.SetTalking(false);
         caption = null;
         kostyaSpeaking = false;
     }
 
     IEnumerator Encounter()
     {
-        Frame(new Vector3(-1.12f,1.64f,1.62f),new Vector3(.05f,1.53f,8.3f));
         staging.ResetActors();
         player.FaceTowards(kostya.position);
+        StartDirecting(Cover.Walk, 1);
         player.WalkTo(transform.TransformPoint(new Vector3(-.28f, .10f, 3.15f)), .57f);
         yield return Say("Алексей", "На пол! Руки за голову!", 2.1f);
         player.StopWalking();
+        Cut(Cover.CloseKostya, 1);   // he turns round into his close-up; Alexey's recognition plays over it
+        LocationAudio.Effect("stinger", .3f);
         turning = true;
         yield return Animate(staging.TurnDuration, staging.Turn);
         turning = false;
         confrontationMark = kostya.localPosition;
-        Frame(new Vector3(.14f,1.5f,5.45f),new Vector3(1.08f,1.48f,7.1f));
         yield return Say("Алексей", "Костя?.. Это ты всё устроил?!", 2.8f);
         yield return Say("Костя", "Привет, братишка. Вижу, дослужился до значка.", 3.5f);
         yield return Say("Алексей", "Ты родного отца на счётчик поставил! Из-за той ссоры десять лет назад?!", 4.1f);
         yield return Say("Костя", "Вы вышвырнули меня на улицу без гроша. Я сам себя сделал на этих причалах!", 4.3f);
         yield return Say("Костя", "Я хотел, чтобы старик почувствовал, каково это, когда у тебя забирают всё.", 4.2f);
-        Frame(new Vector3(-.95f,1.22f,5.75f),new Vector3(0,1.04f,7.12f));
+        Cut(Cover.CloseFather, 1);
         effortGoal = delayed ? 0f : 1f;
+        if (!delayed) LocationAudio.Effect("horror-creak-61", .28f);   // the chair under the tied father
         if (!delayed) yield return new WaitForSeconds(.50f);
         yield return Say(delayed ? "Алексей" : "Фёдор Павлович", delayed ? "Отец… Нет. Ты его загнал до смерти!" : "Лёша… Не стреляй… Это же Костя… Не бери грех на душу.", 4);
         if (delayed) concern = 1f;
@@ -251,7 +267,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         {
             TakeControl(player);
             player.FaceTowards(kostya.position);
-            Frame(new Vector3(-.05f,1.42f,5.38f),new Vector3(.95f,1.2f,7.1f));
+            StartDirecting(Cover.Choice);
             UnlockCursor();
             StartCoroutine(Negotiate());
             return;
@@ -325,14 +341,17 @@ public sealed partial class HangarFinale : MonoBehaviour
         if (shot) LocationAudio.Effect("Hangar shot", .55f);
         yield return Animate(staging.FallDuration(shot),
             t => staging.Subside(shot, t, confrontationMark, confrontationFacing));
+        LocationAudio.Effect("Body fall", shot ? .75f : .4f);
         LocationAudio.Effect("Door movement close", .17f);
         yield return new WaitForSeconds(.20f);
         if (!shot)
         {
+            LocationAudio.Effect("Handcuffs", .6f);
             LocationAudio.Effect("Lock key press", .35f);
             staging.SetCuff(true);
             yield return new WaitForSeconds(.44f);
         }
+        LocationAudio.Effect("Police siren", .22f);   // backup on its way across the docks
         yield return StandardLastWords(shot);
         if (!delayed)
         {
@@ -347,6 +366,7 @@ public sealed partial class HangarFinale : MonoBehaviour
                 player.FaceTowards(rescue.transform.position);
             }
             staging.Bindings(false);
+            LocationAudio.Effect("Rope", .55f);
             yield return Animate(.65f, t =>
             {
                 staging.DropRope(t);
@@ -374,6 +394,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     void ShowReport()
     {
         stage = Stage.Report;
+        StopDirecting();
         Frame(new Vector3(-1.8f,1.35f,4.7f),new Vector3(.24f,.86f,7.15f));
         UnlockCursor();
     }
@@ -395,17 +416,14 @@ public sealed partial class HangarFinale : MonoBehaviour
 
     bool ActionButton(Rect rect, string text)
     {
-        bool hover = rect.Contains(Event.current.mousePosition);
-        Fill(rect,hover ? new Color(.22f,.23f,.2f,.98f) : ink);
-        Fill(new Rect(rect.x,rect.y,3,rect.height),brass);
-        GUI.Label(rect,text,action);
-        return GUI.Button(rect,GUIContent.none,GUIStyle.none);
+        // Same look as the answer buttons in the bar dialogue.
+        return ChoiceButton.Draw(rect,text,action.fontSize);
     }
 
     void OnGUI()
     {
-        if (NoirMenu.GameSession.Paused) return;
         if (endingFade > 0f) Fill(new Rect(0,0,Screen.width,Screen.height),new Color(0,0,0,endingFade));
+        if (NoirMenu.GameSession.Paused) return;
         Subtitles.Draw(caption);
         if (stage != Stage.DialogueChoice && stage != Stage.Decision && stage != Stage.Missed && stage != Stage.Report) return;
         float k = Mathf.Min(Screen.width / 800f,Screen.height / 800f);
@@ -415,8 +433,8 @@ public sealed partial class HangarFinale : MonoBehaviour
         title.fontSize = Mathf.RoundToInt(29*k);
         body.fontSize = Mathf.RoundToInt(19*k);
         action.fontSize = Mathf.RoundToInt(20*k);
-        title.normal.textColor = action.normal.textColor = new Color(.97f,.94f,.85f);
-        body.normal.textColor = brass;
+        title.normal.textColor = action.normal.textColor = new Color(.97f,.94f,.85f); title.Steady(); action.Steady();
+        body.normal.textColor = brass; body.Steady();
         float width = 570*k;
         var r = new Rect((Screen.width-width)*.5f, Screen.height-226*k,width,198*k);
         if (stage == Stage.DialogueChoice)
@@ -426,7 +444,7 @@ public sealed partial class HangarFinale : MonoBehaviour
             Fill(r, ink);
             GUI.Label(new Rect(r.x+18*k,r.y+7*k,r.width-36*k,38*k),"Ответить Косте",title);
             for (int i=0; i<4; i++)
-                if (ActionButton(new Rect(r.x+16*k,r.y+(50+46*i)*k,r.width-32*k,41*k),(i+1)+"   "+Replies[round,i])) Pick(i);
+                if (ActionButton(new Rect(r.x+16*k,r.y+(50+46*i)*k,r.width-32*k,41*k),"["+(i+1)+"]  "+Replies[round,i])) Pick(i);
             return;
         }
         Fill(r,ink);
@@ -442,14 +460,14 @@ public sealed partial class HangarFinale : MonoBehaviour
         {
             Fill(new Rect(x,r.y+98*k,w,3*k),new Color(.28f,.28f,.25f));
             Fill(new Rect(x,r.y+98*k,w*Mathf.Clamp01((deadline-Time.time)/DecisionSeconds),3*k),brass);
-            if (ActionButton(new Rect(x,r.y+120*k,(w-12*k)/2,50*k),"1   Выстрелить")) Resolve(true);
-            else if (ActionButton(new Rect(x+(w+12*k)/2,r.y+120*k,(w-12*k)/2,50*k),"2   Обезвредить")) Resolve(false);
+            if (ActionButton(new Rect(x,r.y+120*k,(w-12*k)/2,50*k),"[1]  Выстрелить")) Resolve(true);
+            else if (ActionButton(new Rect(x+(w+12*k)/2,r.y+120*k,(w-12*k)/2,50*k),"[2]  Обезвредить")) Resolve(false);
         }
         else
         {
             if (report) GUI.Label(new Rect(x,r.y+80*k,w,48*k),
                 SpecialText ?? (delayed ? "Фёдор погиб. " : "Фёдор спасён. ") + (shot ? "Костя застрелен." : "Костя арестован."),body);
-            if (ActionButton(new Rect(x,r.y+129*k,w,45*k),report ? "Завершить дело   [Enter]" : "Повторить выбор   [Enter]"))
+            if (ActionButton(new Rect(x,r.y+129*k,w,45*k),report ? "[Enter]  Завершить дело" : "[Enter]  Повторить выбор"))
             {
                 if (report) FinishCase(); else BeginDecision();
             }

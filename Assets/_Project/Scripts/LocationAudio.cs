@@ -117,6 +117,7 @@ public sealed class LocationAudio : MonoBehaviour
     {
         if (!current || !current.effects) return;
         if (!current.cues.TryGetValue(name, out var clip)) clip = Clip("Effects", name);
+        if (!clip) clip = ProceduralSfx.Get(name);   // siren, cuffs, rope, body fall when no recording exists
         if (clip) current.effects.PlayOneShot(clip, gain);
     }
 

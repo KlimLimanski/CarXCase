@@ -42,9 +42,9 @@ namespace CarXCase.UI
             Fill(new Rect(row.x, row.y, row.width, Mathf.Max(1f, scale)), new Color(Gold.r, Gold.g, Gold.b, highlighted ? .9f : .62f));
             Fill(new Rect(row.x, row.yMax - 2f * scale, 13f * scale, 2f * scale), Gold);
             Fill(key, highlighted ? Gold : new Color(.32f, .25f, .13f, .90f));
-            numeral.normal.textColor = highlighted ? new Color(.11f, .08f, .04f) : Cream;
+            numeral.normal.textColor = highlighted ? new Color(.11f, .08f, .04f) : Cream; numeral.Steady();
             GUI.Label(key, number.ToString(), numeral);
-            label.normal.textColor = Cream;
+            label.normal.textColor = Cream; label.Steady();
             GUI.Label(new Rect(row.x + 11f * scale, row.y, key.x - row.x - 20f * scale, row.height), text, label);
         }
 

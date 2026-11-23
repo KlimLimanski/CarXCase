@@ -350,9 +350,9 @@ namespace CarXCase.Intro
             if (subtitleStyle == null)
             {
                 subtitleStyle = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
-                subtitleStyle.normal.textColor = Color.white;
+                subtitleStyle.normal.textColor = Color.white; subtitleStyle.Steady();
                 speakerStyle = new GUIStyle(subtitleStyle);
-                speakerStyle.normal.textColor = new Color(1, .82f, .51f);
+                speakerStyle.normal.textColor = new Color(1, .82f, .51f); speakerStyle.Steady();
                 smallStyle = new GUIStyle(subtitleStyle) { font = GameTypography.Face, alignment = TextAnchor.MiddleRight };
                 titleStyle = new GUIStyle(subtitleStyle) { font = GameTypography.Face, fontStyle = FontStyle.Bold };
             }

@@ -101,7 +101,8 @@ namespace DetectiveGame.Core
         private bool _radialInitialized;
         private float _radialShare = 1f, _radialVelocity;
         private readonly RaycastHit[] _hits = new RaycastHit[16];
-        private bool _shot, _station, _arrivalShot, _showHero;
+        private bool _shot, _station, _arrivalShot, _directed, _showHero;
+        private float _directRoll, _directFovScale = 1f;
         private float _shotWeight, _shotVelocity, _shotStarted, _shotBaseFov;
         private Vector3 _shotPosition, _shotLook, _shotDrift;
         private Camera _lens;
@@ -263,6 +264,7 @@ namespace DetectiveGame.Core
             {
                 _shotWeight = 0f;
                 _arrivalShot = false;
+                _directed = false;
             }
             float shotBlend = Mathf.SmoothStep(0f, 1f, _shotWeight);
             if (shotBlend > 0f)
@@ -271,12 +273,15 @@ namespace DetectiveGame.Core
                 float held = Mathf.Min(Time.time - _shotStarted, 6f);
                 Vector3 shotPos = _shotPosition + _shotDrift * held;
                 Quaternion shotRot = Quaternion.LookRotation(_shotLook - shotPos);
+                if (_directed) shotRot *= Quaternion.Euler(0f, 0f, _directRoll);
                 position = Vector3.Lerp(position, shotPos, shotBlend);
                 look = Quaternion.Slerp(look, shotRot, shotBlend);
             }
             if (_lens && (shotBlend > 0f || _shotBaseFov > 0f))
             {
-                _lens.fieldOfView = _shotBaseFov - (_station ? 0f : shotFovNarrowing) * shotBlend;
+                _lens.fieldOfView = _directed
+                    ? Mathf.Lerp(_shotBaseFov, _shotBaseFov * _directFovScale, shotBlend)
+                    : _shotBaseFov - (_station ? 0f : shotFovNarrowing) * shotBlend;
                 if (shotBlend <= 0f) _shotBaseFov = 0f;
             }
             transform.SetPositionAndRotation(position, _handheld ? _handheld.ExplorationRotation(look) : look);
@@ -284,7 +289,7 @@ namespace DetectiveGame.Core
             {
                 bool clear = Vector3.Dot(position - focus, backward) >= 0.85f;
                 // Examination shots keep Alexey in frame; a station close-up (the board) looks past him, so he steps out of view.
-                bool visible = _station ? (_showHero && _shot) || ((_arrivalShot || shotBlend < .4f) && clear) : shotBlend > .3f || clear;
+                bool visible = _directed || (_station ? (_showHero && _shot) || ((_arrivalShot || shotBlend < .4f) && clear) : shotBlend > .3f || clear);
                 foreach (var bodyRenderer in _characterRenderers)
                     if (bodyRenderer != null) bodyRenderer.enabled = visible;
             }
@@ -439,6 +444,7 @@ namespace DetectiveGame.Core
             if (!target) return;
             _station = false;
             _arrivalShot = false;
+            _directed = false;
             if (!_lens) _lens = GetComponent<Camera>();
             if (_lens && _shotBaseFov <= 0f) _shotBaseFov = _lens.fieldOfView;
 
@@ -501,6 +507,27 @@ namespace DetectiveGame.Core
             _station = true;
             _arrivalShot = false;
             _showHero = false;
+            _directed = false;
+            _shot = true;
+        }
+
+        /// A directed dialogue shot, driven every frame by a cutscene director: the lens sits exactly at
+        /// `position` once blended in (moving it between frames dollies, jumping it cuts), keeps the hero
+        /// visible, and can tilt (roll, degrees) and zoom (fovScale of the gameplay FOV). Ends with EndShot.
+        public void Direct(Vector3 position, Vector3 lookAt, float roll = 0f, float fovScale = 1f)
+        {
+            if (!_lens) _lens = GetComponent<Camera>();
+            if (_lens && _shotBaseFov <= 0f) _shotBaseFov = _lens.fieldOfView;
+            if ((lookAt - position).sqrMagnitude < .0001f) return;
+            _shotPosition = position;
+            _shotLook = lookAt;
+            _shotDrift = Vector3.zero;
+            _shotStarted = Time.time;
+            _station = true;
+            _arrivalShot = false;
+            _directed = true;
+            _directRoll = roll;
+            _directFovScale = fovScale;
             _shot = true;
         }
 

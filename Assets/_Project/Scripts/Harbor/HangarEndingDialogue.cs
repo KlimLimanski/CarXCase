@@ -105,7 +105,9 @@ public sealed partial class HangarFinale
             var fallen = Quaternion.AngleAxis(-82f, player.transform.right) * visual.rotation;
             var start = visual.rotation;
             yield return Animate(.85f, t => visual.rotation = Quaternion.Slerp(start, fallen, t*t));
+            LocationAudio.Effect("Body fall", .75f);
         }
+        LocationAudio.Effect("Police siren", .2f);
         Frame(new Vector3(-.8f,.7f,5.2f),new Vector3(1.1f,1.4f,7.1f));
         yield return Line("Алексей", "Ты... всё-таки...");
         yield return Line("Костя", "Лёш? Эй. Слышишь меня?");
@@ -191,6 +193,7 @@ public sealed partial class HangarFinale
         stage = Stage.Aftermath;
         yield return Animate(.85f, staging.OfferWrists);
         staging.SetCuff(true);
+        LocationAudio.Effect("Handcuffs",.6f);
         LocationAudio.Effect("Lock key press",.4f);
         yield return Line("Костя", "Тогда давай, детектив. Делай свою работу.");
         yield return Line("Костя", "Лёш...");
@@ -199,9 +202,11 @@ public sealed partial class HangarFinale
         yield return Line("Алексей", "Сам скажешь.");
         yield return Line("Костя", "Думаешь, захочет меня видеть?");
         yield return Line("Алексей", "Не знаю. Но у тебя будет время спросить.");
+        LocationAudio.Effect("Police siren", .32f);   // swells in as the patrol car pulls up
         if (!delayed)
         {
             staging.Bindings(false);
+            LocationAudio.Effect("Rope", .55f);
             yield return Animate(.65f,staging.DropRope);
             fatherReleased = true;
             yield return Line("Фёдор Павлович", "Костя... Прости меня, сынок.");
@@ -212,6 +217,7 @@ public sealed partial class HangarFinale
         lights.transform.localPosition = new Vector3(1.2f, 1.5f, .7f);
         var spill = lights.AddComponent<Light>();
         spill.range = 11f;
+        LocationAudio.Effect("Approaching traffic", .25f);
         try
         {
             yield return Animate(2.2f, t =>
