@@ -1,4 +1,4 @@
-COMPONENT PlayerCamera ThirdPersonCamera
+COMPONENT Main Camera ThirdPersonCamera
 target=Player
 offset=(0.00, 1.50, 0.00)
 offset.x=0
@@ -35,7 +35,7 @@ attentionBlendTime=0.7
 shotInTime=0.85
 shotOutTime=1.05
 shotFovNarrowing=7
-COMPONENT PlayerCamera UniversalAdditionalCameraData
+COMPONENT Main Camera UniversalAdditionalCameraData
 m_RenderShadows=True
 m_VolumeTrigger=null
 m_RenderPostProcessing=True
@@ -60,3 +60,35 @@ m_TaaSettings.m_JitterScale=1
 m_TaaSettings.m_MipBias=0
 m_TaaSettings.m_VarianceClampScale=0.9
 m_TaaSettings.m_ContrastAdaptiveSharpening=0
+COMPONENT Cutscene_Director PrecinctIntroCutscene
+player=Player
+shotCamera=Main Camera
+path.Array.data[0]=P0_Doorway
+path.Array.data[1]=P1_BullpenEnd
+path.Array.data[2]=P2_OfficeFront
+path.Array.data[3]=P3_InOffice
+frontDoorLeft=FrontDoor_L_Pivot
+frontDoorRight=FrontDoor_R_Pivot
+officeDoor=OfficeDoor_Pivot
+establishingShot=Shot_Establishing
+walkSpeed=1,7
+walkStart=2,2
+dialogue.Array.data[0].start=8
+dialogue.Array.data[0].end=13
+replyAt=13,2
+replies.Array.data[0].lines.Array.data[0].start=0
+replies.Array.data[0].lines.Array.data[0].end=6
+replies.Array.data[0].lines.Array.data[1].start=6,4
+replies.Array.data[0].lines.Array.data[1].end=10,3
+replies.Array.data[1].lines.Array.data[0].start=0
+replies.Array.data[1].lines.Array.data[0].end=6,5
+replies.Array.data[1].lines.Array.data[1].start=6,9
+replies.Array.data[1].lines.Array.data[1].end=9,4
+replies.Array.data[2].lines.Array.data[0].start=0
+replies.Array.data[2].lines.Array.data[0].end=5
+replies.Array.data[2].lines.Array.data[1].start=5,4
+replies.Array.data[2].lines.Array.data[1].end=7,6
+darknessTime=4,2
+startExposure=-2,6
+startVignette=0,5
+ease=0,8
