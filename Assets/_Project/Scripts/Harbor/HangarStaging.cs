@@ -10,17 +10,27 @@ public sealed class HangarStaging : MonoBehaviour
     public float TurnDuration => pivot.length;
     public float FallDuration(bool shot) => shot ? backwardFall.length : restraint.length;
     float performanceStart;
-    Transform kostya;
+    Transform kostya, father;
     Actor fatherRig, kostyaRig;
     Vector3 kostyaMark, ropeStart, ropeEnd;
     Quaternion ropeRest;
     readonly List<GameObject> bindings = new();
+    bool cuffed;
+    readonly Dictionary<bool, Vector3> clearance = new();
 
     public Vector3 KostyaMark => kostyaMark;
+    public Transform KostyaBone(string name) => kostyaRig.Get(name);
+    public Transform FatherBone(string name) => fatherRig.Has(name) ? fatherRig.Get(name) : null;
+    public Material RopeMaterial => looseRope ? looseRope.GetComponentInChildren<Renderer>(true).sharedMaterial : null;
+    public Material CuffMaterial => wristCuff ? wristCuff.GetComponentInChildren<Renderer>(true).sharedMaterial : null;
+
+    /// Extra binding pieces (the rebuilt rope) that appear and disappear together with the original ones.
+    public void AddBinding(GameObject piece) => bindings.Add(piece);
 
     public void Initialize(Transform liveFather, Transform brother)
     {
         kostya = brother;
+        father = liveFather;
         fatherRig = new Actor(liveFather.Find("Hangar Rescue"));
         kostyaRig = new Actor(kostya.Find("Hangar Kostya"));
         kostyaMark = kostya.localPosition;
@@ -103,15 +113,82 @@ public sealed class HangarStaging : MonoBehaviour
     public void Subside(bool shot, float progress, Vector3 start, Quaternion facing)
     {
         var clip = shot ? backwardFall : restraint;
-        kostya.localPosition = start;
+        Vector3 shift = Clearance(shot, start, facing);
+        // Ease away from the father's chair while going down, so no limb passes through him or the chair.
+        kostya.localPosition = start + shift * Ease(0f, .7f, progress);
         kostya.localRotation = facing;
         kostyaRig.Sample(clip, progress * clip.length, 1f, progress >= 1f);
-        if (!shot && progress > .7f)
+        if (!shot)
         {
-            float amount = Ease(.7f, 1f, progress);
-            HandsBehind(".R", .045f, amount);
-            HandsBehind(".L", -.045f, amount);
+            // Going down on command: hands on the back of the head first, then behind the back for the cuffs.
+            float onHead = Ease(.03f, .22f, progress) * (1f - Ease(.5f, .7f, progress));
+            if (onHead > 0f)
+            {
+                HandsOnHead(".R", 1f, onHead);
+                HandsOnHead(".L", -1f, onHead);
+            }
+            if (progress > .7f)
+            {
+                float amount = Ease(.7f, 1f, progress);
+                HandsBehind(".R", .045f, amount);
+                HandsBehind(".L", -.045f, amount);
+            }
         }
+    }
+
+    /// How far Kostya's mark must slide (in his parent's space) so the whole fall / takedown clears
+    /// the father and his chair. Worked out once per clip from sampled poses.
+    Vector3 Clearance(bool shot, Vector3 start, Quaternion facing)
+    {
+        if (clearance.TryGetValue(shot, out var known)) return known;
+        var clip = shot ? backwardFall : restraint;
+        Vector3 away = kostya.parent.TransformPoint(start) - father.position;
+        away.y = 0f;
+        away = away.sqrMagnitude > .001f ? away.normalized : kostya.right;
+
+        var obstacles = new List<Vector3> { father.position + Vector3.up * .45f };
+        foreach (var name in new[] { "pelvis", "spine", "spine.003", "head", "thigh.L", "thigh.R", "shin.L", "shin.R", "foot.L", "foot.R", "hand.L", "hand.R" })
+            if (fatherRig.Has(name)) obstacles.Add(fatherRig.Get(name).position);
+
+        Vector3 savedPosition = kostya.localPosition;
+        Quaternion savedRotation = kostya.localRotation;
+        kostya.localPosition = start;
+        kostya.localRotation = facing;
+        float need = 0f;
+        const float gap = .34f;
+        for (float t = .1f; t <= 1.001f; t += .1f)
+        {
+            kostyaRig.Sample(clip, t * clip.length, 1f, true);
+            foreach (var bone in kostyaRig.All)
+            {
+                if (bone.name == "root") continue;
+                foreach (var obstacle in obstacles)
+                {
+                    for (float s = need; s < 1.4f; s += .02f)
+                    {
+                        Vector3 d = bone.position + away * s - obstacle;
+                        d.y = 0f;
+                        if (d.magnitude >= gap || Mathf.Abs(bone.position.y - obstacle.y) > .7f) { need = Mathf.Max(need, s); break; }
+                    }
+                }
+            }
+        }
+        kostya.localPosition = savedPosition;
+        kostya.localRotation = savedRotation;
+        Vector3 local = kostya.parent.InverseTransformDirection(away) * need;
+        local.y = 0f;
+        clearance[shot] = local;
+        return local;
+    }
+
+    void HandsOnHead(string side, float sign, float amount)
+    {
+        var head = kostyaRig.Get("head");
+        Quaternion frame = head.rotation * Quaternion.Inverse(kostyaRig.RestOrientation("head"));
+        Vector3 behind = head.position + frame * new Vector3(sign * .075f, .05f, -.085f);
+        Vector3 target = Vector3.Lerp(kostyaRig.Get("hand" + side).position, behind, amount);
+        kostyaRig.Solve("upper_arm" + side, "forearm" + side, "hand" + side, target,
+            frame * new Vector3(sign, .15f, .25f));
     }
 
     public void OfferWrists(float t)
@@ -155,12 +232,29 @@ public sealed class HangarStaging : MonoBehaviour
     public void SetCuff(bool visible)
     {
         if (!wristCuff) return;
+        cuffed = visible;
         wristCuff.gameObject.SetActive(visible);
-        if (!visible) return;
-        var hand = kostyaRig.Get("hand.R");
-        var forearm = kostyaRig.Get("forearm.R");
-        Vector3 axis = (hand.position - forearm.position).normalized;
-        wristCuff.SetPositionAndRotation(hand.position - axis * .023f, Quaternion.FromToRotation(Vector3.up, axis));
+        UpdateCuff();
+    }
+
+    /// Keeps the linked cuffs locked between Kostya's wrists while his arms move. Call after posing.
+    public void UpdateCuff()
+    {
+        if (!cuffed || !wristCuff) return;
+        Vector3 Wrist(string side)
+        {
+            var hand = kostyaRig.Get("hand" + side);
+            var forearm = kostyaRig.Get("forearm" + side);
+            return hand.position - (hand.position - forearm.position).normalized * .025f;
+        }
+        Vector3 left = Wrist(".L"), right = Wrist(".R");
+        Vector3 link = right - left;
+        Vector3 forearmAxis = (kostyaRig.Get("hand.R").position - kostyaRig.Get("forearm.R").position).normalized;
+        if (link.sqrMagnitude < .0001f) link = Vector3.Cross(forearmAxis, Vector3.up);
+        // The mesh's chain runs along its local X; the cuff rings open around the forearm direction.
+        Vector3 up = Vector3.ProjectOnPlane(forearmAxis, link.normalized);
+        wristCuff.SetPositionAndRotation((left + right) * .5f,
+            Quaternion.LookRotation(Vector3.Cross(link.normalized, up.sqrMagnitude > .0001f ? up.normalized : Vector3.up), up.sqrMagnitude > .0001f ? up.normalized : Vector3.up));
     }
 
     static float Ease(float start, float end, float value) =>
@@ -195,6 +289,8 @@ public sealed class HangarStaging : MonoBehaviour
         }
 
         public Transform Get(string name) => bones[name];
+        public bool Has(string name) => bones.ContainsKey(name);
+        public IEnumerable<Transform> All => bones.Values;
         public void RelaxArm(string upper, string lower, string hand)
         {
             bones[upper].localRotation = rest[upper];

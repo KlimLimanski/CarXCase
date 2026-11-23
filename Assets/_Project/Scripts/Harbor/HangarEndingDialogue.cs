@@ -16,8 +16,6 @@ public sealed partial class HangarFinale
         {"Ты всё ещё мой брат.", "Давай по порядку.", "За это придётся ответить.", "Хватит прятаться за отца!"}
     };
     float endingFade;
-    Transform fallenVisual;
-    Quaternion standingRotation;
     int round, answer, trust, pressure;
     void Pick(int value)
     {
@@ -83,6 +81,7 @@ public sealed partial class HangarFinale
         yield return Line("Костя", "Знаешь, что самое смешное? Я ведь думал, ты хотя бы попытаешься понять.");
         yield return Line("Алексей", "Я пытался. Но ты похитил собственного отца. Ты преступник, Кость.");
         yield return Line("Костя", "Вот теперь всё встало на свои места. Не брат приехал. Мент.");
+        props.Aim(1f, kostya);
         yield return Line("Алексей", "Руку от кармана, Кость.");
         yield return Line("Костя", "А ты меня застрелишь, если не положу?");
         yield return Line("Алексей", "Если придётся.");
@@ -94,19 +93,13 @@ public sealed partial class HangarFinale
         yield return Line("Костя", "Прощай, братишка.");
         stage = Stage.Aftermath;
         yield return Animate(.24f, staging.Reach);
+        props.ArmKostya(true, player.transform);
         LocationAudio.Effect("Hangar shot", .62f);
         yield return new WaitForSeconds(.13f);
         LocationAudio.Effect("Hangar shot", .5f);
-        var visual = player.transform.Find("Character_Visual");
-        if (visual)
-        {
-            fallenVisual = visual;
-            standingRotation = visual.localRotation;
-            var fallen = Quaternion.AngleAxis(-82f, player.transform.right) * visual.rotation;
-            var start = visual.rotation;
-            yield return Animate(.85f, t => visual.rotation = Quaternion.Slerp(start, fallen, t*t));
-            LocationAudio.Effect("Body fall", .75f);
-        }
+        // Knees give, then he goes over backwards; the gun slips out of his hand.
+        yield return Animate(1.25f, props.Collapse);
+        LocationAudio.Effect("Body fall", .75f);
         LocationAudio.Effect("Police siren", .2f);
         Frame(new Vector3(-.8f,.7f,5.2f),new Vector3(1.1f,1.4f,7.1f));
         yield return Line("Алексей", "Ты... всё-таки...");
@@ -133,8 +126,10 @@ public sealed partial class HangarFinale
         yield return Line("Костя", "ЧЕЛОВЕКОМ?!");
         stage = Stage.Aftermath;
         yield return Animate(.3f, staging.Reach);
+        props.ArmKostya(true, rescue.transform, .85f);
         kostya.LookAt(new Vector3(rescue.transform.position.x,kostya.position.y,rescue.transform.position.z));
         Frame(new Vector3(-1.16f,1.14f,5.84f),new Vector3(-.08f,.90f,7.07f));
+        props.Aim(1f, kostya);
         yield return Line("Алексей", "Костя! Убери оружие!");
         yield return Line("Костя", "Он даже сейчас не может сказать, что был неправ!");
         yield return Line("Фёдор Павлович", "Сынок, я...");
@@ -191,6 +186,7 @@ public sealed partial class HangarFinale
         yield return Line("Костя", "Наручники наденешь?");
         yield return Line("Алексей", "Придётся.");
         stage = Stage.Aftermath;
+        props.Aim(0f, kostya);
         yield return Animate(.85f, staging.OfferWrists);
         staging.SetCuff(true);
         LocationAudio.Effect("Handcuffs",.6f);
