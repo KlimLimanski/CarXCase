@@ -52,6 +52,15 @@ namespace CarXCase.Intro
         [Header("Interior props")]
         [SerializeField] Transform hangingCross;
 
+        [SerializeField] Transform phoneHandTarget;
+        Vector3 earLocalPosition;
+        Quaternion earLocalRotation;
+        HeroArmIK phoneArm;
+        Vector3 restingWrist, elbowHintLocal;
+        float phoneLift;
+        // Seconds in the dialogue recording. The dialling sound starts at 30 seconds.
+        const float PhoneLiftStart = 28.6f, PhoneAtEar = 30f;
+
         const float PassPeakSeconds = 1.7f;
         const float BlackHold = 2.5f, TitleHold = 2f;
         const float PreludeDuration = BlackHold + 2 * TitleHold;
@@ -83,6 +92,19 @@ namespace CarXCase.Intro
                 cameraRotation = cameraRig.localRotation;
                 shotCamera = cameraRig.GetComponent<Camera>();
                 initialFov = shotCamera ? shotCamera.fieldOfView : 64f;
+            }
+            if (phoneHandTarget && car)
+            {
+                earLocalPosition = phoneHandTarget.localPosition;
+                earLocalRotation = phoneHandTarget.localRotation;
+                foreach (var arm in car.GetComponentsInChildren<HeroArmIK>())
+                    if (arm.target == phoneHandTarget) phoneArm = arm;
+                if (phoneArm && phoneArm.hint)
+                {
+                    restingWrist = car.InverseTransformPoint(phoneArm.upper.position)
+                        + new Vector3(.045f, -.29f, .22f);
+                    elbowHintLocal = phoneArm.hint.localPosition;
+                }
             }
             ApplyPose(0);
             if (hangingCross) crossRest = hangingCross.localRotation;
@@ -185,6 +207,8 @@ namespace CarXCase.Intro
             }
 
             float time = dialogueSource.isPlaying ? (float)dialogueSource.timeSamples / dialogueClip.frequency : -1f;
+            if (time >= 0f)
+                phoneLift = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(PhoneLiftStart, PhoneAtEar, time));
             DialogueLine next = ActiveLine(time);
             if (next == currentLine) return;
 
@@ -193,6 +217,25 @@ namespace CarXCase.Intro
                 HeroFace.SpeakAsHero(currentLine.text, currentLine.end - time);
             else
                 HeroFace.StopHero();
+        }
+
+        // Position the wrist goal after head animation and before HeroArmIK solves the arm.
+        void LateUpdate()
+        {
+            if (!phoneArm || !phoneArm.hint) return;
+            var head = phoneHandTarget.parent;
+            var hint = phoneArm.hint;
+            // Keep the elbow below and outside the wrist until the forearm is upright.
+            // Returning to the ear hint too early lets the elbow flip over the shoulder.
+            float settle = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.65f, 1f, phoneLift));
+            Vector3 relaxedPole = phoneArm.upper.position + car.TransformVector(new Vector3(.19f, -.36f, -.04f));
+            hint.position = Vector3.Lerp(relaxedPole, hint.parent.TransformPoint(elbowHintLocal), settle);
+
+            Vector3 ear = head.TransformPoint(earLocalPosition);
+            Vector3 arc = car.forward * (.065f * Mathf.Sin(Mathf.PI * phoneLift));
+            phoneHandTarget.SetPositionAndRotation(Vector3.Lerp(car.TransformPoint(restingWrist), ear, phoneLift) + arc,
+                head.rotation * earLocalRotation);
+            phoneArm.GripAlignment = Mathf.SmoothStep(0f, 1f, phoneLift);
         }
 
         void StartEngineAudio()

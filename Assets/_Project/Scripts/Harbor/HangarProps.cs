@@ -5,7 +5,7 @@ using DetectiveGame.Core;
 using UnityEngine;
 
 /// Hand props and procedural acting for the hangar finale, applied after the Animator and HeroFace:
-/// Alexey's service pistol (two-handed aim / low ready), Kostya's pistol drawn from the jacket,
+/// Alexey's handheld service pistol, Kostya's pistol drawn from the jacket,
 /// guns dropping to the floor, linked cuffs that follow Kostya's wrists, Alexey's collapse when shot,
 /// and the father's twisted jute rope (built once from the old placeholder rings).
 [DefaultExecutionOrder(9600)]
@@ -43,6 +43,7 @@ public sealed class HangarProps : MonoBehaviour
     // Grip space measured on the retargeted Pistol Aim pose.
     static readonly Quaternion AimGripRotation = new(.69940f, .27256f, .33313f, .57059f);
     static readonly Vector3 AimGripOffset = new(.0434f, -.0332f, -.0094f);
+    static readonly Vector3 PropMeshOffset = new(.006f, .034f, .034f);
     // The original coat rig weights part of the palm to the sleeve, so fit the socket
     // at the three visible poses where the right wrist bends most.
     static readonly Vector3 KostyaGripReveal = new(-.118f, .021f, .075f);
@@ -99,23 +100,33 @@ public sealed class HangarProps : MonoBehaviour
         using var stream = new BinaryReader(new MemoryStream(data));
         int vertexCount = stream.ReadInt32();
         int count = stream.ReadInt32();
-        if (count < 0 || data.Length != 8L + 16L * count) return;
+        // Older grip assets contain only positions. The shaded pose also stores normal and tangent deltas.
+        bool shaded = data.Length == 8L + 40L * count;
+        if (count < 0 || (!shaded && data.Length != 8L + 16L * count)) return;
+        Vector3 ReadDelta() => new Vector3(stream.ReadSingle(), stream.ReadSingle(), stream.ReadSingle());
 
         foreach (var skin in hero.GetComponentsInChildren<SkinnedMeshRenderer>())
         {
             if (!skin.sharedMesh || skin.sharedMesh.vertexCount != vertexCount) continue;
             var offsets = new Vector3[vertexCount];
+            var normals = shaded ? new Vector3[vertexCount] : null;
+            var tangents = shaded ? new Vector3[vertexCount] : null;
             for (int i = 0; i < count; i++)
             {
                 int vertex = stream.ReadInt32();
                 if (vertex < 0 || vertex >= vertexCount) return;
-                offsets[vertex] = new Vector3(stream.ReadSingle(), stream.ReadSingle(), stream.ReadSingle());
+                offsets[vertex] = ReadDelta();
+                if (shaded)
+                {
+                    normals[vertex] = ReadDelta();
+                    tangents[vertex] = ReadDelta();
+                }
             }
             gripSkin = skin;
             originalGripMesh = skin.sharedMesh;
             gripMesh = Instantiate(originalGripMesh);
             gripShape = gripMesh.blendShapeCount;
-            gripMesh.AddBlendShapeFrame("Hangar pistol grip", 100f, offsets, null, null);
+            gripMesh.AddBlendShapeFrame("Hangar pistol grip", 100f, offsets, normals, tangents);
             gripSkin.sharedMesh = gripMesh;
             return;
         }
@@ -318,18 +329,21 @@ public sealed class HangarProps : MonoBehaviour
             gripPrepared = true;
             PrepareGrip();
         }
-        if (gripSkin) gripSkin.SetBlendShapeWeight(gripShape, Mathf.SmoothStep(0f, 100f, Mathf.InverseLerp(0f, .30f, aim)));
+        if (gripSkin) gripSkin.SetBlendShapeWeight(gripShape, Mathf.SmoothStep(0f, 100f, Mathf.InverseLerp(-.05f, .15f, aim)));
         float weight = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, .46f, aim));
         for (int i = 0; i < aimBones.Length; i++)
             if (aimBones[i]) locomotionArms[i] = aimBones[i].localRotation;
         staging.HeroAimPose.SampleAnimation(heroRig.gameObject, 0f);
 
-        Transform right = aimBones[3], left = aimBones[7];
-        Quaternion authoredGun = right.rotation * AimGripRotation;
-        Quaternion authoredSupport = left.rotation;
+        Transform right = aimBones[3];
         for (int i = 0; i < aimBones.Length; i++)
-            if (aimBones[i])
-                aimBones[i].localRotation = Quaternion.Slerp(locomotionArms[i], aimBones[i].localRotation, weight);
+        {
+            if (!aimBones[i]) continue;
+            // The free arm keeps its locomotion pose throughout the shot.
+            aimBones[i].localRotation = i < 4
+                ? Quaternion.Slerp(locomotionArms[i], aimBones[i].localRotation, weight)
+                : locomotionArms[i];
+        }
 
         Vector3 up = Vector3.up;
         Vector3 shoulderCenter = (aimBones[1].position + aimBones[5].position) * .5f;
@@ -340,25 +354,20 @@ public sealed class HangarProps : MonoBehaviour
             ? Vector3.RotateTowards(hero.forward, flat.normalized, 25f * Mathf.Deg2Rad, 0f)
             : hero.forward;
         Vector3 across = Vector3.Cross(up, forward).normalized;
-        // Put the grip in front of the sternum and keep both elbows outside the wrists.
-        Vector3 centerGrip = shoulderCenter + forward * Mathf.Lerp(.35f, .52f, raised)
-            + across * .018f - up * Mathf.Lerp(.24f, .10f, raised);
+        // Keep the prop on the right side of the silhouette as the arm rises.
+        Vector3 centerGrip = shoulderCenter + forward * Mathf.Lerp(.30f, .57f, raised)
+            + across * .13f - up * Mathf.Lerp(.28f, .015f, raised);
         Vector3 direction = (target - centerGrip).normalized;
         Quaternion gunRotation = Quaternion.LookRotation(direction.sqrMagnitude > .01f ? direction : forward, up);
-        Quaternion rightPalm = Quaternion.AngleAxis(-8f, gunRotation * Vector3.forward)
-            * gunRotation * Quaternion.Inverse(AimGripRotation);
+        Quaternion rightPalm = gunRotation * Quaternion.Inverse(AimGripRotation);
         Vector3 rightWrist = centerGrip - rightPalm * AimGripOffset;
         HeroArmIK.Solve(aimBones[1], aimBones[2], right, rightWrist,
             shoulderCenter + across * .43f - up * .27f + forward * .08f, weight);
         right.rotation = Quaternion.Slerp(right.rotation, rightPalm, weight);
 
         Vector3 gripPoint = right.position + right.TransformDirection(AimGripOffset);
-        gunAlexey.SetPositionAndRotation(gripPoint, gunRotation);
-        Vector3 supportWrist = gripPoint + gunRotation * new Vector3(-.073f, -.050f, -.036f);
-        HeroArmIK.Solve(aimBones[5], aimBones[6], left, supportWrist,
-            shoulderCenter - across * .43f - up * .27f + forward * .08f, weight);
-        Quaternion supportPalm = gunRotation * Quaternion.Inverse(authoredGun) * authoredSupport;
-        left.rotation = Quaternion.Slerp(left.rotation, supportPalm, weight);
+        Quaternion propRotation = right.rotation * AimGripRotation;
+        gunAlexey.SetPositionAndRotation(gripPoint + propRotation * PropMeshOffset, propRotation);
     }
 
     /// Twists the hand about the barrel line so its palm (a direction in hand space) faces `want`.

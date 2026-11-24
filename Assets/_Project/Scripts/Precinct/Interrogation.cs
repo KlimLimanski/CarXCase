@@ -268,6 +268,13 @@ namespace CarXCase.Precinct
         IEnumerator SayLines(string who, string text, bool isSuspect, float voiced = -1f)
         {
             var parts = (text ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 1 && voiced <= 0f)
+            {
+                var holds = CarXCase.UI.VoiceOver.Spread(parts);
+                for (int i = 0; i < parts.Length; i++)
+                    yield return Say(who, parts[i].Trim(), isSuspect, null, 0f, holds[i]);
+                yield break;
+            }
             // One recording can cover several subtitle lines: share its length out by line length.
             float voice = voiced > 0f ? voiced : parts.Length > 0 ? CarXCase.UI.VoiceOver.Length(parts[0]) : 0f, total = 0f;
             foreach (var part in parts) total += part.Trim().Length;

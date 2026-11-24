@@ -14,12 +14,15 @@ namespace CarXCase.Hero
         [Range(0, 1)] public float weight = 1;
         public bool alignHandRotation = true;
 
+        // A relaxed wrist follows the forearm. A firm grip matches the target orientation.
+        public float GripAlignment { get; set; } = 1f;
+
         void LateUpdate()
         {
             if (!upper || !lower || !end || !target || weight <= 0) return;
             Solve(upper, lower, end, target.position, hint ? hint.position : (Vector3?)null, weight);
             if (alignHandRotation)
-                end.rotation = Quaternion.Slerp(end.rotation, target.rotation, weight);
+                end.rotation = Quaternion.Slerp(end.rotation, target.rotation, weight * GripAlignment);
         }
 
         public static void Solve(Transform a, Transform b, Transform c, Vector3 targetPos, Vector3? hintPos, float w)

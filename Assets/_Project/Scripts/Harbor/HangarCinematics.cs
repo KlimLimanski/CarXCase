@@ -173,8 +173,8 @@ public sealed partial class HangarFinale
                 // Follow Alexey from behind his shoulder as he storms in, Kostya ahead in frame.
                 Vector3 fwd = Flat(player.transform.forward, axis);
                 Vector3 fwdSide = Vector3.Cross(up, fwd) * lineSide;
-                eye = headA - fwd * 1.35f + fwdSide * .48f + up * .12f;
-                look = Vector3.Lerp(headA + fwd * 3f, headK, .55f) - up * .1f;
+                eye = headA - fwd * 1.12f + fwdSide * .88f + up * .04f;
+                look = Vector3.Lerp(headA + fwd * 3f, headK, .55f) - up * .24f;
                 fov = .95f;
                 break;
             }
@@ -202,10 +202,10 @@ public sealed partial class HangarFinale
             }
             case Cover.CloseAlexey:
             {
-                float d = Mathf.Lerp(1.2f, 1f, held / 7f);
-                eye = headA + axis * d + side * (.3f + held * .015f) - up * .06f;
-                look = headA - up * .04f;
-                fov = .8f;
+                float d = Mathf.Lerp(1.16f, 1.04f, held / 7f);
+                eye = headA + axis * d + side * (.88f + held * .012f) - up * .12f;
+                look = headA + axis * .12f - up * .17f;
+                fov = .88f;
                 break;
             }
             case Cover.CloseFather:
