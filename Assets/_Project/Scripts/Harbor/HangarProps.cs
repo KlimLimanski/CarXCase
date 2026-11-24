@@ -326,7 +326,9 @@ public sealed class HangarProps : MonoBehaviour
 
         Transform right = aimBones[3], left = aimBones[7];
         Quaternion authoredGun = right.rotation * AimGripRotation;
-        Quaternion authoredSupport = left.rotation;
+        // Preserve the two wrists' relative pose from the animation as the prop moves.
+        Quaternion supportRotation = Quaternion.Inverse(authoredGun) * left.rotation;
+        Vector3 supportOffset = Quaternion.Inverse(authoredGun) * (left.position - right.position);
         for (int i = 0; i < aimBones.Length; i++)
             if (aimBones[i])
                 aimBones[i].localRotation = Quaternion.Slerp(locomotionArms[i], aimBones[i].localRotation, weight);
@@ -345,19 +347,19 @@ public sealed class HangarProps : MonoBehaviour
             + across * .018f - up * Mathf.Lerp(.24f, .10f, raised);
         Vector3 direction = (target - centerGrip).normalized;
         Quaternion gunRotation = Quaternion.LookRotation(direction.sqrMagnitude > .01f ? direction : forward, up);
-        Quaternion rightPalm = Quaternion.AngleAxis(-8f, gunRotation * Vector3.forward)
-            * gunRotation * Quaternion.Inverse(AimGripRotation);
+        Quaternion rightPalm = gunRotation * Quaternion.Inverse(AimGripRotation);
         Vector3 rightWrist = centerGrip - rightPalm * AimGripOffset;
         HeroArmIK.Solve(aimBones[1], aimBones[2], right, rightWrist,
             shoulderCenter + across * .43f - up * .27f + forward * .08f, weight);
         right.rotation = Quaternion.Slerp(right.rotation, rightPalm, weight);
 
         Vector3 gripPoint = right.position + right.TransformDirection(AimGripOffset);
-        gunAlexey.SetPositionAndRotation(gripPoint, gunRotation);
-        Vector3 supportWrist = gripPoint + gunRotation * new Vector3(-.073f, -.050f, -.036f);
+        Quaternion propRotation = right.rotation * AimGripRotation;
+        gunAlexey.SetPositionAndRotation(gripPoint, propRotation);
+        Vector3 supportWrist = right.position + propRotation * supportOffset;
         HeroArmIK.Solve(aimBones[5], aimBones[6], left, supportWrist,
             shoulderCenter - across * .43f - up * .27f + forward * .08f, weight);
-        Quaternion supportPalm = gunRotation * Quaternion.Inverse(authoredGun) * authoredSupport;
+        Quaternion supportPalm = propRotation * supportRotation;
         left.rotation = Quaternion.Slerp(left.rotation, supportPalm, weight);
     }
 

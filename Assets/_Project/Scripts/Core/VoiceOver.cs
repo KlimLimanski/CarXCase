@@ -35,12 +35,7 @@ namespace CarXCase.UI
             (Dmitry + "раунд3/Никто не узнает", "Никто не узнает"),
             (Dmitry + "раунд3/Либо говоришь, либо оформляю", "Либо говоришь, либо оформляю"),
             (Dmitry + "исходы разговора/успех", "У отца дома меня не было"),
-            (Dmitry + "исходы разговора/частичный результат", "Я не был у него, клянусь"),
-            (Dmitry + "исходы разговора/провал", "Пошёл ты к чёрту, Лёша"),
             // Bar: the girl at the counter
-            (Witness + "начало разговора", "Добрый вечер. Дмитрий говорит"),
-            (Witness + "выпить с девушкой", "Одну. Но сначала"),
-            (Witness + "отказаться", "Я на службе"),
             // Father's flat
             (Flat + "вход в квартиру", "Отец? Фёдор Павлович, ты дома"),
             (Flat + "осмотр замка", "Замок цел, следов взлома нет"),
@@ -66,9 +61,22 @@ namespace CarXCase.UI
         };
 
         /// One recording voicing several moments: (clip, line start, from, to) as fractions of the clip.
-        /// Only Marcus' question is used: the answers in the recording do not match the choices, so they stay silent.
         static readonly (string clip, string line, float from, float to)[] Parts =
         {
+            (Dmitry + "исходы разговора/провал", "Пошёл ты к чёрту, Лёша", 0f, 8.21f / 14.446f),
+            (Dmitry + "исходы разговора/провал", "Она слышала скандал", 8.21f / 14.446f, 1f),
+            (Dmitry + "исходы разговора/частичный результат", "Я не был у него, клянусь", 0f, 7.63f / 21.394f),
+            (Dmitry + "исходы разговора/частичный результат", "Вчера сюда приходили двое", 7.63f / 21.394f, 16.95f / 21.394f),
+            (Dmitry + "исходы разговора/частичный результат", "Девушка в конце стойки видела", 16.95f / 21.394f, 1f),
+            (Witness + "начало разговора", "Добрый вечер. Дмитрий говорит", 0f, 8.4f / 12.513f),
+            (Witness + "начало разговора", "Выпьешь со мной", 8.4f / 12.513f, 1f),
+            (Witness + "выпить с девушкой", "Одну. Но сначала", 0f, 3.34f / 21.081f),
+            (Witness + "выпить с девушкой", "Месяц назад они", 3.34f / 21.081f, 11.05f / 21.081f),
+            (Witness + "выпить с девушкой", "Найдёшь их в Шипсхед-Бей", 11.05f / 21.081f, 15.45f / 21.081f),
+            (Witness + "выпить с девушкой", "Шипсхед-Бей, четвёртый ангар. Спасибо", 15.45f / 21.081f, 1f),
+            (Witness + "отказаться", "Я на службе", 0f, 3.66f / 15.491f),
+            (Witness + "отказаться", "Как хочешь. Слышала", 3.66f / 15.491f, 12.19f / 15.491f),
+            (Witness + "отказаться", "Четвёртый ангар. Этого хватит", 12.19f / 15.491f, 1f),
             (Precinct + "разговор с Маркусом", "Лёш? Ты же недавно смену сдал", 0f, .33f),
         };
 
@@ -94,7 +102,13 @@ namespace CarXCase.UI
         static string lastSubtitle;
         static AudioSource source;
 
-        public static AudioClip ForText(string line) => Find(line, out _, out _);
+        public static AudioClip ForComment(string line, out float duration)
+        {
+            var clip = Find(line, out float from, out float to);
+            duration = clip ? clip.length * (to - from) : 0f;
+            // HeroFace plays whole clips. Subtitles start and stop excerpts at their recorded boundaries.
+            return from == 0f && to == 1f ? clip : null;
+        }
 
         /// The recording for a line and the part of it (fractions) that belongs to this line.
         static AudioClip Find(string line, out float from, out float to)
@@ -189,6 +203,14 @@ namespace CarXCase.UI
             if (!loaded.TryGetValue(path, out var clip))
             {
                 clip = Resources.Load<AudioClip>(path);
+                // Unity can index a decomposed Cyrillic folder name on macOS.
+                if (!clip && path.StartsWith(Witness, System.StringComparison.Ordinal))
+                {
+                    var directory = Witness.Normalize(NormalizationForm.FormD);
+                    var name = path.Substring(Witness.Length);
+                    clip = Resources.Load<AudioClip>(directory + name);
+                    if (!clip) clip = Resources.Load<AudioClip>(directory + name.Normalize(NormalizationForm.FormD));
+                }
                 if (!clip) Debug.LogWarning("Voice clip missing: " + path);
                 loaded[path] = clip;
             }
