@@ -14,7 +14,7 @@ public sealed partial class HangarFinale : MonoBehaviour
     AudioSource recordAudio;
     AudioLowPassFilter recordFilter;
     OfficerController recordListener;
-    float recordShelter, recordLevel;
+    float recordLevel;
     bool fadingToCredits;
     public float RecordScoreDuck { get; private set; }
     public float EndingAmbience => fadingToCredits ? 1f - endingFade : 1f;
@@ -86,6 +86,7 @@ public sealed partial class HangarFinale : MonoBehaviour
         if (!deck || !record) return;
 
         recordAudio = deck.gameObject.AddComponent<AudioSource>();
+        recordAudio.playOnAwake = false;
         recordAudio.clip = record;
         recordAudio.loop = true;
         // Mix from Alexey's position so dialogue coverage never moves the listener.
@@ -95,22 +96,19 @@ public sealed partial class HangarFinale : MonoBehaviour
         recordFilter.cutoffFrequency = 1550f;
         recordFilter.lowpassResonanceQ = 1f;
         recordListener = FindAnyObjectByType<OfficerController>();
-        recordAudio.Play();
     }
 
     void MixRecordAudio()
     {
-        if (!recordAudio || !recordListener) return;
+        if (!recordAudio || !recordListener || !UnderRoof || !recordAudio.isPlaying) return;
 
         Transform listener = recordListener.transform;
         Vector3 toDeck = Vector3.ProjectOnPlane(recordAudio.transform.position - listener.position, Vector3.up);
         float distance = toDeck.magnitude;
         float roomDistance = Smooth(2f, 22f, distance);
-        float yardPresence = Mathf.Lerp(1f, .42f, Smooth(6f, 60f, distance)) * (1f - Smooth(62f, 92f, distance));
         float blend = 1f - Mathf.Exp(-Time.deltaTime / .45f);
-        recordShelter = Mathf.Lerp(recordShelter, UnderRoof ? 1f : 0f, blend);
 
-        float presence = Mathf.Lerp(.54f * yardPresence, Mathf.Lerp(1f, .62f, roomDistance), recordShelter);
+        float presence = Mathf.Lerp(1f, .62f, roomDistance);
         float speech = string.IsNullOrEmpty(caption) ? .86f : .36f;
         float target = stage == Stage.Report || creditsRolling ? 0f : speech * presence * NoirMenu.GameSettings.MusicGain;
         recordLevel = Mathf.Lerp(recordLevel, target, blend);
@@ -118,10 +116,9 @@ public sealed partial class HangarFinale : MonoBehaviour
 
         float pan = .24f * Vector3.Dot(listener.right, toDeck / Mathf.Max(2f, distance));
         recordAudio.panStereo = Mathf.Lerp(recordAudio.panStereo, pan, blend);
-        float yardCutoff = Mathf.Lerp(1450f, 2100f, yardPresence);
-        float cutoff = Mathf.Lerp(yardCutoff, Mathf.Lerp(5600f, 2900f, roomDistance), recordShelter);
+        float cutoff = Mathf.Lerp(5600f, 2900f, roomDistance);
         recordFilter.cutoffFrequency = Mathf.Lerp(recordFilter.cutoffFrequency, cutoff, blend);
-        RecordScoreDuck = Mathf.Lerp(.65f * yardPresence, 1f, recordShelter);
+        RecordScoreDuck = Mathf.Lerp(RecordScoreDuck, 1f, blend);
     }
 
     public void SetBranch(bool arrivedLate)
@@ -210,13 +207,17 @@ public sealed partial class HangarFinale : MonoBehaviour
             return;
         }
         stage = Stage.Conversation;
+        if (recordAudio) recordAudio.Play();
         if (!delayed) pulse.Play();
         StartCoroutine(Encounter());
     }
 
     public void Leave()
     {
+        if (recordAudio) { recordAudio.Stop(); recordAudio.volume = 0f; }
+        RecordScoreDuck = recordLevel = 0f;
         if (yardRain) yardRain.enabled = true;
+        if (!string.IsNullOrEmpty(caption)) VoiceOver.EndHangarLine();
         StopAllCoroutines();
         StopCredits();
         fadingToCredits = false;
@@ -270,12 +271,13 @@ public sealed partial class HangarFinale : MonoBehaviour
         return opening * Mathf.SmoothStep(0f, 1f, fade);
     }
 
-    IEnumerator Say(string speaker, string words, float seconds)
+    IEnumerator Say(string speaker, string words, float seconds, string replyClip = null)
     {
         kostyaSpeaking = speaker == "Костя";
         CarXCase.Hero.HeroFace.SetTalking(speaker == "Алексей");
         OnLine(speaker, words);
         caption = Subtitles.WithSpeaker(speaker, words);
+        seconds = Mathf.Max(seconds, VoiceOver.StartHangarLine(caption, replyClip) + .12f);
         var face = speaker == "Костя" ? kostyaFace : speaker == "Фёдор Павлович" ? fatherFace : null;
         for (float elapsed = 0; elapsed < seconds; elapsed += Time.deltaTime)
         {
@@ -327,7 +329,9 @@ public sealed partial class HangarFinale : MonoBehaviour
     void Update()
     {
         if (NoirMenu.GameSession.Paused) return;
+#if UNITY_EDITOR
         DebugKeys();
+#endif
         MixRecordAudio();
         if (stage == Stage.Outside || stage == Stage.Listening || Time.timeScale <= 0) return;
         if (!delayed && !Finished)
@@ -465,7 +469,7 @@ public sealed partial class HangarFinale : MonoBehaviour
             });
             fatherReleased = true;
             yield return Say("Фёдор Павлович", shot ? "Спасибо тебе, сынок... за всё. Ты спас мне жизнь." :
-                "Спасибо тебе, сынок... за всё. И за то, что меня вытащил, и за то, что душу не замарал.", 5f);
+                "Спасибо тебе, сынок... за всё. И за то, что меня вытащил, и за то, что душу не замарал.", 5f, shot ? "shot_4" : "arrest_6");
         }
         else yield return new WaitForSeconds(1.5f);
         EndPose(shot);
@@ -578,7 +582,9 @@ public sealed partial class HangarFinale : MonoBehaviour
             GUI.depth = depth;
             if (drewCredits) return;
         }
+#if UNITY_EDITOR
         if (DebugMenu()) return;
+#endif
         if (endingFade >= 1f) return;
         if (NoirMenu.GameSession.Paused) return;
         Subtitles.Draw(caption);

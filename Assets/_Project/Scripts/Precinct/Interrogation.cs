@@ -276,6 +276,11 @@ namespace CarXCase.Precinct
                 yield break;
             }
             // One recording can cover several subtitle lines: share its length out by line length.
+            if (voiced < 0f && parts.Length > 1 && System.Array.TrueForAll(parts, p => CarXCase.UI.VoiceOver.Length(p.Trim()) > 0f))
+            {
+                foreach (var part in parts) yield return Say(who, part.Trim(), isSuspect);
+                yield break;
+            }
             float voice = voiced > 0f ? voiced : parts.Length > 0 ? CarXCase.UI.VoiceOver.Length(parts[0]) : 0f, total = 0f;
             foreach (var part in parts) total += part.Trim().Length;
             foreach (var part in parts)

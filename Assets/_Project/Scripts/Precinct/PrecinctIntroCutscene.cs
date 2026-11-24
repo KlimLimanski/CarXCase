@@ -43,6 +43,7 @@ namespace CarXCase.Precinct
         [Tooltip("Exposure (EV) at the very start: the doorway reads as black, Alexey as a silhouette.")]
         public float startExposure = -2.6f;
         [Range(0f, 1f)] public float startVignette = .5f;
+        AudioSource footsteps;
         Volume reveal;
         VolumeProfile revealProfile;
 
@@ -52,6 +53,7 @@ namespace CarXCase.Precinct
         bool live;
         int lastShot = -1;
         float elapsed, fadeIn = 1, fadeOut;
+        float replyWalkPosition, resumeTime;
         float[] cumulative;
         Quaternion leftClosed, rightClosed, officeClosed;
         GUIStyle sub, speaker, small, big;
@@ -100,6 +102,27 @@ namespace CarXCase.Precinct
 
         void Start()
         {
+            replyWalkPosition = replyAt;
+            if (dialogue != null)
+            {
+                foreach (var line in dialogue)
+                {
+                    float length = VoiceOver.Length(Subtitles.WithSpeaker(line.speaker, line.text));
+                    if (length <= 0f) continue;
+                    line.end = Mathf.Max(line.end, line.start + length + .1f);
+                    replyAt = Mathf.Max(replyAt, line.end);
+                }
+            }
+            var clip = Resources.Load<AudioClip>("LocationAudio/Effects/steps-2");
+            if (clip)
+            {
+                footsteps = gameObject.AddComponent<AudioSource>();
+                footsteps.clip = clip;
+                footsteps.playOnAwake = false;
+                footsteps.loop = true;
+                footsteps.spatialBlend = 0f;
+                footsteps.volume = 0f;
+            }
             SetupReveal();
             SetGameplay(false);
             Evaluate(0);
@@ -126,7 +149,11 @@ namespace CarXCase.Precinct
 
         void Update()
         {
-            if (NoirMenu.GameSession.Paused) return;
+            if (NoirMenu.GameSession.Paused)
+            {
+                if (footsteps && footsteps.isPlaying) footsteps.Pause();
+                return;
+            }
             if (Finished)
             {
                 fadeIn = Mathf.MoveTowards(fadeIn, 0, Time.deltaTime / 0.8f);
@@ -142,10 +169,12 @@ namespace CarXCase.Precinct
                 choosingReply = false;
                 displayedReply = -1;
                 finishedReply = true;
-                elapsed = Mathf.Max(elapsed, Duration - 1.0f);
+                Finish();
+                return;
             }
             if (choosingReply)
             {
+                UpdateFootsteps(0f);
                 if (keyboard != null)
                 {
                     if (keyboard.digit1Key.wasPressedThisFrame || keyboard.numpad1Key.wasPressedThisFrame) PickReply(0);
@@ -156,6 +185,7 @@ namespace CarXCase.Precinct
             }
             if (displayedReply >= 0)
             {
+                UpdateFootsteps(0f);
                 replyElapsed += Time.deltaTime;
                 var lines = replies[displayedReply].lines;
                 ShowLine(LineAt(lines, replyElapsed));
@@ -175,11 +205,20 @@ namespace CarXCase.Precinct
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
-            live = true; Evaluate(elapsed); live = false;
+            float walkTime = elapsed;
+            if (finishedReply)
+            {
+                resumeTime += Time.deltaTime;
+                float ramp = Mathf.Clamp01(resumeTime / .6f);
+                walkTime = replyWalkPosition + (resumeTime < .6f ? .3f * ramp * ramp : resumeTime - .3f);
+            }
+            else if (replies != null && replies.Length > 0)
+                walkTime = Mathf.Min(elapsed, replyWalkPosition);
+            live = true; Evaluate(walkTime); live = false;
             UpdateReveal(elapsed);
             ShowLine(choosingReply ? null : LineAt(dialogue, elapsed));
-            if (elapsed > Duration - 1.0f) fadeOut = Mathf.InverseLerp(Duration - 1.0f, Duration, elapsed);
-            if (elapsed >= Duration) Finish();
+            if (walkTime > Duration - .32f) fadeOut = Mathf.InverseLerp(Duration - .32f, Duration, walkTime);
+            if (walkTime >= Duration) Finish();
         }
 
         static Line LineAt(Line[] lines, float time)
@@ -203,6 +242,14 @@ namespace CarXCase.Precinct
             choosingReply = false;
             displayedReply = index;
             replyElapsed = 0f;
+            float previousEnd = 0f;
+            foreach (var line in replies[index].lines)
+            {
+                float length = VoiceOver.Length(Subtitles.WithSpeaker(line.speaker, line.text));
+                line.start = Mathf.Max(line.start, previousEnd);
+                line.end = Mathf.Max(line.end, line.start + length + .1f);
+                previousEnd = line.end;
+            }
             Cursor.visible = false;
             ShowLine(LineAt(replies[index].lines, 0f));
         }
@@ -263,6 +310,7 @@ namespace CarXCase.Precinct
         void Finish()
         {
             EndReveal();
+            if (footsteps) footsteps.Stop();
             Evaluate(Duration);
             HeroFace.SetTalking(false);
             Finished = true;
@@ -279,6 +327,19 @@ namespace CarXCase.Precinct
             SetGameplay(true);
         }
 
+        void UpdateFootsteps(float gait)
+        {
+            if (!footsteps) return;
+            float target = NoirMenu.GameSettings.SfxGain * .85f * Mathf.SmoothStep(0f, 1f, gait);
+            footsteps.volume = Mathf.MoveTowards(footsteps.volume, target, Time.unscaledDeltaTime * 5f);
+            if (target > 0f && !footsteps.isPlaying)
+            {
+                if (footsteps.timeSamples > 0) footsteps.UnPause();
+                else footsteps.Play();
+            }
+            if (target <= 0f && footsteps.volume <= 0f) footsteps.Stop();
+        }
+
         /// Poses hero, doors and camera for time t (seconds). Also used by the editor for previews.
         public void Evaluate(float t)
         {
@@ -287,6 +348,7 @@ namespace CarXCase.Precinct
             float total = cumulative[cumulative.Length - 1];
             float tau = t - walkStart, v = walkSpeed, a = Mathf.Max(ease, .01f), T = total / v + a;
             float s = tau <= 0 ? 0 : tau >= T ? total : tau < a ? .5f * v / a * tau * tau : tau > T - a ? total - .5f * v / a * (T - tau) * (T - tau) : .5f * v * a + v * (tau - a);
+            if (live) UpdateFootsteps(Mathf.Clamp01(Mathf.Min(tau, T - tau) / a));
             Vector3 pos = PointAt(s);
             Vector3 ahead = PointAt(s + 0.7f) - PointAt(Mathf.Max(0, s - 0.1f));
             if (s >= total - 0.01f) ahead = path[path.Length - 1].forward;

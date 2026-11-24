@@ -18,7 +18,9 @@ namespace CarXCase.UI
             {
                 state.textColor = style.normal.textColor;
                 state.background = style.normal.background;
+#if UNITY_EDITOR
                 state.scaledBackgrounds = style.normal.scaledBackgrounds;
+#endif
             }
         }
 
