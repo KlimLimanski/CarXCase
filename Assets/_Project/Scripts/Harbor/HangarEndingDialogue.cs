@@ -99,7 +99,7 @@ public sealed partial class HangarFinale
         yield return Animate(staging.DrawDuration * .9f, t =>
         {
             staging.Draw(t, player.transform);
-            if (t >= HangarStaging.RevealMoment) props.ArmKostya(true, player.transform);
+            if (t >= HangarStaging.RevealMoment) props.ArmKostya(true);
         });
         endingFade = 1f;
         LocationAudio.Effect("Hangar shot", .62f);
@@ -112,10 +112,21 @@ public sealed partial class HangarFinale
         yield return RevealAfterDeath(.62f, .75f);
         LocationAudio.Effect("Police siren", .2f);
         yield return Line("Алексей", "Ты... всё-таки...", "mistake_13");
+        StartCoroutine(LowerKostyaArm());
         yield return Line("Костя", "Лёш? Эй. Слышишь меня?", "mistake_14");
         yield return Line("Алексей", "Я хотел... тебя вернуть...", "mistake_15");
         if (!delayed) yield return Line("Фёдор Павлович", "Что ты наделал, Костя?..", "mistake_16");
         yield return Line("Костя", "Я... я не хотел...", "mistake_17");
+    }
+
+    IEnumerator LowerKostyaArm()
+    {
+        var shoulder = staging.KostyaBone("upper_arm.R");
+        var wrist = staging.KostyaBone("hand.R");
+        Quaternion raised = shoulder.rotation;
+        Vector3 relaxed = kostya.TransformDirection(new Vector3(.12f, -.92f, .38f));
+        Quaternion lowered = Quaternion.FromToRotation(wrist.position - shoulder.position, relaxed) * raised;
+        yield return Animate(.95f, t => shoulder.rotation = Quaternion.Slerp(raised, lowered, Mathf.SmoothStep(0f, 1f, t)));
     }
 
     IEnumerator FathersSins()
@@ -138,7 +149,7 @@ public sealed partial class HangarFinale
         yield return Animate(staging.DrawDuration * .9f, t =>
         {
             staging.Draw(t, rescue.transform, .85f);
-            if (t >= HangarStaging.RevealMoment) props.ArmKostya(true, rescue.transform, .85f);
+            if (t >= HangarStaging.RevealMoment) props.ArmKostya(true);
         });
         Frame(new Vector3(-1.16f,1.14f,5.84f),new Vector3(-.08f,.90f,7.07f));
         props.Aim(1f, kostya);

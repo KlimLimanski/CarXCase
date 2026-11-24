@@ -141,7 +141,7 @@ public static class HangarReview
             new() { name = "father_rope", apply = () => { staging.Bindings(true); staging.Father(0, 0); }, views = OnFather },
             new() { name = "alexey_aim", apply = () => { Talk(); Hero(() => props.AimImmediate(1f, kostya)); }, views = OnBoth },
             new() { name = "alexey_low_ready", apply = () => { Talk(); Hero(() => props.AimImmediate(.5f, kostya)); }, views = OnBoth },
-            new() { name = "kostya_draws", apply = () => { Talk(); staging.Reach(1f); Hero(() => { props.AimImmediate(1f, kostya); props.ArmKostya(true, player); }); }, views = OnBoth },
+            new() { name = "kostya_draws", apply = () => { Talk(); staging.Reach(1f); Hero(() => { props.AimImmediate(1f, kostya); props.ArmKostya(true); }); }, views = OnBoth },
             new() { name = "fall_35", apply = () => { Hero(() => { }); staging.Subside(true, .35f, mark, facing); }, views = OnKostya },
             new() { name = "fall_end", apply = () => staging.Subside(true, 1f, mark, facing), views = OnKostya },
             new() { name = "restraint_20", apply = () => staging.Subside(false, .2f, mark, facing), views = OnKostya },

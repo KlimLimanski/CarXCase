@@ -369,7 +369,7 @@ public sealed partial class HangarFinale : MonoBehaviour
             // Under the timer he goes for it: hand under the lapel, grip, and the gun starting to clear the coat.
             reach = Mathf.Min(HoldDraw, (DecisionSeconds - deadline + Time.time) / staging.DrawDuration);
             staging.Draw(reach, player.transform);
-            if (reach >= HangarStaging.RevealMoment && !props.KostyaArmed) props.ArmKostya(true, player.transform);
+            if (reach >= HangarStaging.RevealMoment && !props.KostyaArmed) props.ArmKostya(true);
             if (keys != null && (keys.digit1Key.wasPressedThisFrame || keys.numpad1Key.wasPressedThisFrame)) Resolve(true);
             else if (keys != null && (keys.digit2Key.wasPressedThisFrame || keys.numpad2Key.wasPressedThisFrame)) Resolve(false);
             else if (Time.time >= deadline) stage = Stage.Missed;

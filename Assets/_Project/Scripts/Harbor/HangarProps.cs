@@ -23,8 +23,6 @@ public sealed class HangarProps : MonoBehaviour
     float aimGoal, aim, aimVelocity;
     Transform aimAt;
     bool kostyaArmed;
-    Transform kostyaTarget;
-    float kostyaTargetHeight = 1.15f;
 
     sealed class Fall { public Transform item; public float start; public Vector3 from, to; public Quaternion fromRot, toRot; }
     readonly List<Fall> falling = new();
@@ -44,11 +42,8 @@ public sealed class HangarProps : MonoBehaviour
     static readonly Quaternion AimGripRotation = new(.69940f, .27256f, .33313f, .57059f);
     static readonly Vector3 AimGripOffset = new(.0434f, -.0332f, -.0094f);
     static readonly Vector3 PropMeshOffset = new(.006f, .034f, .034f);
-    // The original coat rig weights part of the palm to the sleeve, so fit the socket
-    // at the three visible poses where the right wrist bends most.
-    static readonly Vector3 KostyaGripReveal = new(-.118f, .021f, .075f);
-    static readonly Vector3 KostyaGripWithdrawn = new(-.078f, .034f, .066f);
-    static readonly Vector3 KostyaGripAimed = new(-.053f, .096f, .099f);
+    static readonly Vector3 KostyaWristOffset = new(-.053f, .096f, .099f);
+    static readonly Vector3 KostyaPalmOffset = new(.038f, .091f, .019f);
 
     float Floor => transform.position.y + .06f;
 
@@ -150,12 +145,10 @@ public sealed class HangarProps : MonoBehaviour
 
     public void AimImmediate(float level, Transform target) { Aim(level, target); aim = aimGoal; aimVelocity = 0f; }
 
-    public void ArmKostya(bool armed, Transform target = null, float height = 1.15f)
+    public void ArmKostya(bool armed)
     {
-        kostyaTargetHeight = height;
         if (armed && grounded.Contains(gunKostya)) return;
         kostyaArmed = armed;
-        kostyaTarget = target;
     }
 
     public bool KostyaArmed => kostyaArmed;
@@ -384,24 +377,9 @@ public sealed class HangarProps : MonoBehaviour
         if (!gunKostya || IsFalling(gunKostya) || grounded.Contains(gunKostya)) return;
         gunKostya.gameObject.SetActive(kostyaArmed);
         if (!kostyaArmed) return;
-        // Stay in hand space, with a short correction for the mesh deformation at the cuff.
         var hand = staging.KostyaBone("hand.R");
-        Vector3 barrel = staging.HandAxis;
-        Vector3 thumb = staging.ThumbAxis;
-        float draw = staging.DrawProgress;
-        Vector3 offset = Vector3.Lerp(KostyaGripReveal, KostyaGripWithdrawn,
-            Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.54f, .65f, draw)));
-        offset = Vector3.Lerp(offset, KostyaGripAimed,
-            Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.65f, .78f, draw)));
-        Vector3 grip = hand.position + hand.TransformDirection(offset);
-        Quaternion rotation = Quaternion.LookRotation(barrel, thumb);
-        float settle = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.78f, 1f, draw));
-        if (kostyaTarget && settle > 0f)
-        {
-            Vector3 target = kostyaTarget.position + Vector3.up * kostyaTargetHeight - grip;
-            if (target.sqrMagnitude > .01f)
-                rotation = Quaternion.RotateTowards(rotation, Quaternion.LookRotation(target, Vector3.up), 8f * settle);
-        }
+        Quaternion rotation = Quaternion.LookRotation(staging.HandAxis, staging.ThumbAxis);
+        Vector3 grip = hand.position + hand.TransformDirection(KostyaWristOffset) + rotation * KostyaPalmOffset;
         gunKostya.SetPositionAndRotation(grip, rotation);
     }
 
