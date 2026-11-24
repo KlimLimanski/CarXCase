@@ -101,10 +101,10 @@ public static class RainAtmosphereSetup
             var m = Mat(n, streakSh); m.SetFloat("_Opacity", opacity); m.SetFloat("_ForwardScatter", scatter);
             m.renderQueue = (int)RenderQueue.Transparent; return m;
         }
-        var near = Streak("Rain_Near", 0.42f, 1.6f);
-        var mid = Streak("Rain_Mid", 0.30f, 1.4f);
-        var far = Streak("Rain_Far", 0.14f, 1.0f); far.SetFloat("_SoftDistance", 0.5f);
-        var splashM = Streak("Rain_Splash", 0.55f, 1.8f); splashM.SetFloat("_SoftDistance", 0.02f);
+        var near = Streak("Rain_Near", 0.28f, 1.6f);
+        var mid = Streak("Rain_Mid", 0.19f, 1.4f);
+        var far = Streak("Rain_Far", 0.075f, 1.0f); far.SetFloat("_SoftDistance", 0.5f);
+        var splashM = Streak("Rain_Splash", 0.24f, 1.8f); splashM.SetFloat("_SoftDistance", 0.02f);
 
         // ---------------- ground plane for collisions / splashes
         var ground = new GameObject("Rain_GroundPlane").transform; ground.SetParent(root, false);
@@ -166,7 +166,7 @@ public static class RainAtmosphereSetup
         var wiperPivots = new List<Transform>(); var wiperAxes = new List<Vector3>();
         if (interior)
         {
-            var wind = Mat("RainGlass_Windshield", glassSh); wind.SetFloat("_StaticAmount", 0.55f); wind.SetFloat("_StaticSize", 0.011f); wind.SetFloat("_EdgeDarken", 0.35f); wind.renderQueue = (int)RenderQueue.Transparent + 1;
+            var wind = Mat("RainGlass_Windshield", glassSh); wind.SetFloat("_StaticAmount", 0.42f); wind.SetFloat("_StaticSize", 0.009f); wind.SetFloat("_RunningAmount", 0.48f); wind.SetFloat("_EdgeDarken", 0.35f); wind.renderQueue = (int)RenderQueue.Transparent + 1;
             var side = Mat("RainGlass_Side", glassSh); side.renderQueue = (int)RenderQueue.Transparent + 1;
             side.SetFloat("_Wipers", 0); side.SetFloat("_StaticAmount", 0.28f); side.SetFloat("_StaticSize", 0.013f); side.SetFloat("_RunningAmount", 0.35f); side.SetFloat("_EdgeDarken", 0.3f);
             foreach (var n in new[] { "Windshield_Laminated", "Left_Front_Glass", "Right_Front_Glass", "Left_Rear_Glass", "Right_Rear_Glass", "Left_Quarter_Glass", "Right_Quarter_Glass", "Rear_Window_Heated" })
@@ -231,7 +231,7 @@ public static class RainAtmosphereSetup
             if (m.HasProperty("_Wetness")) m.SetFloat("_Wetness", Mathf.Max(m.GetFloat("_Wetness"), 0.8f));
             EditorUtility.SetDirty(m);
         }
-        Wet("WetRoad", 0.55f, 1.4f); Wet("WetSidewalk", 0.4f, 1.4f); Wet("WetCurb", 0.25f, 1.4f); Wet("WetPaint", 0.4f, 1.4f);
+        Wet("WetRoad", 0.19f, 1.4f); Wet("WetSidewalk", 0.4f, 1.4f); Wet("WetCurb", 0.25f, 1.4f); Wet("WetPaint", 0.4f, 1.4f);
 
         // ---------------- planar reflections for puddles / wet asphalt
         var puddleGo = GameObject.Find("Puddle_Reflection");

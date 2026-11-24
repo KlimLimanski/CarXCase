@@ -1,14 +1,11 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
+using CarXCase.Precinct;
 
 namespace DetectiveGame.Core
 {
     public class SimpleUIHUD : MonoBehaviour
     {
         private string _promptText = "";
-        private bool _isShowingClue = false;
-        private string _clueTitle = "";
-        private string _clueDesc = "";
         private string _inspectionLine = "";
         private float _inspectionUntil;
         float journalHintUntil;
@@ -17,66 +14,71 @@ namespace DetectiveGame.Core
         public bool showInspectionHud;
         public bool enableJournal;
         public bool IsListening { get; set; }
-        public bool IsShowingJournal { get; private set; }
-
-        int selectedEntry;
-        Vector2 journalListScroll, journalDetailScroll;
-        ThirdPersonCamera journalFollow;
-        CursorLockMode journalCursorLock;
-        bool journalCursorVisible;
-        GUIStyle journalTitle, journalBody, journalEntry;
+        public bool IsShowingJournal => CarXCase.Investigation.InvestigationIntegration.IsOpen;
 
         public void ShowInspectionComment(string line)
         {
             ShowInspectionComment(line, Mathf.Clamp(2.7f + line.Length * .033f, 3.2f, 7f));
         }
 
-        public void ShowInspectionComment(string line, float duration)
+        public const string HeroSpeaker = "Алексей";
+        bool heroSpeaking;
+
+        public void ShowInspectionComment(string line, float duration, string speaker = HeroSpeaker) =>
+            ShowInspectionComment(line, duration, speaker, null);
+
+        /// Shows a spoken comment. Alexey's own lines are articulated by his face for as long as the
+        /// subtitle stays up (or for the length of the optional voice clip).
+        public void ShowInspectionComment(string line, float duration, string speaker, AudioClip voice)
         {
-            _inspectionLine = line;
-            _inspectionUntil = Time.unscaledTime + duration;
+            // Recorded dialogue: Alexey's comments are voiced through his face (lip-synced), others by Subtitles.
+            float voiceDuration = voice ? voice.length : 0f;
+            if (!voice && speaker == HeroSpeaker) voice = CarXCase.UI.VoiceOver.ForComment(line, out voiceDuration);
+            if (voiceDuration > 0f) duration = Mathf.Max(duration, voiceDuration + .3f);
+            _inspectionLine = CarXCase.UI.Subtitles.WithSpeaker(speaker, line);
+            _inspectionUntil = Time.time + duration;
+            heroSpeaking = speaker == HeroSpeaker && !string.IsNullOrWhiteSpace(line);
+            if (voice && heroSpeaking) CarXCase.UI.VoiceOver.MarkHandled(_inspectionLine);
+            if (heroSpeaking) CarXCase.Hero.HeroFace.SpeakAsHero(line, duration, voice);
+            else CarXCase.Hero.HeroFace.StopHero();
         }
 
-        public void ShowJournalHint() => journalHintUntil = Time.unscaledTime + 8f;
+        /// Removes the current comment at once; the face returns to neutral.
+        public void ClearInspectionComment()
+        {
+            _inspectionUntil = 0f;
+            StopHeroSpeech();
+        }
+
+        void StopHeroSpeech()
+        {
+            if (!heroSpeaking) return;
+            heroSpeaking = false;
+            CarXCase.Hero.HeroFace.StopHero();
+        }
+
+        public void ShowJournalHint() => journalHintUntil = Time.time + 8f;
+        /// Drawn by JournalKeyHint: true once the scene asked for the hint, Fresh while it should stay bright.
+        public bool JournalHintRequested => journalHintUntil > 0f;
+        public bool JournalHintFresh => Time.time < journalHintUntil;
 
         public bool HandleJournalInput(Transform view, bool freeInput)
         {
-            var keyboard = Keyboard.current;
-            if (IsShowingJournal)
-            {
-                if (!freeInput || (keyboard != null &&
-                    (keyboard.jKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)))
-                    CloseJournal();
-                return true;
-            }
-
-            if (!enableJournal || !freeInput || IsListening || _isShowingClue ||
-                keyboard == null || !keyboard.jKey.wasPressedThisFrame) return false;
-
-            IsShowingJournal = true;
-            journalHintUntil = 0f;
-            journalCursorLock = Cursor.lockState;
-            journalCursorVisible = Cursor.visible;
-            journalFollow = view ? view.GetComponent<ThirdPersonCamera>() : null;
-            if (journalFollow) journalFollow.SetCursorLock(false);
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            return true;
+            if (IsShowingJournal) return true;
+            if (!freeInput || IsListening) return false;
+            return CarXCase.Investigation.InvestigationIntegration.HandleInput(this);
         }
 
-        public void CloseJournal()
+        public void CloseJournal() => CarXCase.Investigation.InvestigationIntegration.Close();
+        void OnDisable()
         {
-            if (!IsShowingJournal) return;
-            IsShowingJournal = false;
-            if (journalFollow) journalFollow.SetCursorLock(journalCursorLock == CursorLockMode.Locked);
-            Cursor.lockState = journalCursorLock;
-            Cursor.visible = journalCursorVisible;
-            journalFollow = null;
+            CloseJournal();
+            // A scripted scene took over the screen: the comment is gone, so is the speech.
+            if (Time.time < _inspectionUntil) _inspectionUntil = 0f;
+            StopHeroSpeech();
         }
 
-        void OnDisable() => CloseJournal();
-
-        public string CurrentInspectionComment => Time.unscaledTime < _inspectionUntil ? _inspectionLine : "";
+        public string CurrentInspectionComment => Time.time < _inspectionUntil ? _inspectionLine : "";
 
         public void SetPrompt(string text)
         {
@@ -88,178 +90,143 @@ namespace DetectiveGame.Core
             _promptText = "";
         }
 
-        public void ShowClue(string title, string desc)
+        private OfficerController objectivePlayer;
+        private CarXCase.Precinct.SceneExit apartmentExit;
+        private string objectiveScene;
+        private DeductionBoard precinctBoard;
+        private ConversationInteraction barConversation;
+        private HangarFinale harborFinale;
+        private bool destinationAnnounced;
+        private float locationNoticeUntil;
+
+        private bool DestinationAvailable()
         {
-            _isShowingClue = true;
-            _clueTitle = title;
-            _clueDesc = desc;
+            switch (objectiveScene)
+            {
+                case "01_FatherApartment":
+                    return apartmentExit && apartmentExit.requiredClueIds is { Length: > 0 } ids &&
+                        System.Array.TrueForAll(ids, ClueJournal.Has);
+                case "04_Precinct":
+                    return precinctBoard && precinctBoard.HasAvailableDestination;
+                case "02_Bar":
+                    return PortLead.HasAny(PortLead.Bar);
+                case "03_Pawnshop":
+                    return PortLead.HasAny(PortLead.Pawnshop);
+                default:
+                    return false;
+            }
         }
 
-        public bool IsShowingClue() => _isShowingClue;
+        private void Start()
+        {
+            objectiveScene = gameObject.scene.name;
+            objectivePlayer = FindAnyObjectByType<OfficerController>();
+            if (objectiveScene == "02_Bar")
+                barConversation = FindAnyObjectByType<ConversationInteraction>();
+            if (objectiveScene == "01_FatherApartment")
+                apartmentExit = FindAnyObjectByType<CarXCase.Precinct.SceneExit>();
+            if (objectiveScene == "04_Precinct")
+                precinctBoard = FindAnyObjectByType<DeductionBoard>();
+            if (objectiveScene == "05_BrightonHarbor")
+                harborFinale = FindAnyObjectByType<HangarFinale>();
+            destinationAnnounced = DestinationAvailable();
+        }
+
+        private string CurrentObjective()
+        {
+            switch (objectiveScene)
+            {
+                case "01_FatherApartment":
+                    if (DestinationAvailable())
+                        return "Отправляйтесь в полицейский участок";
+                    return "Найдите улики в квартире отца";
+                case "02_Bar":
+                    if (PortLead.HasAny(PortLead.Bar)) return "Отправляйтесь в Шипсхед-Бей";
+                    if (ClueJournal.Has(BarServiceRoute.DepartureFlag)) return "Осмотрите кассу за стойкой";
+                    if (ClueJournal.Has(PortLead.AskWitness)) return "Поговорите с девушкой в конце стойки";
+                    if (barConversation && !barConversation.ReadyToTalk)
+                        return "Осмотрите зал бара";
+                    return "Поговорите с Дмитрием";
+                case "03_Pawnshop":
+                    if (ClueJournal.Has(PortLead.CheckSafe) && !ClueJournal.Has(PortLead.Safe))
+                        return ClueJournal.Has(PawnshopSafe.OpenFlag) ? "Осмотрите записку в сейфе" : "Откройте сейф за стойкой";
+                    return PortLead.HasAny(PortLead.Pawnshop) ? "Отправляйтесь в Шипсхед-Бей" : "Осмотрите ломбард";
+                case "04_Precinct": return "Осмотрите кабинет";
+                case "05_BrightonHarbor":
+                    return ClueJournal.Has("harbor_gate_open") ? (harborFinale ? harborFinale.Objective : "Осмотрите склад") : "Откройте ворота порта";
+                default: return null;
+            }
+        }
 
         private void Update()
         {
-            if (_isShowingClue && Keyboard.current != null)
-            {
-                if (Keyboard.current.spaceKey.wasPressedThisFrame ||
-                    Keyboard.current.escapeKey.wasPressedThisFrame ||
-                    Keyboard.current.eKey.wasPressedThisFrame)
-                {
-                    _isShowingClue = false;
-                }
-            }
+            if (NoirMenu.GameSession.Paused) return;
+            if (destinationAnnounced || !DestinationAvailable()) return;
+            destinationAnnounced = true;
+            locationNoticeUntil = Time.time + 4f;
         }
 
-        [Tooltip("HUD прототипа (подсказки управления, прицел, подсказка взаимодействия). Пока выключен.")]
-        public bool showHud = false;
+        private void DrawObjective()
+        {
+            if (IsListening || (objectivePlayer && (objectivePlayer.InputLocked || !objectivePlayer.enabled)) ||
+                (QteManager.Instance && QteManager.Instance.IsQteActive())) return;
+
+            string text = CurrentObjective();
+            if (string.IsNullOrEmpty(text)) return;
+            DrawObjectiveCard(text, Screen.height * .085f);
+        }
+
+        private static GUIStyle objectiveStyle;
+
+        internal static void DrawObjectiveCard(string text, float top)
+        {
+            float scale = Mathf.Clamp(Screen.height / 800f, .72f, 2f);
+            objectiveStyle ??= new GUIStyle(GameTypography.Label) { wordWrap = true, padding = new RectOffset() };
+            objectiveStyle.fontSize = Mathf.RoundToInt(19 * scale);
+            objectiveStyle.normal.textColor = new Color(.96f, .94f, .86f); objectiveStyle.Steady();
+            var content = new GUIContent(text);
+            float inset = 15 * scale;
+            float width = Mathf.Min(Screen.width * .70f, objectiveStyle.CalcSize(content).x + 2 * inset);
+            float bodyHeight = objectiveStyle.CalcHeight(content, width - 2 * inset);
+            var card = new Rect(24 * scale, top,
+                width, bodyHeight + 20 * scale);
+            Color previous = GUI.color;
+            GUI.color = new Color(0, 0, 0, .22f);
+            GUI.DrawTexture(new Rect(card.x + 2 * scale, card.y + 3 * scale, width, card.height), Texture2D.whiteTexture);
+            GUI.color = new Color(.08f, .12f, .12f, .91f);
+            GUI.DrawTexture(card, Texture2D.whiteTexture);
+            GUI.color = new Color(.77f, .65f, .43f);
+            GUI.DrawTexture(new Rect(card.x, card.y, 42 * scale, Mathf.Max(1, 2 * scale)), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(card.x + inset, card.y + 10 * scale, width - 2 * inset, bodyHeight + scale), content, objectiveStyle);
+            GUI.color = previous;
+        }
 
         private void OnGUI()
         {
-            if (IsShowingJournal)
-            {
-                DrawJournal();
-                return;
-            }
-            if (showInspectionHud)
-            {
-                DrawInspectionHud();
-                DrawClueOnly();
-                return;
-            }
-            if (!showHud) { DrawClueOnly(); return; }
-            Rect infoRect = new Rect(20, 20, 320, 145);
-            GUI.Box(infoRect, "");
-            GUILayout.BeginArea(new Rect(30, 25, 300, 135));
-            GUI.color = new Color(1f, 0.85f, 0.4f);
-            GUILayout.Label("CASE 1999: TEST PROTO");
-            GUI.color = Color.white;
-            GUILayout.Label("WASD — Перемещение");
-            GUILayout.Label("Left Shift — Бег");
-            GUILayout.Label("Мышь — Обзор (Esc — курсор)");
-            GUILayout.Label("F — Фонарик | E — Осмотр");
-            GUI.color = new Color(0.4f, 0.95f, 1f);
-            GUILayout.Label("T — Быстрый тест QTE");
-            GUILayout.EndArea();
-
-            if (!_isShowingClue && (QteManager.Instance == null || !QteManager.Instance.IsQteActive()))
-            {
-                float centerX = Screen.width / 2f;
-                float centerY = Screen.height / 2f;
-                GUI.color = new Color(1f, 1f, 1f, 0.7f);
-                GUI.Box(new Rect(centerX - 3, centerY - 3, 6, 6), "");
-            }
-
-            if (!string.IsNullOrEmpty(_promptText) && !_isShowingClue && (QteManager.Instance == null || !QteManager.Instance.IsQteActive()))
-            {
-                float width = 500;
-                float height = 44;
-                Rect promptRect = new Rect((Screen.width - width) / 2f, Screen.height - 110, width, height);
-                GUI.Box(promptRect, "");
-                var centeredStyle = new GUIStyle(GUI.skin.label)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    fontSize = 15,
-                    fontStyle = FontStyle.Bold
-                };
-                centeredStyle.normal.textColor = new Color(0.4f, 0.95f, 1f);
-                GUI.Label(promptRect, _promptText, centeredStyle);
-            }
-
-            DrawClueOnly();
-        }
-
-        void DrawJournal()
-        {
-            float scale = Mathf.Clamp(Screen.height / 850f, .65f, 1.7f);
-            float width = Mathf.Min(Screen.width * .92f, 880 * scale);
-            float height = Mathf.Min(Screen.height * .86f, 560 * scale);
-            float pad = 24 * scale;
-            var panel = new Rect((Screen.width - width) / 2, (Screen.height - height) / 2, width, height);
-
-            var previous = GUI.color;
-            GUI.color = new Color(0, 0, 0, .66f);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = new Color(.105f, .095f, .080f);
-            GUI.DrawTexture(panel, Texture2D.whiteTexture);
-            GUI.color = new Color(.50f, .41f, .27f);
-            GUI.DrawTexture(new Rect(panel.x, panel.y, panel.width, 2 * scale), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-
-            journalTitle ??= new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, wordWrap = true };
-            journalTitle.normal.textColor = new Color(.98f, .85f, .61f);
-            journalTitle.fontSize = Mathf.RoundToInt(24 * scale);
-            journalBody ??= new GUIStyle(GUI.skin.label) { wordWrap = true };
-            journalBody.normal.textColor = new Color(.94f, .90f, .81f);
-            journalBody.fontSize = Mathf.RoundToInt(18 * scale);
-            journalEntry ??= new GUIStyle(GUI.skin.button) { wordWrap = true, alignment = TextAnchor.MiddleLeft };
-            journalEntry.fontSize = Mathf.RoundToInt(16 * scale);
-
-            GUI.Label(new Rect(panel.x + pad, panel.y + pad * .5f, width - 2 * pad, 38 * scale),
-                "Дневник", journalTitle);
-            float top = panel.y + 58 * scale;
-            float columnsHeight = height - 103 * scale;
-            float listWidth = (width - 3 * pad) * .39f;
-            var entries = ClueJournal.Entries;
-
-            if (entries.Count == 0)
-                GUI.Label(new Rect(panel.x + pad, top, width - 2 * pad, 36 * scale), "Пока нет записей", journalBody);
-            else
-            {
-                selectedEntry = Mathf.Clamp(selectedEntry, 0, entries.Count - 1);
-                GUILayout.BeginArea(new Rect(panel.x + pad, top, listWidth, columnsHeight));
-                journalListScroll = GUILayout.BeginScrollView(journalListScroll);
-                for (int i = 0; i < entries.Count; i++)
-                {
-                    GUI.backgroundColor = i == selectedEntry ? new Color(.77f, .60f, .37f) : Color.white;
-                    if (GUILayout.Button(entries[i].title, journalEntry, GUILayout.MinHeight(42 * scale)))
-                    {
-                        selectedEntry = i;
-                        journalDetailScroll = Vector2.zero;
-                    }
-                }
-                GUI.backgroundColor = Color.white;
-                GUILayout.EndScrollView();
-                GUILayout.EndArea();
-
-                float detailX = panel.x + 2 * pad + listWidth;
-                GUILayout.BeginArea(new Rect(detailX, top, panel.xMax - pad - detailX, columnsHeight));
-                journalDetailScroll = GUILayout.BeginScrollView(journalDetailScroll);
-                var entry = entries[selectedEntry];
-                GUILayout.Label(entry.title, journalTitle);
-                GUILayout.Space(10 * scale);
-                GUILayout.Label(entry.description, journalBody);
-                if (!string.IsNullOrEmpty(entry.thought))
-                {
-                    GUILayout.Space(12 * scale);
-                    GUILayout.Label("Алексей: " + entry.thought, journalBody);
-                }
-                GUILayout.EndScrollView();
-                GUILayout.EndArea();
-            }
-
-            GUI.Label(new Rect(panel.x + pad, panel.yMax - 38 * scale, width - 2 * pad, 28 * scale),
-                "J / Esc — закрыть", journalBody);
-            GUI.color = previous;
+            if (NoirMenu.GameSession.Paused) return;
+            if (Time.time < locationNoticeUntil)
+                DrawObjectiveCard("Открыта новая локация", Screen.height * .19f);
+            if (IsShowingJournal || (precinctBoard && precinctBoard.IsChoosingRoute)) return;
+            DrawObjective();
+            CarXCase.UI.Subtitles.Draw(CurrentInspectionComment);
+            if (showInspectionHud) DrawInspectionHud();
         }
 
         void DrawInspectionHud()
         {
-            if (_isShowingClue || (QteManager.Instance && QteManager.Instance.IsQteActive())) return;
+            if (QteManager.Instance && QteManager.Instance.IsQteActive()) return;
             var oldColor = GUI.color;
             GUI.color = Color.white;
             float x = Screen.width * .5f;
             float y = Screen.height * .5f;
             float scale = Mathf.Clamp(Screen.height / 1080f, .7f, 1.8f);
-            float dotSize = Mathf.Max(2, 3 * scale);
-            GUI.color = new Color(0, 0, 0, .65f);
-            GUI.DrawTexture(new Rect(x-dotSize*.5f-1, y-dotSize*.5f-1, dotSize+2, dotSize+2), Texture2D.whiteTexture);
-            GUI.color = new Color(.96f, .94f, .85f, .85f);
-            GUI.DrawTexture(new Rect(x-dotSize*.5f, y-dotSize*.5f, dotSize, dotSize), Texture2D.whiteTexture);
+            // No crosshair: prompts live in the scene, the frame stays clean.
             GUI.color = Color.white;
             if (!string.IsNullOrEmpty(_promptText))
             {
                 if (_inspectionPromptStyle == null)
-                    _inspectionPromptStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true, richText = false };
+                    _inspectionPromptStyle = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true, richText = false };
                 _inspectionPromptStyle.fontSize = Mathf.RoundToInt(19 * scale);
                 float width = Mathf.Min(Screen.width * .88f, _inspectionPromptStyle.CalcSize(new GUIContent(_promptText)).x + 22 * scale);
                 var area = new Rect(x-width*.5f, y+14*scale, width, 40*scale);
@@ -270,10 +237,9 @@ namespace DetectiveGame.Core
                 GUI.Label(area, _promptText, _inspectionPromptStyle);
             }
             GUI.color = Color.white;
-            CarXCase.UI.Subtitles.Draw(CurrentInspectionComment);
-            if (Time.unscaledTime < journalHintUntil)
+            if (Time.time < journalHintUntil && !GetComponent<CarXCase.Investigation.JournalKeyHint>())
             {
-                journalHintStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
+                journalHintStyle ??= new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter };
                 journalHintStyle.fontSize = Mathf.RoundToInt(17 * scale);
                 var hint = new Rect(Screen.width - 264 * scale, 24 * scale, 240 * scale, 40 * scale);
                 GUI.color = new Color(.03f, .025f, .02f, .83f);
@@ -284,48 +250,5 @@ namespace DetectiveGame.Core
             GUI.color = oldColor;
         }
 
-        private void DrawClueOnly()
-        {
-            if (_isShowingClue)
-            {
-                float dialogWidth = 560;
-                float dialogHeight = 240;
-                Rect dialogRect = new Rect((Screen.width - dialogWidth) / 2f, (Screen.height - dialogHeight) / 2f, dialogWidth, dialogHeight);
-                GUI.color = Color.white;
-                GUI.Box(dialogRect, "");
-
-                GUILayout.BeginArea(new Rect(dialogRect.x + 25, dialogRect.y + 20, dialogWidth - 50, dialogHeight - 40));
-                
-                var titleStyle = new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = 18,
-                    fontStyle = FontStyle.Bold
-                };
-                titleStyle.normal.textColor = new Color(1f, 0.85f, 0.3f);
-                GUILayout.Label($"[УЛИКА]: {_clueTitle.ToUpper()}", titleStyle);
-
-                GUILayout.Space(12);
-
-                var bodyStyle = new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = 14,
-                    wordWrap = true
-                };
-                bodyStyle.normal.textColor = Color.white;
-                GUILayout.Label(_clueDesc, bodyStyle);
-
-                GUILayout.FlexibleSpace();
-
-                var footStyle = new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = 12,
-                    fontStyle = FontStyle.Italic
-                };
-                footStyle.normal.textColor = new Color(0.7f, 0.7f, 0.7f);
-                GUILayout.Label("Нажмите [ПРОБЕЛ] или [E], чтобы вернуться", footStyle);
-
-                GUILayout.EndArea();
-            }
-        }
     }
 }

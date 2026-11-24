@@ -7,9 +7,15 @@ public sealed class ApartmentInteractable : MonoBehaviour
     public float openAngle = 95f;
     public float travel = .38f;
     public bool prioritizeWhenAimed;
+    [Tooltip("Off: the player can no longer use it (e.g. the entry door once Alexey is inside).")]
+    public bool playerUsable = true;
     private Quaternion closedRotation;
     private Vector3 closedPosition;
     private bool open;
+    public bool IsOpen => open;
+    /// Scripted open/close (e.g. the entry door shutting behind Alexey); animates like a player use.
+    public void SetOpen(bool value) { if (open != value && kind == "hinge") LocationAudio.Effect(value ? "Door movement open" : "Door movement close"); open = value; enabled = true; }
+    public bool IsHeld => held;
     private bool held;
     private Transform originalParent;
     private Vector3 originalScale;
@@ -32,7 +38,7 @@ public sealed class ApartmentInteractable : MonoBehaviour
     public void Use(Transform eye)
     {
         if(kind=="locked")return;
-        if (kind != "pickup") { open = !open; return; }
+        if (kind != "pickup") { if (kind == "drawer") LocationAudio.Effect("Fumbling With Box", .35f); SetOpen(!open); return; }
         if (!held)
         {
             originalParent = transform.parent;
@@ -57,7 +63,7 @@ public sealed class ApartmentInteractable : MonoBehaviour
             transform.localScale=originalScale;
             for(int i=0;i<itemColliders.Length;i++) if(itemColliders[i]) itemColliders[i].enabled=colliderStates[i];
         }
-        held=!held;
+        if (held) LocationAudio.Effect("Place Open Box Bottles Ff", .28f); held=!held;
     }
     void Update()
     {

@@ -33,7 +33,9 @@ public sealed class ApartmentExplorer : MonoBehaviour
     }
     void Update()
     {
-        if (externalMovement && externalOfficer && !externalOfficer.CanUseLegacyInteraction)
+        if (NoirMenu.GameSession.Paused) return;
+        // With the hero controller present, doors go through its single, visibility-checked target choice.
+        if (externalMovement)
         {
             hint = "";
             return;
@@ -58,14 +60,21 @@ public sealed class ApartmentExplorer : MonoBehaviour
         direction.y=fall;body.Move(direction*Time.deltaTime);
         }
         ApartmentInteractable target=null;hint="";
-        if(held){target=held;hint="E — return item";}
+        if(held){target=held;hint="E — Положить на место";}
         else
         {
             target = ResolveAimedTarget();
             if (target)
-                hint = target.kind == "locked" ? "Дверь заперта" : target.kind == "pickup" ? "E — Осмотреть / Положить" : "E — Открыть / Закрыть";
+                hint = target.kind == "locked" ? "Заперто" : target.kind == "pickup" ? "E — Взять" : target.IsOpen ? "E — Закрыть" : "E — Открыть";
         }
-        if(use && target){target.Use(eye.transform);if(target.kind=="pickup")held=held?null:target;}
+        if (target)
+        {
+            // Key prompt in the scene, next to the handle/item (Heavy Rain / Detroit style).
+            var point = held ? eye.transform.position + eye.transform.forward * .5f - eye.transform.up * .16f
+                             : CarXCase.Interaction.InteractionGlyphs.PointOf(target);
+            CarXCase.Interaction.InteractionGlyphs.ShowPrompt(target, point, hint);
+        }
+        if(use && target && target.kind!="locked"){CarXCase.Interaction.InteractionGlyphs.Press(target);target.Use(eye.transform);if(target.kind=="pickup")held=held?null:target;}
     }
     ApartmentInteractable ResolveAimedTarget()
     {
@@ -75,7 +84,7 @@ public sealed class ApartmentExplorer : MonoBehaviour
         if (!TryGetInteractionHit(out var hit)) return null;
         if (externalMovement && Vector3.Distance(transform.position + Vector3.up, hit.point) >= 1.8f) return null;
         var candidate = hit.collider.GetComponentInParent<ApartmentInteractable>();
-        if (candidate && candidate.isActiveAndEnabled) aimedTarget = candidate;
+        if (candidate && candidate.isActiveAndEnabled && candidate.playerUsable) aimedTarget = candidate;
         return aimedTarget;
     }
 
@@ -99,8 +108,9 @@ public sealed class ApartmentExplorer : MonoBehaviour
     }
     void OnGUI()
     {
-        if(!externalMovement){GUI.Label(new Rect(Screen.width/2f-4,Screen.height/2f-12,20,25),"·");
-        GUI.Label(new Rect(20,Screen.height-62,700,30),"WASD — walk   |   Mouse — look   |   E — interact   |   Esc — release cursor");}
-        GUI.Label(new Rect(20,Screen.height-37,500,30),hint);
+        if (NoirMenu.GameSession.Paused) return;
+        if(!externalMovement){GUI.Label(new Rect(Screen.width/2f-4,Screen.height/2f-12,20,25),"·",GameTypography.Label);
+        GUI.Label(new Rect(20,Screen.height-62,700,30),"WASD — walk   |   Mouse — look   |   E — interact   |   Esc — release cursor",GameTypography.Label);}
+        if(!externalMovement)GUI.Label(new Rect(20,Screen.height-37,500,30),hint,GameTypography.Label);
     }
 }

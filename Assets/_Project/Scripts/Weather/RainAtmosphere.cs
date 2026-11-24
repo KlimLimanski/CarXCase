@@ -58,6 +58,7 @@ namespace CarXCase.Weather
 
         void LateUpdate()
         {
+            if (NoirMenu.GameSession.Paused) return;
             float t = Clock;
             if (car)
             {
@@ -66,9 +67,11 @@ namespace CarXCase.Weather
                 Shader.SetGlobalVector(CabinMax, cabinMax);
             }
             Shader.SetGlobalFloat(RainTime, t);
-            float sweep = wipersOn ? sweepDegrees * Mathf.Deg2Rad : 0.0001f;
+            float sweep = Application.isPlaying && wipersOn ? sweepDegrees * Mathf.Deg2Rad : 0f;
             Shader.SetGlobalVector(WiperParams, new Vector4(upTime, downTime, Mathf.Max(period, upTime + downTime), sweep));
 
+            // Keep the authored park pose in Edit Mode so saving cannot bake a sweep into it.
+            if (!Application.isPlaying) return;
             if (wiperPivots == null || wiperAxes == null) return;
             if (baseRot == null || baseRot.Length != wiperPivots.Length) OnEnable();
             float a = Wiper01(t) * sweepDegrees;

@@ -316,7 +316,7 @@ def bench(name,y,flip=False):
     dy=.24 if flip else -.24
     box(name+'_BackFrame',(x,y+dy,.76),(1.22,.16,.83),wal,'ENV_Furniture',.025,r)
     for i in range(6):
-        box(name+f'_BackChannel_{i}',(.29+i*.20,y+dy+(-.045 if flip else .045),.83),(.196,.19,.64),vinyl,'ENV_Furniture',.045,r)
+        box(name+f'_BackChannel_{i}',(.29+i*.20,y+dy+(-.045 if flip else .045),.834),(.196,.19,.64),vinyl,'ENV_Furniture',.045,r)
     for xx in [.205,1.375]:box(name+'_EndBolster',(xx,y,.67),(.07,.54,.36),vinyl,'ENV_Furniture',.026,r)
     join_children(r);coll(name,(x,y,.59),(1.25,.61,1.18))
     return r

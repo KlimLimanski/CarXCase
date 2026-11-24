@@ -31,9 +31,9 @@ Material:
     - _EdgeDarken: 0.35
     - _Refraction: 0.045
     - _RunSpeed: 1
-    - _RunningAmount: 0.65
-    - _StaticAmount: 0.55
-    - _StaticSize: 0.011
+    - _RunningAmount: 0.48
+    - _StaticAmount: 0.42
+    - _StaticSize: 0.009
     - _VScale: 1.2589458
     - _Wipers: 1
     m_Colors:

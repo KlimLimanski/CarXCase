@@ -1,8 +1,11 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using DetectiveGame.Core;
 using CarXCase.Hero;
+using CarXCase.UI;
 
 namespace CarXCase.Precinct
 {
@@ -13,6 +16,13 @@ namespace CarXCase.Precinct
         [Serializable]
         public class Line { public float start, end; public string speaker; [TextArea] public string text; }
 
+        [Serializable]
+        public class Reply
+        {
+            public string label;
+            public Line[] lines;
+        }
+
         public Transform player;
         public Camera shotCamera;
         public Transform[] path;
@@ -22,8 +32,20 @@ namespace CarXCase.Precinct
         public float walkSpeed = 1.7f;
         public float walkStart = 2.2f;
         public Line[] dialogue;
+        public float replyAt;
+        public Reply[] replies;
         public string title = "13-Й УЧАСТОК · БРУКЛИН";
         public string subtitle = "Тот же вечер";
+
+        [Header("Emerging from darkness")]
+        [Tooltip("Seconds over which the frame opens up from the night outside (after the black fade).")]
+        public float darknessTime = 4.2f;
+        [Tooltip("Exposure (EV) at the very start: the doorway reads as black, Alexey as a silhouette.")]
+        public float startExposure = -2.6f;
+        [Range(0f, 1f)] public float startVignette = .5f;
+        AudioSource footsteps;
+        Volume reveal;
+        VolumeProfile revealProfile;
 
         public bool Finished { get; private set; }
         public float ease = 0.8f;
@@ -31,9 +53,16 @@ namespace CarXCase.Precinct
         bool live;
         int lastShot = -1;
         float elapsed, fadeIn = 1, fadeOut;
+        float replyWalkPosition, resumeTime;
         float[] cumulative;
         Quaternion leftClosed, rightClosed, officeClosed;
         GUIStyle sub, speaker, small, big;
+        readonly DialogueChoiceRows choiceRows = new();
+        bool choosingReply;
+        bool finishedReply;
+        int displayedReply = -1;
+        float replyElapsed;
+        Line currentLine;
 
         public float TotalLength
         {
@@ -73,6 +102,28 @@ namespace CarXCase.Precinct
 
         void Start()
         {
+            replyWalkPosition = replyAt;
+            if (dialogue != null)
+            {
+                foreach (var line in dialogue)
+                {
+                    float length = VoiceOver.Length(Subtitles.WithSpeaker(line.speaker, line.text));
+                    if (length <= 0f) continue;
+                    line.end = Mathf.Max(line.end, line.start + length + .1f);
+                    replyAt = Mathf.Max(replyAt, line.end);
+                }
+            }
+            var clip = Resources.Load<AudioClip>("LocationAudio/Effects/steps-2");
+            if (clip)
+            {
+                footsteps = gameObject.AddComponent<AudioSource>();
+                footsteps.clip = clip;
+                footsteps.playOnAwake = false;
+                footsteps.loop = true;
+                footsteps.spatialBlend = 0f;
+                footsteps.volume = 0f;
+            }
+            SetupReveal();
             SetGameplay(false);
             Evaluate(0);
             if (ClueJournal.SkipPrecinctIntro)
@@ -98,6 +149,11 @@ namespace CarXCase.Precinct
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused)
+            {
+                if (footsteps && footsteps.isPlaying) footsteps.Pause();
+                return;
+            }
             if (Finished)
             {
                 fadeIn = Mathf.MoveTowards(fadeIn, 0, Time.deltaTime / 0.8f);
@@ -105,19 +161,156 @@ namespace CarXCase.Precinct
                 return;
             }
             fadeIn = Mathf.MoveTowards(fadeIn, 0, Time.deltaTime / 1.5f);
-            if (Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.escapeKey.wasPressedThisFrame))
-                elapsed = Mathf.Max(elapsed, Duration - 1.0f);
+            var keyboard = Keyboard.current;
+            bool skip = Application.isEditor && keyboard != null &&
+                (keyboard.spaceKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame);
+            if (skip)
+            {
+                choosingReply = false;
+                displayedReply = -1;
+                finishedReply = true;
+                Finish();
+                return;
+            }
+            if (choosingReply)
+            {
+                UpdateFootsteps(0f);
+                if (keyboard != null)
+                {
+                    if (keyboard.digit1Key.wasPressedThisFrame || keyboard.numpad1Key.wasPressedThisFrame) PickReply(0);
+                    if (keyboard.digit2Key.wasPressedThisFrame || keyboard.numpad2Key.wasPressedThisFrame) PickReply(1);
+                    if (keyboard.digit3Key.wasPressedThisFrame || keyboard.numpad3Key.wasPressedThisFrame) PickReply(2);
+                }
+                return;
+            }
+            if (displayedReply >= 0)
+            {
+                UpdateFootsteps(0f);
+                replyElapsed += Time.deltaTime;
+                var lines = replies[displayedReply].lines;
+                ShowLine(LineAt(lines, replyElapsed));
+                if (replyElapsed >= lines[lines.Length - 1].end)
+                {
+                    displayedReply = -1;
+                    finishedReply = true;
+                    ShowLine(null);
+                }
+                return;
+            }
             elapsed += Time.deltaTime;
-            live = true; Evaluate(elapsed); live = false;
-            Line cur = null;
-            if (dialogue != null) foreach (var l in dialogue) if (elapsed >= l.start && elapsed < l.end) { cur = l; break; }
-            HeroFace.SetTalking(cur != null && cur.speaker == "АЛЕКСЕЙ");
-            if (elapsed > Duration - 1.0f) fadeOut = Mathf.InverseLerp(Duration - 1.0f, Duration, elapsed);
-            if (elapsed >= Duration) Finish();
+            if (!finishedReply && replies != null && replies.Length > 0 && elapsed >= replyAt)
+            {
+                elapsed = replyAt;
+                choosingReply = true;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            float walkTime = elapsed;
+            if (finishedReply)
+            {
+                resumeTime += Time.deltaTime;
+                float ramp = Mathf.Clamp01(resumeTime / .6f);
+                walkTime = replyWalkPosition + (resumeTime < .6f ? .3f * ramp * ramp : resumeTime - .3f);
+            }
+            else if (replies != null && replies.Length > 0)
+                walkTime = Mathf.Min(elapsed, replyWalkPosition);
+            live = true; Evaluate(walkTime); live = false;
+            UpdateReveal(elapsed);
+            ShowLine(choosingReply ? null : LineAt(dialogue, elapsed));
+            if (walkTime > Duration - .32f) fadeOut = Mathf.InverseLerp(Duration - .32f, Duration, walkTime);
+            if (walkTime >= Duration) Finish();
         }
+
+        static Line LineAt(Line[] lines, float time)
+        {
+            if (lines != null)
+                foreach (var line in lines)
+                    if (time >= line.start && time < line.end) return line;
+            return null;
+        }
+
+        void ShowLine(Line line)
+        {
+            if (currentLine == line) return;
+            currentLine = line;
+            HeroFace.SetTalking(line != null && line.speaker == "АЛЕКСЕЙ");
+        }
+
+        void PickReply(int index)
+        {
+            if (!choosingReply || index >= replies.Length) return;
+            choosingReply = false;
+            displayedReply = index;
+            replyElapsed = 0f;
+            float previousEnd = 0f;
+            foreach (var line in replies[index].lines)
+            {
+                float length = VoiceOver.Length(Subtitles.WithSpeaker(line.speaker, line.text));
+                line.start = Mathf.Max(line.start, previousEnd);
+                line.end = Mathf.Max(line.end, line.start + length + .1f);
+                previousEnd = line.end;
+            }
+            Cursor.visible = false;
+            ShowLine(LineAt(replies[index].lines, 0f));
+        }
+
+        void DrawReplies(float scale)
+        {
+            float height = 36f * scale;
+            float gap = 5f * scale;
+            float right = Screen.width * .92f;
+            float top = Screen.height * .86f - replies.Length * (height + gap);
+            for (int i = 0; i < replies.Length; i++)
+            {
+                string label = replies[i].label;
+                float width = choiceRows.Measure(label, scale, Screen.width * .75f);
+                var rect = new Rect(right - width, top + i * (height + gap), width, height);
+                choiceRows.Draw(rect, label, i + 1, scale, rect.Contains(Event.current.mousePosition));
+                if (GUI.Button(rect, GUIContent.none, GUIStyle.none)) PickReply(i);
+            }
+        }
+
+        /// A temporary global volume: low exposure and a heavy vignette that lift as he steps in from the dark.
+        void SetupReveal()
+        {
+            if (reveal) return;
+            revealProfile = ScriptableObject.CreateInstance<VolumeProfile>();
+            var exposure = revealProfile.Add<ColorAdjustments>(true);
+            exposure.postExposure.value = startExposure;
+            var vignette = revealProfile.Add<Vignette>(true);
+            vignette.intensity.value = startVignette;
+            vignette.smoothness.value = .6f;
+            vignette.color.value = Color.black;
+            var go = new GameObject("Intro_Darkness_Reveal");
+            go.transform.SetParent(transform, false);
+            reveal = go.AddComponent<Volume>();
+            reveal.isGlobal = true;
+            reveal.priority = 100;
+            reveal.sharedProfile = revealProfile;
+            reveal.weight = 1f;
+        }
+
+        void UpdateReveal(float t)
+        {
+            if (!reveal) return;
+            // Starts lifting as the doors part and he steps over the threshold.
+            float k = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(walkStart - .8f, walkStart + darknessTime, t));
+            reveal.weight = 1f - k;
+        }
+
+        void EndReveal()
+        {
+            if (reveal) Destroy(reveal.gameObject);
+            if (revealProfile) Destroy(revealProfile);
+            reveal = null;
+        }
+
+        void OnDestroy() => EndReveal();
 
         void Finish()
         {
+            EndReveal();
+            if (footsteps) footsteps.Stop();
             Evaluate(Duration);
             HeroFace.SetTalking(false);
             Finished = true;
@@ -134,6 +327,19 @@ namespace CarXCase.Precinct
             SetGameplay(true);
         }
 
+        void UpdateFootsteps(float gait)
+        {
+            if (!footsteps) return;
+            float target = NoirMenu.GameSettings.SfxGain * .85f * Mathf.SmoothStep(0f, 1f, gait);
+            footsteps.volume = Mathf.MoveTowards(footsteps.volume, target, Time.unscaledDeltaTime * 5f);
+            if (target > 0f && !footsteps.isPlaying)
+            {
+                if (footsteps.timeSamples > 0) footsteps.UnPause();
+                else footsteps.Play();
+            }
+            if (target <= 0f && footsteps.volume <= 0f) footsteps.Stop();
+        }
+
         /// Poses hero, doors and camera for time t (seconds). Also used by the editor for previews.
         public void Evaluate(float t)
         {
@@ -142,6 +348,7 @@ namespace CarXCase.Precinct
             float total = cumulative[cumulative.Length - 1];
             float tau = t - walkStart, v = walkSpeed, a = Mathf.Max(ease, .01f), T = total / v + a;
             float s = tau <= 0 ? 0 : tau >= T ? total : tau < a ? .5f * v / a * tau * tau : tau > T - a ? total - .5f * v / a * (T - tau) * (T - tau) : .5f * v * a + v * (tau - a);
+            if (live) UpdateFootsteps(Mathf.Clamp01(Mathf.Min(tau, T - tau) / a));
             Vector3 pos = PointAt(s);
             Vector3 ahead = PointAt(s + 0.7f) - PointAt(Mathf.Max(0, s - 0.1f));
             if (s >= total - 0.01f) ahead = path[path.Length - 1].forward;
@@ -157,7 +364,9 @@ namespace CarXCase.Precinct
             if (frontDoorLeft) frontDoorLeft.localRotation = leftClosed * Quaternion.Euler(0, -80 * front, 0);
             if (frontDoorRight) frontDoorRight.localRotation = rightClosed * Quaternion.Euler(0, 80 * front, 0);
             float officeOpen = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(total - 4.6f, total - 3.2f, s));
-            if (officeDoor) officeDoor.localRotation = officeClosed * Quaternion.Euler(0, -95 * officeOpen, 0);
+            // Swing shut during the pause after Alexey reaches the last waypoint.
+            float officeClose = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((tau - T) / 0.85f));
+            if (officeDoor) officeDoor.localRotation = officeClosed * Quaternion.Euler(0, -95f * officeOpen * (1f - officeClose), 0);
 
             if (!shotCamera) return;
             Vector3 head = pos + Vector3.up * 1.55f, chest = pos + Vector3.up * 1.25f;
@@ -224,6 +433,7 @@ namespace CarXCase.Precinct
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (Finished)
             {
                 if (fadeIn > 0) Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, fadeIn));
@@ -231,11 +441,11 @@ namespace CarXCase.Precinct
             }
             if (sub == null)
             {
-                sub = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
-                sub.normal.textColor = Color.white;
-                speaker = new GUIStyle(sub); speaker.normal.textColor = new Color(1, .82f, .51f);
-                small = new GUIStyle(sub) { alignment = TextAnchor.MiddleRight };
-                big = new GUIStyle(sub) { fontStyle = FontStyle.Bold };
+                sub = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+                sub.normal.textColor = Color.white; sub.Steady();
+                speaker = new GUIStyle(sub); speaker.normal.textColor = new Color(1, .82f, .51f); speaker.Steady();
+                small = new GUIStyle(sub) { font = GameTypography.Face, alignment = TextAnchor.MiddleRight };
+                big = new GUIStyle(sub) { font = GameTypography.Face, fontStyle = FontStyle.Bold };
             }
             float k = Mathf.Clamp(Screen.height / 720f, .65f, 2);
             sub.fontSize = Mathf.RoundToInt(22 * k); speaker.fontSize = Mathf.RoundToInt(16 * k);
@@ -245,15 +455,11 @@ namespace CarXCase.Precinct
             if (elapsed < 5)
             {
                 GUI.Label(new Rect(0, Screen.height * .13f, Screen.width, 44 * k), title, big);
-                GUI.Label(new Rect(0, Screen.height * .13f + 44 * k, Screen.width, 30 * k), subtitle, sub);
+                GUI.Label(new Rect(0, Screen.height * .13f + 44 * k, Screen.width, 30 * k), subtitle, new GUIStyle(GameTypography.Label) { fontSize = sub.fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true });
             }
-            if (dialogue != null)
-                foreach (var l in dialogue)
-                    if (elapsed >= l.start && elapsed < l.end)
-                    {
-                        CarXCase.UI.Subtitles.Draw(l.text, .76f);
-                        break;
-                    }
+            if (currentLine != null)
+                Subtitles.Draw(Subtitles.WithSpeaker(currentLine.speaker, currentLine.text), .76f);
+            if (choosingReply) DrawReplies(k);
             float f = Mathf.Max(fadeIn, fadeOut);
             if (f > 0) Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, f));
         }

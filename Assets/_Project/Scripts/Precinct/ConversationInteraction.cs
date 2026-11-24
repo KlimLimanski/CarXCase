@@ -1,3 +1,4 @@
+using System;
 using DetectiveGame.Core;
 using UnityEngine;
 
@@ -8,9 +9,26 @@ namespace CarXCase.Precinct
     {
         public Interrogation conversation;
         public string characterName = "Дмитрий";
+        [Tooltip("Objects that count toward unlocking this conversation.")]
+        public string[] introductionClues = Array.Empty<string>();
+        [SerializeField, Min(1)] int requiredInspections = 1;
         bool started;
 
-        public bool CanInteract => isActiveAndEnabled && conversation && !started;
+        public int RequiredInspections => Mathf.Clamp(requiredInspections, 0, introductionClues?.Length ?? 0);
+        public int InspectedCount
+        {
+            get
+            {
+                if (introductionClues == null) return 0;
+                int count = 0;
+                foreach (var entry in ClueJournal.Entries)
+                    if (Array.IndexOf(introductionClues, entry.id) >= 0) count++;
+                return count;
+            }
+        }
+        public bool ReadyToTalk => RequiredInspections == 0 || InspectedCount >= RequiredInspections;
+        public bool CanInteract => isActiveAndEnabled && conversation && !started && ReadyToTalk &&
+            (string.IsNullOrEmpty(conversation.completedFlag) || !ClueJournal.Has(conversation.completedFlag));
         public string InteractPrompt => "E  Поговорить · " + characterName;
 
         public void Interact(SimpleUIHUD hud)
@@ -35,7 +53,7 @@ namespace CarXCase.Precinct
             Place(conversation.camOnHero, npcHead - direction * .35f - side * .75f + Vector3.up * .08f, heroHead);
             Place(conversation.camWide, (heroHead + npcHead) * .5f + side * 1.7f + Vector3.up * .2f,
                 (heroHead + npcHead) * .5f - Vector3.up * .15f);
-            conversation.Begin();
+            conversation.Begin(player.transform);
         }
 
         static void Place(Transform shot, Vector3 position, Vector3 target)

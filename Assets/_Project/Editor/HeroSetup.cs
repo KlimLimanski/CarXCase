@@ -381,27 +381,35 @@ public static class HeroSetup
             renderer.renderingLayerMask |= heroFillLayer;
             PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
         }
-        SetFill("Alexey_Fill", new Vector3(.73f, 1.72f, -.73f), 1.65f);
-        SetFill("Alexey_Front_Fill", new Vector3(-.66f, 1.63f, .78f), 1.1f);
-
-        void SetFill(string name, Vector3 position, float intensity)
+        // Match the cool, short-range fill used on Alexey in 03_Pawnshop.
+        var fill = player.Find("Alexey_Fill");
+        if (!fill) fill = visual.Find("Alexey_Fill");
+        if (!fill)
         {
-            var fill = player.Find(name);
-            if (!fill)
-            {
-                fill = new GameObject(name).transform;
-                fill.SetParent(player, false);
-            }
-            fill.localPosition = position;
-            var light = fill.GetComponent<Light>();
-            if (!light) light = fill.gameObject.AddComponent<Light>();
-            light.enabled = true;
-            light.type = LightType.Point;
-            light.color = new Color(1f, .97f, .91f);
-            light.intensity = intensity;
-            light.range = 3.1f;
-            light.shadows = LightShadows.None;
-            light.GetUniversalAdditionalLightData().renderingLayers = heroFillLayer;
+            fill = new GameObject("Alexey_Fill").transform;
+            Undo.RegisterCreatedObjectUndo(fill.gameObject, "Create Alexey fill");
+        }
+        if (fill.parent != player) Undo.SetTransformParent(fill, player, "Attach Alexey fill to player");
+        Undo.RecordObject(fill, "Position Alexey fill");
+        fill.SetLocalPositionAndRotation(new Vector3(.27f, 1.68f, .83f), Quaternion.identity);
+        var light = fill.GetComponent<Light>();
+        if (!light) light = Undo.AddComponent<Light>(fill.gameObject);
+        Undo.RecordObject(light, "Set Alexey fill");
+        light.enabled = true;
+        light.type = LightType.Point;
+        light.color = new Color(.91f, .995f, 1f);
+        light.intensity = .6f;
+        light.range = 1.5f;
+        light.shadows = LightShadows.None;
+        var lightData = light.GetUniversalAdditionalLightData();
+        Undo.RecordObject(lightData, "Isolate Alexey fill");
+        lightData.renderingLayers = heroFillLayer;
+
+        var previousFill = player.Find("Alexey_Front_Fill");
+        if (previousFill && previousFill.TryGetComponent<Light>(out var previousLight))
+        {
+            Undo.RecordObject(previousLight, "Disable previous Alexey fill");
+            previousLight.enabled = false;
         }
     }
 

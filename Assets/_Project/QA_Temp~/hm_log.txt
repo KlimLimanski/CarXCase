@@ -1,0 +1,14 @@
+0 open 0,00
+1 open 0,32
+2 open 0,54
+3 open 0,62
+4 open 0,02
+5 open 0,58
+6 open 0,34
+7 open 0,33
+8 open 0,51
+9 open 0,31
+10 open 0,60
+11 open 0,00
+12 open 0,82
+13 open 0,11

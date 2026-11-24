@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using CarXCase.Hero;
+using NoirMenu;
 
 namespace CarXCase.Intro
 {
@@ -25,6 +26,8 @@ namespace CarXCase.Intro
             public float speed;
             public float startZ;
             public float endZ;
+            [NonSerialized] public AudioSource approachAudio;
+            [NonSerialized] public AudioSource passAudio;
         }
 
         [Header("Timing and destination")]
@@ -37,11 +40,39 @@ namespace CarXCase.Intro
         [Header("Oncoming Traffic")]
         public List<OncomingVehicle> oncomingVehicles = new List<OncomingVehicle>();
 
-        [Header("Temporary dialogue")]
+        [Header("Hero car audio")]
+        [SerializeField, Range(0, 1)] float engineVolume = .65f;
+
+        [Header("Recorded dialogue")]
+        [SerializeField] AudioClip dialogueClip;
+        [SerializeField, Min(0)] float dialogueDelay = 4f;
+        [Tooltip("Subtitle times are in seconds from the start of the recording.")]
         public DialogueLine[] dialogue;
 
-        float elapsed, skipFade, previousZ;
-        bool loading, skipping;
+        [Header("Interior props")]
+        [SerializeField] Transform hangingCross;
+
+        [SerializeField] Transform phoneHandTarget;
+        Vector3 earLocalPosition;
+        Quaternion earLocalRotation;
+        HeroArmIK phoneArm;
+        Vector3 restingWrist, elbowHintLocal;
+        float phoneLift;
+        // Seconds in the dialogue recording. The dialling sound starts at 30 seconds.
+        const float PhoneLiftStart = 28.6f, PhoneAtEar = 30f;
+
+        const float PassPeakSeconds = 1.7f;
+        const float BlackHold = 2.5f, TitleHold = 2f;
+        const float PreludeDuration = BlackHold + 2 * TitleHold;
+        const float ExitFadeDuration = 2.5f;
+        AudioClip approachClip, passClip;
+        AudioSource music, engine, dialogueSource;
+        AudioLowPassFilter musicFilter;
+        float preludeElapsed, elapsed, skipFade, previousZ;
+        float musicLevel = .18f, engineLevel;
+        bool loading, skipping, dialogueStarted;
+        DialogueLine currentLine;
+        Quaternion crossRest;
         string loadError;
         Vector3 cameraStart;
         Quaternion cameraRotation;
@@ -62,38 +93,88 @@ namespace CarXCase.Intro
                 shotCamera = cameraRig.GetComponent<Camera>();
                 initialFov = shotCamera ? shotCamera.fieldOfView : 64f;
             }
+            if (phoneHandTarget && car)
+            {
+                earLocalPosition = phoneHandTarget.localPosition;
+                earLocalRotation = phoneHandTarget.localRotation;
+                foreach (var arm in car.GetComponentsInChildren<HeroArmIK>())
+                    if (arm.target == phoneHandTarget) phoneArm = arm;
+                if (phoneArm && phoneArm.hint)
+                {
+                    restingWrist = car.InverseTransformPoint(phoneArm.upper.position)
+                        + new Vector3(.045f, -.29f, .22f);
+                    elbowHintLocal = phoneArm.hint.localPosition;
+                }
+            }
             ApplyPose(0);
+            if (hangingCross) crossRest = hangingCross.localRotation;
             previousZ = car != null ? car.position.z : 0;
+            StartEngineAudio();
+            if (dialogueClip)
+            {
+                dialogueSource = gameObject.AddComponent<AudioSource>();
+                dialogueSource.playOnAwake = false;
+                dialogueSource.clip = dialogueClip;
+            }
+            approachClip = Resources.Load<AudioClip>("LocationAudio/Effects/Approaching traffic");
+            passClip = Resources.Load<AudioClip>("LocationAudio/Effects/Passing car");
+            var track = Resources.Load<AudioClip>("LocationAudio/Music/Zver1Music");
+            if (track)
+            {
+                var soundtrack = new GameObject("Brighton intro music");
+                soundtrack.transform.SetParent(transform, false);
+                music = soundtrack.AddComponent<AudioSource>();
+                music.playOnAwake = false;
+                music.clip = track;
+                music.volume = 0;
+                musicFilter = soundtrack.AddComponent<AudioLowPassFilter>();
+                musicFilter.cutoffFrequency = 3500f;
+                music.Play();
+            }
         }
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (loading || loadError != null) return;
 
-            if (Keyboard.current != null && (Keyboard.current.escapeKey.wasPressedThisFrame ||
+            if (Application.isEditor && Keyboard.current != null && (Keyboard.current.escapeKey.wasPressedThisFrame ||
                 Keyboard.current.spaceKey.wasPressedThisFrame)) skipping = true;
 
             if (skipping)
             {
                 skipFade = Mathf.MoveTowards(skipFade, 1, Time.deltaTime / 1.2f);
+                UpdateMusic(currentLine != null, Mathf.Max(ExitFade, skipFade));
+                if (engine) engine.volume = engineLevel * (1 - Mathf.SmoothStep(0, 1, Mathf.Max(ExitFade, skipFade)));
+                if (dialogueSource) dialogueSource.volume = 1 - Mathf.SmoothStep(0, 1, skipFade);
+                HeroFace.StopHero();
+                foreach (var vehicle in oncomingVehicles)
+                {
+                    if (vehicle.approachAudio) vehicle.approachAudio.volume = 0;
+                    if (vehicle.passAudio) vehicle.passAudio.volume *= 1 - skipFade;
+                }
                 if (skipFade >= 1) LoadApartment();
                 return;
             }
 
-            elapsed += Time.deltaTime;
+            if (preludeElapsed < PreludeDuration)
+            {
+                preludeElapsed = Mathf.Min(PreludeDuration, preludeElapsed + Time.deltaTime);
+                UpdateMusic(false, 0);
+                return;
+            }
+
+            elapsed = Mathf.Min(duration, elapsed + Time.deltaTime);
             float t = Mathf.Clamp01(elapsed / duration);
-            float story = elapsed / Mathf.Max(1, duration) * 150;
-            bool heroTalks = false;
-            if (dialogue != null)
-                foreach (var l in dialogue)
-                    if (story >= l.start && story < l.end) { heroTalks = l.speaker == "АЛЕКСЕЙ"; break; }
-            HeroFace.SetTalking(heroTalks);
+            UpdateDialogue();
+            UpdateMusic(currentLine != null, ExitFade);
             ApplyPose(t);
             UpdateOncomingTraffic();
 
             if (car != null)
             {
                 float moved = car.position.z - previousZ;
+                UpdateEngineAudio(moved / Mathf.Max(Time.deltaTime, .001f), currentLine != null);
                 if (wheels != null)
                 {
                     foreach (var wheel in wheels)
@@ -104,7 +185,105 @@ namespace CarXCase.Intro
                 previousZ = car.position.z;
             }
 
+            if (hangingCross)
+            {
+                float swing = Mathf.Lerp(1f, .25f, Mathf.InverseLerp(.90f, .97f, t));
+                hangingCross.localRotation = crossRest * Quaternion.Euler(
+                    .75f * swing * Mathf.Sin(elapsed * 3.3f), 0, 1.8f * swing * Mathf.Sin(elapsed * 3.9f));
+            }
+
             if (elapsed >= duration) LoadApartment();
+        }
+
+        float ExitFade => Mathf.InverseLerp(duration - ExitFadeDuration, duration, elapsed);
+
+        void UpdateDialogue()
+        {
+            if (!dialogueSource) return;
+            if (!dialogueStarted && elapsed >= dialogueDelay)
+            {
+                dialogueStarted = true;
+                dialogueSource.Play();
+            }
+
+            float time = dialogueSource.isPlaying ? (float)dialogueSource.timeSamples / dialogueClip.frequency : -1f;
+            if (time >= 0f)
+                phoneLift = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(PhoneLiftStart, PhoneAtEar, time));
+            DialogueLine next = ActiveLine(time);
+            if (next == currentLine) return;
+
+            currentLine = next;
+            if (currentLine?.speaker == "АЛЕКСЕЙ")
+                HeroFace.SpeakAsHero(currentLine.text, currentLine.end - time);
+            else
+                HeroFace.StopHero();
+        }
+
+        // Position the wrist goal after head animation and before HeroArmIK solves the arm.
+        void LateUpdate()
+        {
+            if (!phoneArm || !phoneArm.hint) return;
+            var head = phoneHandTarget.parent;
+            var hint = phoneArm.hint;
+            // Keep the elbow below and outside the wrist until the forearm is upright.
+            // Returning to the ear hint too early lets the elbow flip over the shoulder.
+            float settle = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.65f, 1f, phoneLift));
+            Vector3 relaxedPole = phoneArm.upper.position + car.TransformVector(new Vector3(.19f, -.36f, -.04f));
+            hint.position = Vector3.Lerp(relaxedPole, hint.parent.TransformPoint(elbowHintLocal), settle);
+
+            Vector3 ear = head.TransformPoint(earLocalPosition);
+            Vector3 arc = car.forward * (.065f * Mathf.Sin(Mathf.PI * phoneLift));
+            phoneHandTarget.SetPositionAndRotation(Vector3.Lerp(car.TransformPoint(restingWrist), ear, phoneLift) + arc,
+                head.rotation * earLocalRotation);
+            phoneArm.GripAlignment = Mathf.SmoothStep(0f, 1f, phoneLift);
+        }
+
+        void StartEngineAudio()
+        {
+            if (!car) return;
+            var clip = Resources.Load<AudioClip>("LocationAudio/Effects/Hero car engine");
+            if (!clip) return;
+
+            var motor = new GameObject("Hero car engine");
+            motor.transform.SetParent(car, false);
+            engine = motor.AddComponent<AudioSource>();
+            engine.playOnAwake = false;
+            engine.clip = clip;
+            engine.loop = true;
+            engine.volume = 0;
+        }
+
+        void UpdateEngineAudio(float speed, bool dialogueActive)
+        {
+            if (!engine) return;
+            if (!engine.isPlaying) engine.Play();
+
+            float throttle = Mathf.InverseLerp(0, roadDistance / (.905f * duration), speed);
+            engine.pitch = Mathf.MoveTowards(engine.pitch, Mathf.Lerp(.92f, 1.26f, throttle), Time.deltaTime);
+            float target = engineVolume * GameSettings.SfxGain * Mathf.Lerp(.55f, 1, throttle);
+            if (dialogueActive) target *= .62f;
+            engineLevel = Mathf.MoveTowards(engineLevel, target, Time.deltaTime * (dialogueActive ? 1.4f : .6f));
+            engine.volume = engineLevel * (1 - Mathf.SmoothStep(0, 1, ExitFade));
+        }
+
+        DialogueLine ActiveLine(float storyTime)
+        {
+            if (dialogue != null)
+                foreach (var line in dialogue)
+                    if (storyTime >= line.start && storyTime < line.end) return line;
+            return null;
+        }
+
+        void UpdateMusic(bool dialogueActive, float fade)
+        {
+            if (!music) return;
+
+            float cabin = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(0, 2f, elapsed));
+            float target = dialogueActive ? .16f : Mathf.Lerp(.9f, .58f, cabin);
+            musicLevel = Mathf.MoveTowards(musicLevel, target, Time.deltaTime * (dialogueActive ? 3f : .35f));
+            musicFilter.cutoffFrequency = Mathf.Lerp(3500f, 1600f, cabin);
+            float entrance = Mathf.SmoothStep(0, 1, Mathf.Clamp01(preludeElapsed / 1.2f));
+            music.volume = musicLevel * GameSettings.MusicGain * entrance * (1 - Mathf.SmoothStep(0, 1, fade));
         }
 
         void UpdateOncomingTraffic()
@@ -134,8 +313,52 @@ namespace CarXCase.Intro
                     Vector3 pos = v.root.position;
                     pos.z = currentZ;
                     v.root.position = pos;
+                    if (car && shotCamera) UpdateTrafficAudio(v);
                 }
             }
+        }
+
+        void UpdateTrafficAudio(OncomingVehicle vehicle)
+        {
+            float distance = vehicle.root.position.z - car.position.z;
+            float heroSpeed = (car.position.z - previousZ) / Mathf.Max(Time.deltaTime, .001f);
+            float timeToPass = distance / Mathf.Max(.1f, vehicle.speed + heroSpeed);
+            if (!vehicle.approachAudio)
+            {
+                Vector3 screen = shotCamera.WorldToViewportPoint(vehicle.root.position + Vector3.up * .65f);
+                if (screen.z < shotCamera.nearClipPlane || screen.z > shotCamera.farClipPlane ||
+                    screen.x < -.025f || screen.x > 1.025f || screen.y < 0 || screen.y > 1) return;
+                if (approachClip && timeToPass > 0)
+                    vehicle.approachAudio = PlayTraffic(vehicle, approachClip, true);
+            }
+
+            if (vehicle.approachAudio && timeToPass <= PassPeakSeconds && !vehicle.passAudio && passClip)
+            {
+                vehicle.passAudio = PlayTraffic(vehicle, passClip, false);
+                vehicle.passAudio.time = Mathf.Clamp(PassPeakSeconds - timeToPass, 0, passClip.length - .02f);
+            }
+            if (vehicle.approachAudio)
+            {
+                float proximity = Mathf.Clamp01(1 - distance / 130f);
+                float handoff = vehicle.passAudio ? 1 - Mathf.Clamp01(vehicle.passAudio.time / .8f) : 1;
+                if (vehicle.passAudio && !vehicle.passAudio.isPlaying) handoff = 0;
+                float target = GameSettings.SfxGain * Mathf.Lerp(.055f, .21f, proximity) * handoff;
+                vehicle.approachAudio.volume = Mathf.MoveTowards(vehicle.approachAudio.volume, target, Time.deltaTime);
+                if (vehicle.passAudio && vehicle.approachAudio.volume <= .001f) vehicle.approachAudio.Stop();
+            }
+            if (vehicle.passAudio) vehicle.passAudio.volume = GameSettings.SfxGain * .32f;
+        }
+
+        AudioSource PlayTraffic(OncomingVehicle vehicle, AudioClip clip, bool loop)
+        {
+            var source = gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = loop;
+            source.clip = clip;
+            source.volume = 0;
+            source.panStereo = vehicle.root.position.x < car.position.x ? -.34f : .34f;
+            source.Play();
+            return source;
         }
 
         void ApplyPose(float t)
@@ -202,19 +425,21 @@ namespace CarXCase.Intro
                 return;
             }
             loading = true;
-            SceneManager.LoadSceneAsync(destinationScene, LoadSceneMode.Single);
+            var load = SceneManager.LoadSceneAsync(destinationScene, LoadSceneMode.Single);
+            ScreenFader.RevealAfterLoad(load, 1.25f);
         }
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (subtitleStyle == null)
             {
-                subtitleStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
-                subtitleStyle.normal.textColor = Color.white;
+                subtitleStyle = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+                subtitleStyle.normal.textColor = Color.white; subtitleStyle.Steady();
                 speakerStyle = new GUIStyle(subtitleStyle);
-                speakerStyle.normal.textColor = new Color(1, .82f, .51f);
-                smallStyle = new GUIStyle(subtitleStyle) { alignment = TextAnchor.MiddleRight };
-                titleStyle = new GUIStyle(subtitleStyle) { fontStyle = FontStyle.Bold };
+                speakerStyle.normal.textColor = new Color(1, .82f, .51f); speakerStyle.Steady();
+                smallStyle = new GUIStyle(subtitleStyle) { font = GameTypography.Face, alignment = TextAnchor.MiddleRight };
+                titleStyle = new GUIStyle(subtitleStyle) { font = GameTypography.Face, fontStyle = FontStyle.Bold };
             }
 
             float s = Mathf.Clamp(Screen.height / 720f, .65f, 2);
@@ -226,33 +451,27 @@ namespace CarXCase.Intro
             Fill(new Rect(0, 0, Screen.width, Screen.height * .065f), Color.black);
             Fill(new Rect(0, Screen.height * .935f, Screen.width, Screen.height * .065f), Color.black);
 
-            if (elapsed < 7)
-            {
-                GUI.Label(new Rect(0, Screen.height * .12f, Screen.width, 45 * s), "БРАЙТОН-БИЧ · 1999", titleStyle);
-                GUI.Label(new Rect(0, Screen.height * .12f + 45 * s, Screen.width, 30 * s), "Ночной дождь", subtitleStyle);
-            }
+            if (currentLine != null && !skipping)
+                CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(currentLine.speaker, currentLine.text));
 
-            float storyTime = elapsed / Mathf.Max(1, duration) * 150;
-            if (dialogue != null && !skipping)
-            {
-                foreach (var line in dialogue)
-                {
-                    if (storyTime >= line.start && storyTime < line.end)
-                    {
-                        CarXCase.UI.Subtitles.Draw(line.text);
-                        break;
-                    }
-                }
-            }
-
-            float fade = Mathf.Max(1 - Mathf.Clamp01(elapsed / 2), Mathf.InverseLerp(duration - 2.5f, duration, elapsed));
+            float fade = Mathf.Max(1 - Mathf.Clamp01(elapsed / 2), ExitFade);
             fade = Mathf.Max(fade, skipFade);
             if (loading) fade = 1;
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, fade));
 
+            if (!skipping && preludeElapsed >= BlackHold && preludeElapsed < PreludeDuration)
+            {
+                bool showYear = preludeElapsed >= BlackHold + TitleHold;
+                float titleTime = preludeElapsed - BlackHold - (showYear ? TitleHold : 0);
+                float alpha = BlendWindow(titleTime, 0, .3f, TitleHold - .3f, TitleHold);
+                titleStyle.normal.textColor = new Color(1, 1, 1, alpha);
+                GUI.Label(new Rect(0, (Screen.height - 45 * s) / 2, Screen.width, 45 * s),
+                    showYear ? "1999" : "БРАЙТОН-БИЧ", titleStyle);
+            }
+
             if (loadError != null)
             {
-                GUI.Label(new Rect(40, Screen.height / 2 - 60, Screen.width - 80, 120), loadError, subtitleStyle);
+                GUI.Label(new Rect(40, Screen.height / 2 - 60, Screen.width - 80, 120), loadError, new GUIStyle(GameTypography.Label) { fontSize = subtitleStyle.fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true });
             }
         }
 

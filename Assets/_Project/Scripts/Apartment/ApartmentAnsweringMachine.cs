@@ -27,7 +27,8 @@ namespace CarXCase.Apartment
 
         void Update()
         {
-            bool pulse = IsPlaying || Mathf.PingPong(Time.unscaledTime * 1.8f, 1) > .5f;
+            if (NoirMenu.GameSession.Paused) return;
+            bool pulse = IsPlaying || Mathf.PingPong(Time.time * 1.8f, 1) > .5f;
             if (pulse != lit) SetIndicator(pulse);
         }
 
@@ -44,6 +45,7 @@ namespace CarXCase.Apartment
         public void Play(SimpleUIHUD hud)
         {
             if (IsPlaying || !hud) return;
+            LocationAudio.Effect("Cassette button", .72f);
             IsPlaying = true;
             playbackHud = hud;
             hud.IsListening = true;
@@ -58,22 +60,24 @@ namespace CarXCase.Apartment
 
             if (message2140) audioSource.PlayOneShot(message2140);
             float scale = message2140 ? message2140.length / 13f : 1f;
-            yield return Line(hud, "21:40 · Фёдор Павлович, передай Дмитрию, что в сказки мы не верим.", 4f * scale);
-            yield return Line(hud, "Контейнер на двенадцатом пирсе вскрыт, бумаги пропали.", 3.5f * scale);
-            yield return Line(hud, "Если до утра пятницы товар или пятнадцать тысяч не лягут на стол — разговор продолжим в его забегаловке.", 5.5f * scale);
+            yield return Line(hud, "21:40 · Фёдор Павлович, передай Дмитрию, что в сказки мы не верим.", 4f * scale, "Неизвестный голос");
+            yield return Line(hud, "Контейнер на двенадцатом пирсе вскрыт, бумаги пропали.", 3.5f * scale, "Неизвестный голос");
+            yield return Line(hud, "Если до утра пятницы товар или пятнадцать тысяч не лягут на стол — разговор продолжим в его забегаловке.", 5.5f * scale, "Неизвестный голос");
 
             var clue = GetComponent<ClueObject>();
             clue.AddEntry();
-            hud.ShowInspectionComment(clue.inspectionComment);
+            hud.ShowInspectionComment(clue.inspectionComment, Mathf.Clamp(2.7f + (clue.inspectionComment ?? "").Length * .033f, 3.2f, 7f),
+                SimpleUIHUD.HeroSpeaker, CarXCase.UI.VoiceOver.ForTitle(clue.clueTitle));
             hud.IsListening = false;
             playbackHud = null;
             IsPlaying = false;
         }
 
-        static IEnumerator Line(SimpleUIHUD hud, string line, float seconds)
+        static IEnumerator Line(SimpleUIHUD hud, string line, float seconds, string speaker = null)
         {
-            hud.ShowInspectionComment(line, seconds);
-            yield return new WaitForSecondsRealtime(seconds);
+            seconds = Mathf.Max(seconds, CarXCase.UI.VoiceOver.Length(line) + .2f);   // let the recording finish
+            hud.ShowInspectionComment(line, seconds, speaker);
+            yield return new WaitForSeconds(seconds);
         }
 
         void OnDisable()

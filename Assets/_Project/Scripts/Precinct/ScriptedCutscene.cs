@@ -53,10 +53,33 @@ namespace CarXCase.Precinct
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0, v.z);
 
-        void Start() { Evaluate(0); }
+        void Start() { FitDialogueToVoice(); Evaluate(0); }
+
+        /// A recorded line holds until its recording ends; later lines move back and the cutscene grows,
+        /// so voices never overlap or get cut off.
+        void FitDialogueToVoice()
+        {
+            if (dialogue == null || dialogue.Length == 0) return;
+            var ordered = (Line[])dialogue.Clone();
+            System.Array.Sort(ordered, (a, b) => a.start.CompareTo(b.start));
+            var hold = CarXCase.UI.VoiceOver.Spread(System.Array.ConvertAll(ordered, l => l.text));
+            float shift = 0f;
+            for (int i = 0; i < ordered.Length; i++)
+            {
+                ordered[i].start += shift;
+                ordered[i].end += shift;
+                if (hold[i] <= 0f) continue;
+                float missing = ordered[i].start + hold[i] - ordered[i].end;
+                if (missing <= 0f) continue;
+                ordered[i].end += missing;
+                shift += missing;
+            }
+            tail += shift;
+        }
 
         void Update()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (Finished) return;
             fade = Mathf.MoveTowards(fade, 0, Time.deltaTime / 1.2f);
             var kb = Keyboard.current;
@@ -130,13 +153,14 @@ namespace CarXCase.Precinct
 
         void OnGUI()
         {
+            if (NoirMenu.GameSession.Paused) return;
             if (Finished) return;
             if (sub == null)
             {
-                sub = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; sub.normal.textColor = Color.white;
-                spk = new GUIStyle(sub); spk.normal.textColor = new Color(1, .82f, .51f);
-                big = new GUIStyle(sub) { fontStyle = FontStyle.Bold };
-                small = new GUIStyle(sub) { alignment = TextAnchor.MiddleRight };
+                sub = new GUIStyle(GameTypography.Label) { alignment = TextAnchor.MiddleCenter, wordWrap = true }; sub.normal.textColor = Color.white; sub.Steady();
+                spk = new GUIStyle(sub); spk.normal.textColor = new Color(1, .82f, .51f); spk.Steady();
+                big = new GUIStyle(sub) { font = GameTypography.Face, fontStyle = FontStyle.Bold };
+                small = new GUIStyle(sub) { font = GameTypography.Face, alignment = TextAnchor.MiddleRight };
             }
             float k = Mathf.Clamp(Screen.height / 720f, .65f, 2);
             sub.fontSize = Mathf.RoundToInt(21 * k); spk.fontSize = Mathf.RoundToInt(16 * k);
@@ -146,13 +170,13 @@ namespace CarXCase.Precinct
             if (elapsed < 4.5f && !string.IsNullOrEmpty(title))
             {
                 GUI.Label(new Rect(0, Screen.height * .13f, Screen.width, 44 * k), title, big);
-                GUI.Label(new Rect(0, Screen.height * .13f + 44 * k, Screen.width, 30 * k), subtitle, sub);
+                GUI.Label(new Rect(0, Screen.height * .13f + 44 * k, Screen.width, 30 * k), subtitle, new GUIStyle(GameTypography.Label) { fontSize = sub.fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true });
             }
             if (dialogue != null)
                 foreach (var l in dialogue)
                     if (elapsed >= l.start && elapsed < l.end)
                     {
-                        CarXCase.UI.Subtitles.Draw(l.text, .76f);
+                        CarXCase.UI.Subtitles.Draw(CarXCase.UI.Subtitles.WithSpeaker(l.speaker, l.text), .76f);
                         break;
                     }
             if (fade > 0) Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0, 0, 0, fade));

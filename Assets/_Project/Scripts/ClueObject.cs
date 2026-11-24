@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace DetectiveGame.Core
 {
+    /// Camera angle used when Alexey examines the clue (Detroit-style framing).
+    public enum ClueShot { Auto, Left, Right, High, Close }
+
     public class ClueObject : MonoBehaviour
     {
         public string clueId = "clue_safe";
@@ -11,8 +14,19 @@ namespace DetectiveGame.Core
         public string clueDescription = "Сейф распахнут настежь. Замок не взломан — код ввели вручную. Внутри пусто, пачки денег исчезли.";
         public bool isSuspiciousForBrothers = true;
         public bool addToJournal = true;
+        [Tooltip("Optional real evidence images and captions shared by diary and board.")]
+        public Casebook.Attachment[] journalAttachments = System.Array.Empty<Casebook.Attachment>();
         [TextArea] public string inspectionComment;
+        [Tooltip("Optional recorded line for the comment; Alexey's lips follow it instead of the text pacing.")]
+        public AudioClip inspectionVoice;
         [TextArea] public string journalThought;
+        [Header("Examination")]
+        [Tooltip("Ракурс камеры при осмотре. Auto выбирает сторону со свободным местом.")]
+        public ClueShot cameraShot = ClueShot.Auto;
+
+        bool inspected;
+        /// Every clue is examined once: after that its key no longer appears and E does nothing.
+        public bool IsDone => inspected || (addToJournal && ClueJournal.Has(clueId));
 
         public string InspectionAction =>
             TryGetComponent<CarXCase.Apartment.ApartmentAnsweringMachine>(out _) ? "Воспроизвести" : "Осмотреть";
@@ -95,6 +109,9 @@ namespace DetectiveGame.Core
 
         public void Inspect(SimpleUIHUD ui)
         {
+            if (IsDone) return;
+            inspected = true;
+            SetHighlight(false);
             if (TryGetComponent<CarXCase.Apartment.ApartmentAnsweringMachine>(out var machine))
             {
                 machine.Play(ui);
@@ -103,8 +120,11 @@ namespace DetectiveGame.Core
 
             AddEntry();
             if (!ui) return;
-            if (!string.IsNullOrWhiteSpace(inspectionComment)) ui.ShowInspectionComment(inspectionComment);
-            else ui.ShowClue(clueTitle, clueDescription);
+            var line = !string.IsNullOrWhiteSpace(inspectionComment) ? inspectionComment :
+                !string.IsNullOrWhiteSpace(journalThought) ? journalThought : clueDescription;
+            if (string.IsNullOrWhiteSpace(line)) return;
+            float duration = Mathf.Clamp(2.7f + line.Length * .033f, 3.2f, 7f);
+            ui.ShowInspectionComment(line, duration, SimpleUIHUD.HeroSpeaker, inspectionVoice ? inspectionVoice : CarXCase.UI.VoiceOver.ForTitle(clueTitle));
         }
     }
 }

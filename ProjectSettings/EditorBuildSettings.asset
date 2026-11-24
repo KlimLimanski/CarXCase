@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_Project/Scenes/MainMenu.unity
+    path: Assets/_Project/Scenes/00_MainMenu.unity
     guid: 54d49179a381d2245b92c085e2a8cf93
   - enabled: 1
     path: Assets/_Project/Scenes/00_BrightonDrive_Models.unity
@@ -15,17 +15,17 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/01_FatherApartment.unity
     guid: 49742a5d96b3e4a4ebf26df0f9de3523
   - enabled: 1
-    path: Assets/_Project/Scenes/02_Precinct.unity
+    path: Assets/_Project/Scenes/04_Precinct.unity
     guid: 983ace2e3bb19fc4a87ea757d233778d
   - enabled: 1
-    path: Assets/_Project/Scenes/03_Bar.unity
+    path: Assets/_Project/Scenes/02_Bar.unity
     guid: 5c6a3408a6e1cb04da471fed3d8f520f
   - enabled: 1
-    path: Assets/_Project/Scenes/04_Pawnshop.unity
+    path: Assets/_Project/Scenes/03_Pawnshop.unity
     guid: f2104a5027662c14cbc485ae6db011c4
   - enabled: 1
-    path: Assets/_Project/Scenes/05_Mikhail.unity
-    guid: 4bcd975f4fd25da428a9e621c4488ff6
+    path: Assets/_Project/Scenes/05_BrightonHarbor.unity
+    guid: a7f24d340f8486442a1671fe4da0560e
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -24,6 +24,7 @@ namespace DetectiveGame.Core
                 return;
             }
 
+            QteManager.Instance.Present(targetRenderer ? targetRenderer.transform : transform, actionName);
             if (qteType == QteType.SinglePress)
             {
                 QteManager.Instance.StartSinglePress(targetKey, keyDisplayName, duration, OnSuccess, OnFailure);
