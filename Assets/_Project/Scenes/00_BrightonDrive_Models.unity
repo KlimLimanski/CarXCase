@@ -95445,6 +95445,7 @@ MonoBehaviour:
   engineVolume: 0.65
   dialogueClip: {fileID: 8300000, guid: 168ba1fef2f14ad6abb9a51098e85ebb, type: 3}
   dialogueDelay: 4
+  phoneHandTarget: {fileID: 522699627}
   dialogue:
   - start: 2.52
     end: 5.42
