@@ -19,6 +19,9 @@ public sealed class HangarProps : MonoBehaviour
     GameObject bloodPool;
     Material bloodMaterial;
     Texture2D bloodTexture;
+    float bloodSpread;
+    static readonly Vector3 BloodPoolStartSize = new(1.41f, 1.58f, 1f);
+    static readonly Vector3 BloodPoolSize = new(1.72f, 1.95f, 1f);
 
     float aimGoal, aim, aimVelocity;
     Transform aimAt;
@@ -206,32 +209,83 @@ public sealed class HangarProps : MonoBehaviour
         if (!chest) return;
         if (!bloodMaterial)
         {
-            var shader = Shader.Find("Sprites/Default");
-            if (!shader) return;
-            const int size = 64;
-            bloodTexture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            bloodTexture.wrapMode = TextureWrapMode.Clamp;
-            var pixels = new Color[size * size];
-            for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
-            {
-                var p = new Vector2(x, y) / (size - 1) * 2f - Vector2.one;
-                float edge = p.magnitude + (Mathf.PerlinNoise(x * .105f, y * .105f) - .5f) * .18f;
-                pixels[y * size + x] = new Color(.19f, .022f, .023f, .86f * (1f - Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.65f, .96f, edge))));
-            }
-            bloodTexture.SetPixels(pixels);
-            bloodTexture.Apply(false, true);
-            bloodMaterial = new Material(shader) { mainTexture = bloodTexture };
+            var template = Resources.Load<Material>("Hangar blood pool");
+            if (!template) return;
+            bloodTexture = MakeBloodTexture();
+            bloodMaterial = new Material(template) { mainTexture = bloodTexture };
+            bloodMaterial.SetTexture("_EmissionMap", bloodTexture);
         }
+
+        // Project the final chest pose onto the walkable slab, below the character and any props.
+        var center = new Vector3(chest.position.x, Floor, chest.position.z);
+        var normal = Vector3.up;
+        var slab = transform.Find("Worn concrete slab");
+        if (slab && slab.TryGetComponent<Collider>(out var floor) &&
+            floor.Raycast(new Ray(center + Vector3.up, Vector3.down), out var hit, 2f))
+        {
+            center = hit.point;
+            normal = hit.normal;
+        }
+        var hips = alexey ? Bone(HumanBodyBones.Hips) : staging.KostyaBone("pelvis");
+        Vector3 along = Vector3.ProjectOnPlane(hips ? chest.position - hips.position : chest.up, normal);
+        if (along.sqrMagnitude < .001f) along = Vector3.ProjectOnPlane(transform.forward, normal);
+
         bloodPool = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        bloodPool.name = "Small blood pool";
+        bloodPool.name = "Blood pool on concrete";
         bloodPool.transform.SetParent(transform, false);
-        bloodPool.transform.SetPositionAndRotation(new Vector3(chest.position.x, Floor + .008f, chest.position.z), Quaternion.Euler(90f, 16f, 0f));
-        bloodPool.transform.localScale = new Vector3(.65f, .44f, 1f);
-        Destroy(bloodPool.GetComponent<Collider>());
+        bloodPool.transform.SetPositionAndRotation(center + normal * .014f, Quaternion.LookRotation(-normal, along));
+        bloodSpread = 0f;
+        bloodPool.transform.localScale = BloodPoolStartSize;
+        var collider = bloodPool.GetComponent<Collider>();
+        collider.enabled = false;
+        Destroy(collider);
         var renderer = bloodPool.GetComponent<MeshRenderer>();
         renderer.sharedMaterial = bloodMaterial;
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+    }
+
+    static Texture2D MakeBloodTexture()
+    {
+        const int size = 192;
+        var texture = new Texture2D(size, size, TextureFormat.RGBA32, true)
+        {
+            name = "Blood pooled on concrete",
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Trilinear,
+        };
+        var pixels = new Color32[size * size];
+        var core = new Color(.215f, .015f, .028f);
+        var thin = new Color(.445f, .043f, .062f);
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            var p = new Vector2(x, y) * (2f / (size - 1)) - Vector2.one;
+            float warp = Mathf.PerlinNoise(p.x * 5.1f + 7.7f, p.y * 5.1f + 9.3f) - .5f;
+            float grain = Mathf.PerlinNoise(p.x * 37f + 17.4f, p.y * 37f + 26.1f);
+            float edge = Lobe(p, -.08f, -.06f, .68f, .61f);
+            edge = MergeLobes(edge, Lobe(p, .36f, .24f, .43f, .40f));
+            edge = MergeLobes(edge, Lobe(p, -.38f, -.35f, .44f, .37f));
+            edge = MergeLobes(edge, Lobe(p, .12f, .45f, .41f, .35f));
+            edge += .22f * warp + .07f * (grain - .5f);
+
+            float rim = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-.54f, .02f, edge));
+            var color = Color.Lerp(core, thin, Mathf.Clamp01(.13f + rim * .78f + warp * .29f + grain * .14f));
+            color.a = Mathf.Lerp(.98f, .67f, rim) * (1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-.12f, .047f, edge)));
+            pixels[y * size + x] = color;
+        }
+        texture.SetPixels32(pixels);
+        texture.Apply(true, true);
+        return texture;
+    }
+
+    static float Lobe(Vector2 p, float x, float y, float width, float height) =>
+        new Vector2((p.x - x) / width, (p.y - y) / height).magnitude - 1f;
+
+    static float MergeLobes(float a, float b)
+    {
+        const float blend = .24f;
+        float overlap = Mathf.Max(blend - Mathf.Abs(a - b), 0f) / blend;
+        return Mathf.Min(a, b) - .25f * blend * overlap * overlap;
     }
 
     // ---------- per frame ----------
@@ -240,6 +294,12 @@ public sealed class HangarProps : MonoBehaviour
     {
         if (NoirMenu.GameSession.Paused) return;
         aim = Mathf.SmoothDamp(aim, aimGoal, ref aimVelocity, .28f);
+        if (bloodPool && bloodSpread < 1f)
+        {
+            bloodSpread = Mathf.MoveTowards(bloodSpread, 1f, Time.deltaTime / 2.4f);
+            float spread = Mathf.SmoothStep(0f, 1f, bloodSpread);
+            bloodPool.transform.localScale = Vector3.Lerp(BloodPoolStartSize, BloodPoolSize, spread);
+        }
         Apply();
     }
 
@@ -490,6 +550,44 @@ public sealed class HangarProps : MonoBehaviour
             if (bone) lowest = Mathf.Min(lowest, bone.position.y - r);
         }
         if (lowest < float.MaxValue) heroVisual.position += Vector3.up * (Floor - lowest);
+
+        float settle = Ease(.67f, 1f, t);
+        if (settle > 0f)
+        {
+            SettleArm(true, settle);
+            SettleArm(false, settle);
+        }
+    }
+
+    void SettleArm(bool left, float weight)
+    {
+        var shoulder = Bone(left ? HumanBodyBones.LeftUpperArm : HumanBodyBones.RightUpperArm);
+        var elbow = Bone(left ? HumanBodyBones.LeftLowerArm : HumanBodyBones.RightLowerArm);
+        var wrist = Bone(left ? HumanBodyBones.LeftHand : HumanBodyBones.RightHand);
+        if (!shoulder || !elbow || !wrist) return;
+
+        Vector3 outward = hero.right * (left ? -1f : 1f);
+        Vector3 towardFeet = hero.forward;
+        Vector3 forearmDirection = (towardFeet + outward * (left ? .40f : .62f)).normalized;
+        LowerSegment(shoulder, elbow, (outward + towardFeet * .42f).normalized, Floor + .045f, weight);
+        LowerSegment(elbow, wrist, forearmDirection, Floor + .0325f, weight);
+
+        // The hand meshes extend along opposite local X axes. Keep the fingers parallel to the slab.
+        Vector3 localX = left ? -forearmDirection : forearmDirection;
+        var flatHand = Quaternion.LookRotation(Vector3.Cross(localX, Vector3.up), Vector3.up);
+        wrist.rotation = Quaternion.Slerp(wrist.rotation, flatHand, weight);
+    }
+
+    static void LowerSegment(Transform joint, Transform tip, Vector3 groundDirection, float tipHeight, float weight)
+    {
+        Vector3 segment = tip.position - joint.position;
+        float length = segment.magnitude;
+        if (length < .001f) return;
+        float rise = Mathf.Clamp(tipHeight - joint.position.y, -length, length);
+        float run = Mathf.Sqrt(Mathf.Max(0f, length * length - rise * rise));
+        Vector3 target = Vector3.up * rise + Vector3.ProjectOnPlane(groundDirection, Vector3.up).normalized * run;
+        var rotation = Quaternion.FromToRotation(segment, target) * joint.rotation;
+        joint.rotation = Quaternion.Slerp(joint.rotation, rotation, weight);
     }
 
     static float Ease(float a, float b, float v) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, v));
